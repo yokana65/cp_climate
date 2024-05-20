@@ -1,9 +1,38 @@
+---
+title: "Compositional Data Analysis"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    number_sections: true
+    code_folding: hide
+---
+
+# Introduction
+
+This is where you can write an introduction to your document.
+
+Install the required packages:
+
+```{r eval=TRUE, include=FALSE}
+if (!require(rmarkdown)) {
+  install.packages("rmarkdown")
+}
+```
+
+# Data Analysis
+
+## DA Functions
+
+```{r, eval=TRUE, include=FALSE}
 graph_ts_200ka <- function(display = TRUE, datasets = c("data_odp_967_22", "data_odp721_722_terr", "data_odp_709", "data_icdp_chb", "data_kl09", "data_kl11", "data_kl15", "data_lake_tana"), index = 1) {
     d <- get(datasets[index])
 
     #*******************************200ka Plot of wentness index*************************************
     # Create the plot
-    png(filename = paste0("graphs/200ka_polygonplot", datasets[index],".png"))
+    if (!display) {
+      png(filename = paste0("graphs/200ka_polygonplot", datasets[index],".png"))
+    }
 
     yt <- d[,2] # your time series y values
     xt <- d[,1] # your time series age values
@@ -17,9 +46,7 @@ graph_ts_200ka <- function(display = TRUE, datasets = c("data_odp_967_22", "data
     y_max <- mean_yt + 5 * std_dev
     
     #***************************Plotting the graph********************************
-    if (!display) {
-        plot(xt, yt, type = "n", xlab = "", ylab = "", xlim = range(xt), ylim = range(yt), main = paste0("200ka Plot of ", datasets[index]))
-    }
+    plot(xt, yt, type = "n", xlab = "", ylab = "", xlim = range(xt), ylim = range(yt), main = paste0("200ka Plot of ", datasets[index]))
 
     # Create the filled areas
     # age matrix
@@ -39,8 +66,11 @@ graph_ts_200ka <- function(display = TRUE, datasets = c("data_odp_967_22", "data
     color_rgb <- col2rgb('#0072BD') / 255
     polygon(fill_x, fill_y2, col = rgb(color_rgb[1], color_rgb[2], color_rgb[3], alpha = 0.1), border = NA)
 
+    if (!display) {
         # Close the graphics device
-    dev.off()
+        dev.off()
+        return()
+    }
     
     # #*******************alternative ggplot graph********************************
     # library(ggplot2)
@@ -81,3 +111,46 @@ graph_ts_200ka <- function(display = TRUE, datasets = c("data_odp_967_22", "data
 
     # ggsave(filename = paste0("200ka_plot_",datasets[index],".png"), plot = p, path = "graphs/", width = 10, height = 6, dpi = 300)
 }
+
+```
+
+
+## ODP
+
+This is the data from the Ocean Drilling Program close to Cyprus. Data contains several Cores, an age model and XRF data. XRF data is a proxy for the chemical composition of the sediment. 
+
+The analysis is done with Ti.AL as a proxy for wetness (?). The time series looks as follows
+  
+  ```{r, eval=TRUE}
+  graph_ts_200ka(display = TRUE, datasets = c("data_odp_967_22", "data_odp721_722_terr", "data_odp_709", "data_icdp_chb", "data_kl09", "data_kl11", "data_kl15", "data_lake_tana"), index = 1)
+  ```
+
+  ToDo: It would be more  informative to have point data instead of polygons.
+
+## CHB 14
+
+## KL 15
+
+A first look of the data in KL_15:
+
+```{r, eval=TRUE}
+# we want to read them in R
+data_KL15 <- read.table("data/Africa_NE_200/data/data_KL15_XRF_tuned.txt", header = TRUE, sep = "\t")
+
+# summarise all attributes of our data
+summary(data_KL15)
+
+```
+
+This is clearly a compositional data set, as the sum of all elements is constant. 
+
+# Convert Matlab files
+
+
+## Read the data
+
+```{r, eval=TRUE}
+
+
+
+```
