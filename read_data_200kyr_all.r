@@ -2,7 +2,7 @@ dir <- paste0(getwd(), "/data/Africa_NE_200/data/")
 
 # ODP 967
 data_odp_967_22 <- read.table(paste0(dir,'data_odp_967_22_43247_2021_339_MOESM2_ESM_XRF_Ti_Al.txt'), header = TRUE, sep = "\t")
-# get the age and Ba_ppm attributes
+# get the age and Ti_Al attributes
 data_odp_967_22 <- data_odp_967_22[,c(8, 19)]
 # filter out data with age less than 200k
 data_odp_967_22 <- data_odp_967_22[data_odp_967_22[, 1] < 200,]

@@ -50,3 +50,6 @@ rsconnect/
 
 # data folder
 data/
+
+# graph output
+graph/
