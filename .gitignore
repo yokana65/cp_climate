@@ -56,3 +56,6 @@ graph/
 
 # folder for matlab files
 spatial_temp_variations
+
+# redundant markdown output
+overview.html

@@ -129,6 +129,10 @@ graph_ts_200ka <- function(display = TRUE, datasets = c("data_odp_967_22", "data
 
 ### spearman cross correlation analysis
 
+The first step is to reproduce the cross correlation analysis from the paper (especially figure 3).
+
+
+
 # Data overview
 
 ## ODP
@@ -154,8 +158,7 @@ we have a bunch of data files:
 list.files("data/Africa_NE_200/data/")
 ```
 
-
-A first look of the data in KL_15:
+A first look of the data in KL_15_XRF_tuned:
 
 ```{r, eval=TRUE}
 # we want to read them in R
@@ -168,12 +171,32 @@ summary(data_KL15)
 
 This is clearly a compositional data set, as the sum of all elements is constant. 
 
+For the **correlation** analysis the following datasets are used:
+
+- script_read_data_KL15_XRF
+
+```{r, eval=TRUE}
+# we want to read them in R
+data_KL15 <- read.table("data/Africa_NE_200/data/data_KL15_XRF.txt", header = TRUE, sep = "\t")
+
+# summarise all attributes of our data
+summary(data_KL15)
+
+```
+
+- script_read_data_KL15_orbitalforcing
+- script_read_data_KL15_odp967
+- script_read_data_KL15_odp722
+- script_read_data_KL15_odp721_722
+- script_readco2_age
+- script_read_data_KL15_CHB_K_RRM_MHT500
+
 # Convert Matlab files
 
 
 ## Read the files
 
-```{r, eval=TRUE}
+```{r, eval=FALSE}
 # Install the R.matlab package if it's not already installed
 if (!require(R.matlab)) {
   install.packages("R.matlab")
