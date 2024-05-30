@@ -18,6 +18,10 @@ Install the required packages:
 if (!require(rmarkdown)) {
   install.packages("rmarkdown")
 }
+
+if (!require(targets))) {
+  install.packages("targets")
+}
 ```
 
 # Data Analysis
