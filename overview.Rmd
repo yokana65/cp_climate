@@ -18,9 +18,21 @@ Install the required packages:
 if (!require(rmarkdown)) {
   install.packages("rmarkdown")
 }
+
+if (!require(targets))) {
+  install.packages("targets")
+}
 ```
 
 # Data Analysis
+
+read the data:
+TODO: write pipeline to avoid loading the data all the time
+
+```{r, eval=TRUE, include=FALSE}
+# run the read_data_200kyr_all.R script
+source("scripts/read_data_200kyr_all.r")
+```
 
 ## DA Functions
 
@@ -114,6 +126,9 @@ graph_ts_200ka <- function(display = TRUE, datasets = c("data_odp_967_22", "data
 
 ```
 
+### spearman cross correlation analysis
+
+# Data overview
 
 ## ODP
 
@@ -131,6 +146,14 @@ The analysis is done with Ti.AL as a proxy for wetness (?). The time series look
 
 ## KL 15
 
+we have a bunch of data files:
+
+```{r, eval=TRUE}
+# list all files in the directory that end with .txt
+list.files("data/Africa_NE_200/data/")
+```
+
+
 A first look of the data in KL_15:
 
 ```{r, eval=TRUE}
@@ -147,9 +170,19 @@ This is clearly a compositional data set, as the sum of all elements is constant
 # Convert Matlab files
 
 
-## Read the data
+## Read the files
 
 ```{r, eval=TRUE}
+# Install the R.matlab package if it's not already installed
+if (!require(R.matlab)) {
+  install.packages("R.matlab")
+}
+
+# Load the R.matlab package
+library(R.matlab)
+
+# Use the readMat() function to read a .mat file
+data <- readMat("data/Africa_NE_200/data_pentagramm_5_1200_025kyr_XCorr.mat")
 
 
 

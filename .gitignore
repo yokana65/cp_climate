@@ -53,3 +53,6 @@ data/
 
 # graph output
 graph/
+
+# folder for matlab files
+spatial_temp_variations
