@@ -22,6 +22,14 @@ if (!require(rmarkdown)) {
 
 # Data Analysis
 
+read the data:
+TODO: write pipeline to avoid loading the data all the time
+
+```{r, eval=TRUE, include=FALSE}
+# run the read_data_200ka.R script
+source("scripts/read_data_200ka.R")
+```
+
 ## DA Functions
 
 ```{r, eval=TRUE, include=FALSE}
