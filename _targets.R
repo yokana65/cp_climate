@@ -19,7 +19,8 @@ library(targets)
 
 # End this file with a list of target objects.
 list(
- tar_target(data_odp_967_22, {
+  dir <- paste0(getwd(), "/data/Africa_NE_200/data/"),
+  tar_target(data_odp_967_22, {
     tryCatch({
     data_odp_967_22 <- read.table(paste0(dir,'data_odp_967_22_43247_2021_339_MOESM2_ESM_XRF_Ti_Al.txt'), header = TRUE, sep = "\t")
     # get the age and Ti_Al attributes

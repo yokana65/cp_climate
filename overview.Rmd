@@ -19,7 +19,7 @@ if (!require(rmarkdown)) {
   install.packages("rmarkdown")
 }
 
-if (!require(targets))) {
+if (!require(targets)) {
   install.packages("targets")
 }
 ```
@@ -38,6 +38,7 @@ source("scripts/read_data_200kyr_all.r")
 
 ```{r, eval=TRUE, include=FALSE}
 graph_ts_200ka <- function(display = TRUE, datasets = c("data_odp_967_22", "data_odp721_722_terr", "data_odp_709", "data_icdp_chb", "data_kl09", "data_kl11", "data_kl15", "data_lake_tana"), index = 1) {
+    # with targets we can use read_target to load the data
     d <- get(datasets[index])
 
     #*******************************200ka Plot of wentness index*************************************
@@ -186,4 +187,12 @@ data <- readMat("data/Africa_NE_200/data_pentagramm_5_1200_025kyr_XCorr.mat")
 
 
 
+```
+
+# targets
+
+Visualize the status of the targets pipeline:
+
+```{r, eval=TRUE}
+tar_visnetwork()
 ```
