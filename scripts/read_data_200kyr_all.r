@@ -62,7 +62,6 @@ tryCatch({
 }, error = function(e) {
   message("Error in reading the file: ", e)
 })
-# TODO: this dataset is missing but is probably calculated from another dataset
 tryCatch({
     datakl15agem <- read.table(paste0(dir,'data_KL15-2_smooth_spline_ages.txt'), header = TRUE, sep = "\t")
     names(data_kl15)[names(data_kl15) == "NEW_depth_cm"] <- "depth"

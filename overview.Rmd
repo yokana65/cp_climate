@@ -184,6 +184,32 @@ summary(data_KL15)
 
 ```
 
+This is clearly a compositional data set, as the sum of all elements is constant. It contains several minerals from the KL_15_XRF dataset. This data is 
+combined with the smoothed age data from data_KL15-2_smooth_spline_ages.txt
+
+TODO: replace all loads with targets
+
+```{r, eval=TRUE}
+data_kl15_agem <- read.table("data/Africa_NE_200/data/data_KL15-2_smooth_spline_ages.txt", header = TRUE, sep = "\t")
+
+summary(data_kl15_agem)
+
+```
+
+This appears to be confidence intervals for the age data. "accrate" is the accumulation rate, which indicates the speed of sedimentation.
+
+We also need the data with "quality flags"
+
+```{r, eval=TRUE}
+data_kl15_qf <- read.table("data/Africa_NE_200/data/data_KL15_qf.txt", header = TRUE, sep = "\t")
+
+summary(data_kl15_qf)
+
+```
+
+
+
+
 - script_read_data_KL15_orbitalforcing
 - script_read_data_KL15_odp967
 - script_read_data_KL15_odp722
