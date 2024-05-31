@@ -22,6 +22,10 @@ if (!require(rmarkdown)) {
 if (!require(targets)) {
   install.packages("targets")
 }
+
+if (!require(visNetwork)) {
+  install.packages("visNetwork")
+}
 ```
 
 # Data Analysis
