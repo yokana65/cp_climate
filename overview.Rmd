@@ -141,7 +141,7 @@ The first step is to reproduce the cross correlation analysis from the paper (es
 
 ### Questions:
 
-- [] In the KL15_xrf data, what is the difference between the Area estimates and the DArea?
+- [] In the KL15_xrf data, what is the difference between the Area estimates and the DArea? (it seems Area is used trough the analysis)
 
 ## ODP
 
@@ -159,11 +159,11 @@ The analysis is done with Ti.AL as a proxy for wetness (?). The time series look
 
 ## KL 15
 
-we have a bunch of data files:
+In the XRF data we have the following variables:
 
 ```{r, eval=TRUE}
-# list all files in the directory that end with .txt
-list.files("data/Africa_NE_200/data/")
+data <- tar_read(data_kl15)
+colnames(data)
 ```
 
 A first look of the data in KL_15_XRF_tuned:
@@ -225,10 +225,12 @@ summary(data_kl15_qf)
 - script_readco2_age
 - script_read_data_KL15_CHB_K_RRM_MHT500
 
-# Convert Matlab files
+# Convert Matlab files and reproduce Paper graphs
 
 
 ## Read the files
+
+The following reads data objects from matlab files.
 
 ```{r, eval=FALSE}
 # Install the R.matlab package if it's not already installed
@@ -241,9 +243,6 @@ library(R.matlab)
 
 # Use the readMat() function to read a .mat file
 data <- readMat("data/Africa_NE_200/data_pentagramm_5_1200_025kyr_XCorr.mat")
-
-
-
 ```
 
 # targets
