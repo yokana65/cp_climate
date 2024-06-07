@@ -139,6 +139,10 @@ The first step is to reproduce the cross correlation analysis from the paper (es
 
 # Data overview
 
+### Questions:
+
+- [] In the KL15_xrf data, what is the difference between the Area estimates and the DArea?
+
 ## ODP
 
 This is the data from the Ocean Drilling Program close to Cyprus. Data contains several Cores, an age model and XRF data. XRF data is a proxy for the chemical composition of the sediment. 
