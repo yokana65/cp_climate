@@ -26,6 +26,13 @@ if (!require(targets)) {
 if (!require(visNetwork)) {
   install.packages("visNetwork")
 }
+
+if (!require(ggplot2)) {
+  install.packages("ggplot2")
+}
+# call libraries
+# TODO: make this part more lenient
+library(ggplot2)
 ```
 
 # Data overview
@@ -38,13 +45,8 @@ if (!require(visNetwork)) {
 
 This is the data from the Ocean Drilling Program close to Cyprus. Data contains several Cores, an age model and XRF data. XRF data is a proxy for the chemical composition of the sediment. 
 
-The analysis is done with Ti.AL as a proxy for wetness (?). The time series looks as follows
+The analysis is done with Ti.AL as a proxy for wetness (?). 
   
-  ```{r, eval=TRUE}
-  graph_ts_200ka(display = TRUE, datasets = c("data_odp_967_22", "data_odp721_722_terr", "data_odp_709", "data_icdp_chb", "data_kl09", "data_kl11", "data_kl15", "data_lake_tana"), index = 1)
-  ```
-
-  ToDo: It would be more  informative to have point data instead of polygons.
 
 ## CHB 14
 
@@ -69,8 +71,17 @@ summary(data_select)
 ```
 
 The compositional data does not sum up to a constant value. In fact the spread of its sum is rather big.
+We want to know how the sum of the compositional parts is behaving over time:
 
+```{r, eval=TRUE}
+ggplot(data_select, aes(x = age, y = aggregate)) +
+  geom_line() +
+  geom_smooth(method = "loess") +
+  labs(x = "Compositional sum over time", y = "Sum", title = "Trend over Time") +
+  theme_minimal()
+```
 
+It looks like its getting more compact with time until there is a turning point (which might make sense from a geological perspective?).
 
 A first look of the data in KL_15_XRF_tuned:
 
@@ -138,6 +149,13 @@ TODO: write pipeline to avoid loading the data all the time
 # run the read_data_200kyr_all.R script
 source("scripts/read_data_200kyr_all.r")
 ```
+
+## Compositional Data Analysis
+
+As an entree point, we have to two R packages at hand for compositional data analysis: `compositions` and `robCompositions`. 
+The first one is more general (and more popular)[https://www.rdocumentation.org/packages/compositions/versions/2.0-8] and the 
+second one is more focused on robust statistics, including ("robust" PCA)[https://www.rdocumentation.org/packages/robCompositions/versions/2.4.1].
+
 
 ## DA Functions
 
@@ -231,6 +249,14 @@ graph_ts_200ka <- function(display = TRUE, datasets = c("data_odp_967_22", "data
 }
 
 ```
+
+
+  ```{r, eval=TRUE}
+  graph_ts_200ka(display = TRUE, datasets = c("data_odp_967_22", "data_odp721_722_terr", "data_odp_709", "data_icdp_chb", "data_kl09", "data_kl11", "data_kl15", "data_lake_tana"), index = 1)
+  ```
+
+  ToDo: It would be more  informative to have point data instead of polygons.
+
 
 ### spearman cross correlation analysis
 
