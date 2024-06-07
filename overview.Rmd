@@ -28,6 +28,107 @@ if (!require(visNetwork)) {
 }
 ```
 
+# Data overview
+
+### Questions:
+
+- [] In the KL15_xrf data, what is the difference between the Area estimates and the DArea? (it seems Area is used trough the analysis)
+
+## ODP
+
+This is the data from the Ocean Drilling Program close to Cyprus. Data contains several Cores, an age model and XRF data. XRF data is a proxy for the chemical composition of the sediment. 
+
+The analysis is done with Ti.AL as a proxy for wetness (?). The time series looks as follows
+  
+  ```{r, eval=TRUE}
+  graph_ts_200ka(display = TRUE, datasets = c("data_odp_967_22", "data_odp721_722_terr", "data_odp_709", "data_icdp_chb", "data_kl09", "data_kl11", "data_kl15", "data_lake_tana"), index = 1)
+  ```
+
+  ToDo: It would be more  informative to have point data instead of polygons.
+
+## CHB 14
+
+## KL 15
+
+In the XRF data we have the following variables:
+
+```{r, eval=TRUE}
+data <- tar_read(data_kl15)
+colnames(data)
+```
+
+We want to analyse the Area minerals together with a time component, which gives us a Compositional Time Series (CTS).
+
+```{r, eval=TRUE}
+data_select <- data[, c("depth", "age", "Br_Area", "Rb_Area", "Sr_Area", "Zr_Area", "Ru_Area", "Rh_Area", "Mg_Area",
+ "Al_Area", "Si_Area", "S_Area", "K_Area", "Ca_Area", "Ti_Area", "Fe_Area")]
+
+# for compositional data, we are interested in the sum of all components
+data_select$aggregate <- rowSums(data_select[3:ncol(data_select)])
+summary(data_select)
+```
+
+The compositional data does not sum up to a constant value. In fact the spread of its sum is rather big.
+
+
+
+A first look of the data in KL_15_XRF_tuned:
+
+```{r, eval=TRUE}
+# we want to read them in R
+data_KL15 <- read.table("data/Africa_NE_200/data/data_KL15_XRF_tuned.txt", header = TRUE, sep = "\t")
+
+# summarise all attributes of our data
+summary(data_KL15)
+
+```
+
+
+For the **correlation** analysis the following datasets are used:
+
+- script_read_data_KL15_XRF
+
+```{r, eval=TRUE}
+# we want to read them in R
+data_KL15 <- read.table("data/Africa_NE_200/data/data_KL15_XRF.txt", header = TRUE, sep = "\t")
+
+# summarise all attributes of our data
+summary(data_KL15)
+
+```
+
+
+
+```{r, eval=TRUE}
+data_kl15_agem <- read.table("data/Africa_NE_200/data/data_KL15-2_smooth_spline_ages.txt", header = TRUE, sep = "\t")
+
+summary(data_kl15_agem)
+
+```
+
+This appears to be confidence intervals for the age data. "accrate" is the accumulation rate, which indicates the speed of sedimentation.
+
+We also need the data with "quality flags"
+
+```{r, eval=TRUE}
+data_kl15_qf <- read.table("data/Africa_NE_200/data/data_KL15_qf.txt", header = TRUE, sep = "\t")
+
+summary(data_kl15_qf)
+
+```
+
+
+
+
+- script_read_data_KL15_orbitalforcing
+- script_read_data_KL15_odp967
+- script_read_data_KL15_odp722
+- script_read_data_KL15_odp721_722
+- script_readco2_age
+- script_read_data_KL15_CHB_K_RRM_MHT500
+
+
+
 # Data Analysis
 
 read the data:
@@ -137,93 +238,7 @@ The first step is to reproduce the cross correlation analysis from the paper (es
 
 
 
-# Data overview
 
-### Questions:
-
-- [] In the KL15_xrf data, what is the difference between the Area estimates and the DArea? (it seems Area is used trough the analysis)
-
-## ODP
-
-This is the data from the Ocean Drilling Program close to Cyprus. Data contains several Cores, an age model and XRF data. XRF data is a proxy for the chemical composition of the sediment. 
-
-The analysis is done with Ti.AL as a proxy for wetness (?). The time series looks as follows
-  
-  ```{r, eval=TRUE}
-  graph_ts_200ka(display = TRUE, datasets = c("data_odp_967_22", "data_odp721_722_terr", "data_odp_709", "data_icdp_chb", "data_kl09", "data_kl11", "data_kl15", "data_lake_tana"), index = 1)
-  ```
-
-  ToDo: It would be more  informative to have point data instead of polygons.
-
-## CHB 14
-
-## KL 15
-
-In the XRF data we have the following variables:
-
-```{r, eval=TRUE}
-data <- tar_read(data_kl15)
-colnames(data)
-```
-
-A first look of the data in KL_15_XRF_tuned:
-
-```{r, eval=TRUE}
-# we want to read them in R
-data_KL15 <- read.table("data/Africa_NE_200/data/data_KL15_XRF_tuned.txt", header = TRUE, sep = "\t")
-
-# summarise all attributes of our data
-summary(data_KL15)
-
-```
-
-This is clearly a compositional data set, as the sum of all elements is constant. 
-
-For the **correlation** analysis the following datasets are used:
-
-- script_read_data_KL15_XRF
-
-```{r, eval=TRUE}
-# we want to read them in R
-data_KL15 <- read.table("data/Africa_NE_200/data/data_KL15_XRF.txt", header = TRUE, sep = "\t")
-
-# summarise all attributes of our data
-summary(data_KL15)
-
-```
-
-This is clearly a compositional data set, as the sum of all elements is constant. It contains several minerals from the KL_15_XRF dataset. This data is 
-combined with the smoothed age data from data_KL15-2_smooth_spline_ages.txt
-
-TODO: replace all loads with targets
-
-```{r, eval=TRUE}
-data_kl15_agem <- read.table("data/Africa_NE_200/data/data_KL15-2_smooth_spline_ages.txt", header = TRUE, sep = "\t")
-
-summary(data_kl15_agem)
-
-```
-
-This appears to be confidence intervals for the age data. "accrate" is the accumulation rate, which indicates the speed of sedimentation.
-
-We also need the data with "quality flags"
-
-```{r, eval=TRUE}
-data_kl15_qf <- read.table("data/Africa_NE_200/data/data_KL15_qf.txt", header = TRUE, sep = "\t")
-
-summary(data_kl15_qf)
-
-```
-
-
-
-
-- script_read_data_KL15_orbitalforcing
-- script_read_data_KL15_odp967
-- script_read_data_KL15_odp722
-- script_read_data_KL15_odp721_722
-- script_readco2_age
-- script_read_data_KL15_CHB_K_RRM_MHT500
 
 # Convert Matlab files and reproduce Paper graphs
 
