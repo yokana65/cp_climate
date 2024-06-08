@@ -193,8 +193,7 @@ second one is more focused on robust statistics, including ("robust" PCA)[https:
 Without further ado, since this is the most robust transformation for compositional data.
 
 ```{r, eval=TRUE}
-# get the compositional elements
-data_comp <- data_select[, 3:(ncol(data_select)-1)]
+tar_read(data_kl15_comp)
 
 # What happens with the relative information if we constrain each row to sum up to 1?
 data_comp_1 <- constSum(data_comp, const = 1) 
@@ -270,7 +269,7 @@ There are ways out of that dilemma. We could use isometric transformations with 
 
 ### Theorie
 
-A clr coordinate contains the relative information of one part related to all the others. I am not a geologist, but if that is what we are looking for depends on 
+A clr coordinate contains the relative information of one part related to all the others. I am not a geologist, but if that is what we are looking for, might depend on 
 the process of sedimentation. And to be honest, I have no idea about that one.
 
 ## DA Functions
@@ -291,11 +290,11 @@ graph_ts_200ka <- function(display = TRUE, datasets = c("data_odp_967_22", "data
 
     # Assuming d is a matrix with two columns
     mean_yt <- mean(d[!is.na(d[,2]), 2], na.rm = TRUE)
-    std_dev <- sd(d[!is.na(d[,2]), 2], na.rm = TRUE)
+    # std_dev <- sd(d[!is.na(d[,2]), 2], na.rm = TRUE)
 
     # Define ylim based on 3-sigma range
-    y_min <- mean_yt - 5 * std_dev
-    y_max <- mean_yt + 5 * std_dev
+    # y_min <- mean_yt - 5 * std_dev
+    # y_max <- mean_yt + 5 * std_dev
     
     #***************************Plotting the graph********************************
     plot(xt, yt, type = "n", xlab = "", ylab = "", xlim = range(xt), ylim = range(yt), main = paste0("200ka Plot of ", datasets[index]))

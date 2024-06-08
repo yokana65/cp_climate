@@ -36,7 +36,17 @@ read_data_kl15_xrf <- function(data_kl15_xrf, data_kl15_agem) {
   # define a colum "aggregate" that is the sum of all elements in a row except of the first column
   data_kl15_itpol$aggregate <- rowSums(data_kl15_itpol[2:28])
 
-  results <- list(data_kl15_itpol = data_kl15_itpol, data_kl15 = data_kl15, missings_depth = missings_depth)  
+  # Select the variables of interest
+  data_select <- data_kl15[, c("depth", "age", "Br_Area", "Rb_Area", "Sr_Area", "Zr_Area", "Ru_Area", "Rh_Area", "Mg_Area",
+  "Al_Area", "Si_Area", "S_Area", "K_Area", "Ca_Area", "Ti_Area", "Fe_Area")]
+
+  # for compositional data, we are interested in the sum of all components
+  data_select$aggregate <- rowSums(data_select[3:ncol(data_select)])
+
+  # get the compositional elements
+  data_comp <- data_select[, 3:(ncol(data_select)-1)]
+
+  results <- list(data_kl15_itpol = data_kl15_itpol, data_kl15 = data_select, data_comp = data_comp, missings_depth = missings_depth)  
 
   return(results)
 }

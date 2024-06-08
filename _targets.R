@@ -69,5 +69,8 @@ list(
   }),
   tar_target(missings_depth, {
     missings_depth <- results$missings_depth
+  }),
+    tar_target(data_kl15_comp, {
+    data_comp <- results$data_comp
   })
 )
