@@ -187,13 +187,15 @@ As an entree point, we have to two R packages at hand for compositional data ana
 The first one is more general (and more popular)[https://www.rdocumentation.org/packages/compositions/versions/2.0-8] and the 
 second one is more focused on robust statistics, including ("robust" PCA)[https://www.rdocumentation.org/packages/robCompositions/versions/2.4.1].
 
+In the following we take a first look at centered log ratios (clr), which are the most recommended technique. Anyway, bafter some deliberation it seems that 
+isometric log ratios (ilr) are more appropriate for our data and methods, that is for data centered around one dimension (Ca) ? and for PCA.
 
 ### Centered log ratios
 
 Without further ado, since this is the most robust transformation for compositional data.
 
 ```{r, eval=TRUE}
-tar_read(data_kl15_comp)
+data_comp <- tar_read(data_kl15_comp)
 
 # What happens with the relative information if we constrain each row to sum up to 1?
 data_comp_1 <- constSum(data_comp, const = 1) 
@@ -265,6 +267,78 @@ plot(res)
 Does not change much.
 
 There are ways out of that dilemma. We could use isometric transformations with Ca as pivot!
+
+### PCA
+
+With robCompositions: 
+
+**Aim**: 
+- to reduce our 14-D space without loosing too much of the relative information, that is the compositional aspects of the data.
+- describe the relation between the observations (in time) and the compositional parts.
+
+
+In the orthonormal space we calculated independent ilr coordinates (why not clr?).
+
+
+#### methods
+
+There is a bunch of methods to calculate PCA.
+
+- SVD: Single Vector Decomposition
+- Eigenvector decomposition
+
+With `robCompositions` we can use the `pcaCoDa` function, which uses eigen-decomposition of the covariates. 
+The composition is represented in orthonormal coordinates, which are the ilr coordinates, and then standard PCA is applied.
+
+
+#### Ternary Diagram
+
+```{r, eval=TRUE}
+data <- tar_read(data_kl15_comp)
+data_3_comp <- data[, c("Ti_Area", "Al_Area", "Ca_Area")]
+ternaryDiag(data_3_comp, line = "pca")
+```
+
+Yeah, we can see the problem.
+
+```{r, eval=TRUE}
+data <- tar_read(data_kl15_comp)
+data_3_comp <- data[, c("Ti_Area", "Al_Area", "Fe_Area")]
+ternaryDiag(data_3_comp, line = "pca")
+```
+
+It seems that a lot of the variation in our data is concentrated on specific components. (Which basically means that the are 
+quite independent and we don't find much relative information at all?)
+
+
+#### PCA calculation
+
+```{r, eval=TRUE}
+## compositional PCA, non-robust
+p_comp <- pcaCoDa(data, method = "classical")
+## compositional PCA, robust
+set.seed(234) # to reproduce the result exactly
+p_comp_rob <- pcaCoDa(data, method = "robust")
+summary(p_comp)
+summary(p_comp_rob)
+plot(p_comp_rob, type = "l")
+```
+
+First of all, that looks better than expected.
+
+Let's plot the first two components:
+
+```{r, eval=TRUE}
+par(mfrow=c(1,2), mar = c(4,4,2,2))
+biplot(p_comp, xlabs = rownames(data))
+biplot(p_comp_rob, xlabs = rownames(data))
+```
+
+That also looks like we can work with. While the first component seems to be associated with Ca (no surprise) and Sr, the second is a combination of Zr, Ti and Fe and maybe most interestingly Br seems to take
+a special place and is probably dominant in the third component.
+
+TODO: **Calculate scores for the components and plot them over time.**
+TODO: Validate result and compare it with euclidean distances -> explain the difference!
 
 
 ### Theorie
