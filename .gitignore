@@ -59,3 +59,6 @@ spatial_temp_variations
 
 # redundant markdown output
 overview.html
+
+# ignore text output
+text/

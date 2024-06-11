@@ -342,7 +342,6 @@ Additionaly the biplot gives a strong hint that we have outliers at observation 
 TODO: **Calculate scores for the components and plot them over time.**
 TODO: Validate result and compare it with euclidean distances -> explain the difference!
 
-
 ### Theorie
 
 A clr coordinate contains the relative information of one part related to all the others. I am not a geologist, but if that is what we are looking for, might depend on 
