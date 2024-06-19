@@ -45,6 +45,30 @@ library(ggplot2)
 The paper uses two pairs as proxy for aridity: Ti/Al and Ti/Ca. The first pair is used for the last 200kyr and the second pair for the last 1200kyr. The data is from the KL15 core.
 A proposed alternative is the use of K as a proxy for aridity.
 
+### CDA Theory
+
+The argument behind the thesis is that sediment data can measure climate processes. In that sense the relative composition of the sediment allows for inference regarding the following processes:
+- ecological productivity (which is a proxy for wet climate)
+- carbonide deposition 
+- dust deposition (which is a proxy for aridity)
+
+The processes manifest themselves through the deposition of minerals in the sediment. The resolution of every sediment core is 1cm and every part of a core can be connected to a time measure. Since the whole mass 
+of a sediment core is fixed, the absolute counts of minerals can be missleading. What is of interest is the relative information, especially the relation of the proxies for wetness and aridity.
+This is a typical framework for compositional data regarding the concentration of minerals in the soil (Booghardt et al. 2018, p.2 )
+
+One main advantage of compositional data theory in this context is that log ratios are unaffected by "dilution effects" (Coudace and Rothwell, p. 511). The problem of asymmetrie due to the arbitrary choice of numerators can **possibly** be 
+solved through the application of log ratio transformations that take the whole composition into account** (See Booghardt)
+
+### Unit of measuremnt
+
+The concentration of minerals is measured as **counts**, which result from X-Ray fluorescene (XRF) scans on one-line measurement of soft cores. This allows for a high resolution of mineral **intensities** from sediment cores (Croudace and Rothwell 2015)
+
+The incorporation of log-ratio transformed compositional data for linear models with XRF counts is an important tool of geological research (Weltje et al. in Coudace and Rothwell, p. 507).
+The literature distinguises between intensity and concentration of elements (see DLC) to account for the inhomogenity of the specimens (p. 508).
+
+
+### Direct linear calibration model -> univariate log ratio calibration (ULC) -> Multivariate calibration algorhm (MLC)
+
 
 # Data overview
 
