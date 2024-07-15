@@ -46,6 +46,7 @@ The paper uses two pairs as proxy for aridity: Ti/Al and Ti/Ca. The first pair i
 A proposed alternative is the use of K as a proxy for aridity.
 
 
+
 # Data overview
 
 ### Questions:
@@ -70,16 +71,36 @@ data <- tar_read(data_kl15)
 colnames(data)
 ```
 
-We want to analyse the Area minerals together with a time component, which gives us a Compositional Time Series (CTS).
 
+TODO: adjust data object
 ```{r, eval=TRUE}
-data_select <- data[, c("depth", "age", "Br_Area", "Rb_Area", "Sr_Area", "Zr_Area", "Ru_Area", "Rh_Area", "Mg_Area",
+data_select <- data[, c("depth", "age", "Br_Area", "Rb_Area", "Sr_Area", "Zr_Area", "Ru_Area", "Mg_Area",
  "Al_Area", "Si_Area", "S_Area", "K_Area", "Ca_Area", "Ti_Area", "Fe_Area")]
-
+variables <- c("Br_Area", "Rb_Area", "Sr_Area", "Zr_Area", "Ru_Area", "Mg_Area",
+ "Al_Area", "Si_Area", "S_Area", "K_Area", "Ca_Area", "Ti_Area", "Fe_Area")
 # for compositional data, we are interested in the sum of all components
 data_select$aggregate <- rowSums(data_select[3:ncol(data_select)])
 summary(data_select)
 ```
+
+
+## Exploratory DA
+
+Lets do some boxplots for our variables:
+
+```{r, eval=TRUE}
+par(mfrow = c(1,2))
+boxplot(data[, variables], main="Boxplots of the Element counts", names = variables, las = 2)
+boxplot(data[, variables[variables != "Ca_Area"]], main="Boxplots of the Element counts", names = variables[variables != "Ca_Area"], las = 2)
+par(mfrow = c(1,1))
+
+
+```
+
+We do have dominant role of Ca. Mg and Rb don't show relevant variation (at first glance) and can probably be dropped in later steps of analysis (better argumentation is needed though).
+Variance of Sr, Si and Fe is also more dominant than the other elements (is this reflected in the Simplex as well?). 
+
+We want to analyse the Area minerals together with a time component, which gives us a Compositional Time Series (CTS).
 
 The compositional data does not sum up to a constant value. In fact the spread of its sum is rather big.
 We want to know how the sum of the compositional parts is behaving over time:
@@ -94,6 +115,10 @@ ggplot(data_select, aes(x = age, y = aggregate)) +
 
 It looks like its getting more compact with time until there is a turning point (which might make sense from a geological perspective?).
 Anyway, the non constant makes sense since we probably don't measure all components of the sediment.
+
+Due to the high variation of the sum, we could apply the concept of sparsely sampled data (Vgl. Greven et Steyer, 2023). The idea is that
+we assume that we only pull a sample from the whole composition. 
+
 
 Just for fun and orientation, let's have a look at the distribution of elements at a certain time point:
 ```{r, eval=TRUE}
@@ -190,6 +215,8 @@ second one is more focused on robust statistics, including ("robust" PCA)[https:
 In the following we take a first look at centered log ratios (clr), which are the most recommended technique. Anyway, bafter some deliberation it seems that 
 isometric log ratios (ilr) are more appropriate for our data and methods, that is for data centered around one dimension (Ca) ? and for PCA.
 
+### Exploratory Analysis
+
 ### Centered log ratios
 
 Without further ado, since this is the most robust transformation for compositional data.
@@ -270,6 +297,11 @@ There are ways out of that dilemma. We could use isometric transformations with 
 
 ### PCA
 
+Steps of analysis are build on: https://www.geo.fu-berlin.de/en/v/soga-r/Advances-statistics/Multivariate-approaches/Principal-Component-Analysis/PCA-the-basics/Data-preparation/index.html
+
+Something to have in mind is that PCA is scale sensitive, while CoDa is scale invariant. That is an additional reason for the transformation in clr, alr or ilr. It also illustrates the fact that
+any steps are unneccassary in CoDaPCA. 
+
 With robCompositions: 
 
 **Aim**: 
@@ -291,10 +323,21 @@ With `robCompositions` we can use the `pcaCoDa` function, which uses eigen-decom
 The composition is represented in orthonormal coordinates, which are the ilr coordinates, and then standard PCA is applied.
 
 
+We can calculate the eigenvalues and eigenvectors for CoDa:
+
+```{r, eval=TRUE}
+data_co <- tar_read(data_kl15_comp)
+pca_cov <- cov(data_co)
+pca_eigen <- eigen(pca_cov)
+rownames(pca_eigen$vectors) <- colnames(data_co)
+pca_eigen$values
+pca_eigen$vectors
+```
+
 #### Ternary Diagram
 
 ```{r, eval=TRUE}
-data <- tar_read(data_kl15_comp)
+
 data_3_comp <- data[, c("Ti_Area", "Al_Area", "Ca_Area")]
 ternaryDiag(data_3_comp, line = "pca")
 ```
