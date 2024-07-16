@@ -113,7 +113,7 @@ We want to know how the sum of the compositional parts is behaving over time:
 ggplot(data, aes(x = age, y = aggregate)) +
   geom_line() +
   geom_smooth(method = "loess") +
-  labs(x = "Compositional sum over time", y = "Sum", title = "Trend over Time") +
+  labs(x = "Compositional sum over time", y = "Sum", title = "Trend compositional sum over Time") +
   theme_minimal()
 ```
 
@@ -143,12 +143,45 @@ ggplot(df, aes(x = Element, y = Value)) +
 
 In addition, let's plot important compositional parts (not in the Simplex though!) over time:
 
-```{r, eval=TRUE}
+```{r, eval=TRUE, fig.width=12, fig.height=6}
+par(mfrow = c(4,1))
+
 # plot data with age and Ca_Area
-ggplot(data, aes(x = age, y = Ca_Area)) +   labs(x = "Time BP", y = "CA", title = "Count values for Ca over time") +
+ggplot(data, aes(x = age, y = Ca_Area)) +
+geom_line() +  geom_smooth(method = "loess") +
+labs(x = "Time BP", y = "CA", title = "Count values for Ca over time") +
+  theme_minimal()
+
+ggplot(data, aes(x = age, y = Fe_Area)) +
+geom_line() +
+geom_smooth(method = "loess") +
+labs(x = "Time BP", y = "Fe", title = "Count values for Fe over time") +
+  theme_minimal()
+
+ggplot(data, aes(x = age, y = Sr_Area)) +
+geom_line() +
+geom_smooth(method = "loess") +
+labs(x = "Time BP", y = "Sr", title = "Count values for Sr over time") +
+  theme_minimal()
+
+
+ggplot(data, aes(x = age, y = K_Area)) +
+geom_line() +
+geom_smooth(method = "loess") +
+labs(x = "Time BP", y = "K", title = "Count values for K over time") +
   theme_minimal()
 ```
 
+There are a few hints for extraordinary events that might have a strong influence on the linear optimization problem:
+- ~280 BP (and 410 BP) there is a Crash in Ca and Sr
+Compare:
+"Element ratios found useful as proxies by Rothwell et al. (2006) are:
+• Sr/Ca (indicating high-Sr aragonite requiring a shallow-water source)"
+=> Actually the ration does not change at all at this events. But the ratio of Sr & Ca to all other might change.
+But when we take the compositional sum into account it looks like these events are characterized by low aggregated counts due to the crash in Ca and Sr counts, which might be a problem with the Cores
+an measurement error of an area where the elementary density of the sediment is low (why?). In any case we should have in mind that these extreme count variations have a strong influence on the optimization algorithm of PCA.
+But this effect is much stronger when dealing with absolute counts than with compositional parts. 
+**That could be an example to show the effect of spurios correlation and the advantage of CoDa**. 
 
 
 #### Further Covariates or additional flags
@@ -301,6 +334,8 @@ In the orthonormal space we calculated independent ilr coordinates (why not clr?
 
 #### methods
 
+The general idea of PCA is a reduction in dimensionality. But from the persepctive of identifying relevant environmental processes it might be as well the deduction of non-relevant
+
 There is a bunch of methods to calculate PCA.
 
 - SVD: Single Vector Decomposition
@@ -356,8 +391,10 @@ quite independent and we don't find much relative information at all?)
 #### PCA calculation
 
 ```{r, eval=TRUE}
+
+
 ## compositional PCA, non-robust
-p_comp <- pcaCoDa(data, method = "classical")
+p_comp <- pcaCoDa(data[, variables], method = "classical")
 ## compositional PCA, robust
 set.seed(234) # to reproduce the result exactly
 p_comp_rob <- pcaCoDa(data, method = "robust")
@@ -369,20 +406,57 @@ plot(p_comp_rob, type = "l")
 We can see that there is no big jump in the explanatory power of the components. For later analysis, we need to qualify the meaningfulness of each component (See chapter environmental processes).
 Also the Kaiser criterion can be used to determine the number of components. 
 
+```{r, eval=FALSE}
+str(p_comp_rob)
+```
+
+
+Scores: Interpretation(?), but can be used to reconstruct the project values in $\boldsymbol{x}_{\mathrm{i}}^{\prime}$
+**Relevant for time analysis**: We can identify how much each obersavtion contributes to a component. In case we can actually identify the latent processes, we can observe the time frames when they are most relevant in the data.
+
+```{r, eval=TRUE}
+head(p_comp_rob$scores)
+```
+
+
+Loadings: In euclidean space indication of the contribution of each compositional part to the respective component
+
+```{r, eval=TRUE}
+p_comp_rob$loadings
+```
+
+Eigenvalues: sum up to one and indicate the contribution of each component to the total variance
+
+```{r, eval=TRUE}
+p_comp_rob$eigenvalues
+```
+
+```{r, eval=TRUE}
+p_comp_rob$princompOutputClr
+```
+
+
+```{r, eval=TRUE}
+p_comp_rob$mult_comp
+```
+
+
 ### Exploratory Analysis of Components
 
 Let's plot the components in relation to the (dominant) first component:
 
+TODO! => check robCompositions to reconstruct the plots below since the choice argument does not work as intended.
+
 ```{r, eval=TRUE, fig.width=10, fig.height=30}
 par(mfrow=c(5,1), mar = c(4,4,2,2))
 # biplot(p_comp, xlabs = rownames(data))
-biplot(p_comp_rob, choices = c(1,2), xlabs = rownames(data))
+biplot(p_comp_rob)
 
 # biplot(p_comp, xlabs = rownames(data))
-biplot(p_comp_rob, choices = c(1,3),  xlabs = rownames(data))
+biplot(p_comp_rob, choices = c(2,3))
 
 # biplot(p_comp, xlabs = rownames(data))
-biplot(p_comp_rob, choices = c(1,4),  xlabs = rownames(data))
+biplot(p_comp_rob, choices = c(2,2))
 
 # biplot(p_comp, xlabs = rownames(data))
 biplot(p_comp_rob, choices = c(1,5), xlabs = rownames(data))
@@ -402,7 +476,15 @@ TODO: Validate result and compare it with euclidean distances -> explain the dif
 
 
 
+### Calculation of $\boldsymbol{x}_{\mathrm{i}}^{\prime}$
 
+We can use principal component to reconstruct the data with all or some of the components. One idea would be calculate an "average" composition and show the influence of every component on the compositional parts (over time).
+
+```{r, eval=TRUE}
+(pca_loading <- p_comp_rob$loadings[, 1:2] )
+
+
+```
 
 
 ### Theorie
