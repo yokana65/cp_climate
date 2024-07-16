@@ -75,5 +75,11 @@ list(
   }),
     tar_target(data_kl15_comp_clr, {
     data_clr <- results$data_clr
+  }),
+  tar_target(data_kl15_comp_ilr, {
+    data_ilr <- results$data_ilr
+  }),
+  tar_target(data_kl15_comp_alr, {
+    data_alr <- results$data_alr
   })
 )

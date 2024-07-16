@@ -47,15 +47,19 @@ read_data_kl15_xrf <- function(data_kl15_xrf, data_kl15_agem) {
   # get the compositional elements
   data_comp <- data_select[, 3:(ncol(data_select)-1)]
 
-  # compute centered log-ratios
+  # transform the dompositional data into the simplex
   data_clr <- clr(data_comp)
+  data_ilr <- ilr(data_comp)
+  data_alr <- alr(data_comp)
 
   results <- list(
     data_kl15_itpol = data_kl15_itpol,
     data_kl15 = data_select,
     data_comp = data_comp,
     missings_depth = missings_depth,
-    data_clr = data_clr)
+    data_clr = data_clr,
+    data_ilr = data_ilr,
+    data_alr = data_alr)
 
   return(results)
 }

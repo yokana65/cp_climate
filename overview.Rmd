@@ -37,6 +37,8 @@ if (!require(robCompositions)) {
 # call libraries
 # TODO: make this part more lenient
 library(ggplot2)
+library(compositions)
+library(dplyr)
 ```
 
 
@@ -239,16 +241,21 @@ isometric log ratios (ilr) are more appropriate for our data and methods, that i
 
 Let's do the boxplot with clr coordinates:
 
-```{r, eval=TRUE}
-data_clr <- tar_read(data_kl15_comp_clr)
-```
+```{r, eval=TRUE,  fig.width=10, fig.height=30}
+data_clr <- tar_read(data_kl15_comp_clr) %>% as.data.frame()
+data_ilr <- tar_read(data_kl15_comp_ilr) %>% as.data.frame()
+data_alr <- tar_read(data_kl15_comp_alr) %>% as.data.frame()
 
-```{r, eval=TRUE}
-par(mfrow = c(1,2))
-boxplot(data[, variables], main="Boxplots of the Element counts", names = variables, las = 2)
-boxplot(data[, variables[variables != "Ca_Area"]], main="Boxplots of the Element counts", names = variables[variables != "Ca_Area"], las = 2)
+
+par(mfrow = c(3,1))
+boxplot(data_clr, main="Boxplots of the clr coordinates for each element", las = 2)
+# boxplot(data_clr[, variables[variables != "Ca_Area"]], main="Boxplots of the clr coordinates for each element", las = 2)
+boxplot(data_ilr, main="Boxplots of the ilr coordinates for each element", las = 2)
+boxplot(data_alr, main="Boxplots of the alr coordinates for each element", las = 2)
 par(mfrow = c(1,1))
 ```
+
+We can see that the transformed coordinates are much less diverged than the original count values.
 
 ### Centered log ratios
 
