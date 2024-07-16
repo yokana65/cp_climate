@@ -359,10 +359,15 @@ pca_eigen$values
 The eigenvalues are an indication of the explained variance from each component and thus used to order the components. The sum of the eigenvalues is equal to the 
 the total variance of the data (cp. chapter 28 SODA).
 
+The eigenvectors of the count data are as follows:
+
 ```{r, eval=TRUE}
 pca_eigen$vectors
 ```
 
+If we compare them with the eigenvectors of CoDa, we see clear differences and from the first point of view a lineare Deconstruction is only possible in CoDa (f.e. with absolute counts the first component is only Ca).
+
+Interpretation for values in euclidean space:
 We can already infer from the numerical values that the first component is almost exclusively composed of Ca (with roughly 50% of explained variance). Depending on the geological interpretation, it might be usefull to visNetwork
 Ca as a basic component that we are not that interested in and want to take out of the equation to put a focus on the other compositional parts?
 
@@ -370,23 +375,15 @@ Ca as a basic component that we are not that interested in and want to take out 
 
 #### Ternary Diagram
 
+We can use ternary Diagrams to explore relative information for each component: 
+
 ```{r, eval=TRUE}
 
-data_3_comp <- data[, c("Ti_Area", "Al_Area", "Ca_Area")]
+data_3_comp <- data[, c("Br_Area", "Sr_Area", "Fe_Area")]
 ternaryDiag(data_3_comp, line = "pca")
 ```
 
-Yeah, we can see the problem.
-
-```{r, eval=TRUE}
-data <- tar_read(data_kl15_comp)
-data_3_comp <- data[, c("Ti_Area", "Al_Area", "Fe_Area")]
-ternaryDiag(data_3_comp, line = "pca")
-```
-
-It seems that a lot of the variation in our data is concentrated on specific components. (Which basically means that the are 
-quite independent and we don't find much relative information at all?)
-
+There is something off with this diagram. TODO: investigate
 
 #### PCA calculation
 
@@ -397,7 +394,7 @@ quite independent and we don't find much relative information at all?)
 p_comp <- pcaCoDa(data[, variables], method = "classical")
 ## compositional PCA, robust
 set.seed(234) # to reproduce the result exactly
-p_comp_rob <- pcaCoDa(data, method = "robust")
+p_comp_rob <- pcaCoDa(data[, variables], method = "robust")
 summary(p_comp)
 summary(p_comp_rob)
 plot(p_comp_rob, type = "l")
@@ -483,8 +480,22 @@ We can use principal component to reconstruct the data with all or some of the c
 ```{r, eval=TRUE}
 (pca_loading <- p_comp_rob$loadings[, 1:2] )
 
-
+# calculate squared sum of loadings to check if the sum is 1
+apply(pca_loading^2, 2, sum)
 ```
+
+Since  $\boldsymbol{x}_{\mathrm{i}}^{\prime}$ is a linear combination of the observations and their loadings, we can use them to reconstruct the original data (plus error).
+
+Remember that we need the transformed variables in the Simplex. To get the variables in Euclidean space (i.e. the original count space we need to retransform the result).
+
+
+```{r, eval=TRUE}
+# first observation projected on PC1
+# remember that we need the transformed variables in the Simplex. To get the variables in Euclidean space (i.e. the original count space we need to retransform the result)
+obs1 <- data[1, variables]
+# data[1, variables] %*% pca_loading[, 1]
+```
+
 
 
 ### Theorie
