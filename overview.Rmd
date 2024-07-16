@@ -237,6 +237,19 @@ isometric log ratios (ilr) are more appropriate for our data and methods, that i
 
 ### Exploratory Analysis
 
+Let's do the boxplot with clr coordinates:
+
+```{r, eval=TRUE}
+data_clr <- tar_read(data_kl15_comp_clr)
+```
+
+```{r, eval=TRUE}
+par(mfrow = c(1,2))
+boxplot(data[, variables], main="Boxplots of the Element counts", names = variables, las = 2)
+boxplot(data[, variables[variables != "Ca_Area"]], main="Boxplots of the Element counts", names = variables[variables != "Ca_Area"], las = 2)
+par(mfrow = c(1,1))
+```
+
 ### Centered log ratios
 
 Without further ado, since this is the most robust transformation for compositional data.
@@ -402,6 +415,8 @@ plot(p_comp_rob, type = "l")
 
 We can see that there is no big jump in the explanatory power of the components. For later analysis, we need to qualify the meaningfulness of each component (See chapter environmental processes).
 Also the Kaiser criterion can be used to determine the number of components. 
+
+The 'robCompositions' package seems to make high level transformations if the input. 
 
 ```{r, eval=FALSE}
 str(p_comp_rob)

@@ -1,5 +1,6 @@
 library(dplyr)
 library(tidyr)
+library(compositions)
 
 read_data_kl15_xrf <- function(data_kl15_xrf, data_kl15_agem) {
   data_kl15 <- full_join(data_kl15_agem, data_kl15_xrf, by = "depth") 
@@ -46,7 +47,15 @@ read_data_kl15_xrf <- function(data_kl15_xrf, data_kl15_agem) {
   # get the compositional elements
   data_comp <- data_select[, 3:(ncol(data_select)-1)]
 
-  results <- list(data_kl15_itpol = data_kl15_itpol, data_kl15 = data_select, data_comp = data_comp, missings_depth = missings_depth)  
+  # compute centered log-ratios
+  data_clr <- clr(data_comp)
+
+  results <- list(
+    data_kl15_itpol = data_kl15_itpol,
+    data_kl15 = data_select,
+    data_comp = data_comp,
+    missings_depth = missings_depth,
+    data_clr = data_clr)
 
   return(results)
 }

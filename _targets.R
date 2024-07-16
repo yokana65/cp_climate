@@ -14,7 +14,7 @@ library(tidyr)
 source("scripts/read_data_KL15_XRF.R")
 
 # Set target-specific options such as packages:
-# tar_option_set(packages = c("dplyr", "tidyr")) # nolint
+# tar_option_set(packages = c("dplyr", "tidyr"))
 
 # # Set the error option to "continue"
 # tar_option_set(error = "continue")
@@ -72,5 +72,8 @@ list(
   }),
     tar_target(data_kl15_comp, {
     data_comp <- results$data_comp
+  }),
+    tar_target(data_kl15_comp_clr, {
+    data_clr <- results$data_clr
   })
 )
