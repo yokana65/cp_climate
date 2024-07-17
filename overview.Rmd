@@ -70,14 +70,14 @@ The analysis is done with Ti.AL as a proxy for wetness (?).
 
 In the XRF data we have the following variables:
 
-```{r, eval=TRUE}
+```{r read data, eval=TRUE}
 data <- tar_read(data_kl15)
 colnames(data)
 ```
 
 Variable selection is done in the target for data_kl15. Nevertheless, we need a list of element names for labeling.
 
-```{r, eval=TRUE}
+```{r variable selection, eval=TRUE}
 # data_select <- data[, c("depth", "age", "Br_Area", "Rb_Area", "Sr_Area", "Zr_Area", "Ru_Area", "Mg_Area",
 #  "Al_Area", "Si_Area", "S_Area", "K_Area", "Ca_Area", "Ti_Area", "Fe_Area")]
 
@@ -520,6 +520,34 @@ TODO: **Calculate scores for the components and plot them over time.**
 TODO: Validate result and compare it with euclidean distances -> explain the difference!
 
 
+We can use the loadings to characterize the components.
+
+
+```{r loadings by elements, eval=TRUE, fig.width=10, fig.height=16}
+loadings <- matrix(pca_rs$loadings, nrow = 13, ncol = 12)
+rownames(loadings) <- variables
+
+par(mfrow = c(3,2), mar = c(4, 8, 2, 2))
+
+for (i in 1:6) {
+  df <- as.data.frame(loadings[,i])
+  df$rowname <- rownames(loadings)
+  
+  barplot(df[,1], 
+          horiz = TRUE, 
+          names.arg = df$rowname, 
+          las = 1, 
+          col = ifelse(df[,1] > 0, "#b0451a", "#1fd844"),
+          main = paste("Loadings of PC", i),
+          xlab = "Loadings")
+  
+  abline(v = 0, lty = 2)
+}
+
+par(mfrow = c(1,1))
+```
+
+This graphic gives a very rough idea of the characteristica of the components. A better method would be to construct prototype compositions.
 
 #### Calculation of $\boldsymbol{x}_{\mathrm{i}}^{\prime}$
 
@@ -562,6 +590,7 @@ Z <- matrix(as.numeric(acomp), nrow = 2119) %*% pca_rs$loadings
 
 The scores in the pca object are not correct!
 
+##### Time series of scores
 
 ```{r time analysis scores, eval=TRUE}
 data <- tar_read(data_kl15)
@@ -575,7 +604,8 @@ ggplot(Z, aes(x = agem, y = Z[, 1])) +
     theme_minimal()
 ```
 
-
+So that shows us some clear trends. If we would have a clear interpretation of the component (f.e. proxy for aridity), we can show a transformed picture that reduces the relative information to just this process and eliminates the "noise" of other processes.
+Additionally we can show the impact of the component onto an "average" composition to construct prototypical compositions of different processes.
 
 ### Theorie
 
