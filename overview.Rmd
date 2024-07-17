@@ -14,28 +14,13 @@ This is where you can write an introduction to your document.
 
 Install the required packages:
 
-```{r eval=TRUE, include=FALSE}
-if (!require(rmarkdown)) {
-  install.packages("rmarkdown")
-}
-
-if (!require(targets)) {
-  install.packages("targets")
-}
-
-if (!require(visNetwork)) {
-  install.packages("visNetwork")
-}
-
-if (!require(ggplot2)) {
-  install.packages("ggplot2")
-}
-if (!require(robCompositions)) {
-  install.packages("robCompositions")
-}
+```{r preinstall libraries, eval=TRUE, include=FALSE}
+sapply(
+        c("rmarkdown", "targets", "visNetwork", "ggplot2", "robCompositions", "compositions"), 
+          function(pkg) if (!require(pkg, character.only = TRUE)) install.packages(pkg)
+          )
 
 # call libraries
-# TODO: make this part more lenient
 library(ggplot2)
 library(compositions)
 library(dplyr)
@@ -44,7 +29,7 @@ library(dplyr)
 
 ## Arguments
 
-The paper uses two pairs as proxy for aridity: Ti/Al and Ti/Ca. The first pair is used for the last 200kyr and the second pair for the last 1200kyr. The data is from the KL15 core.
+The paper (Markus F. et al.) uses two pairs as proxy for aridity: Ti/Al and Ti/Ca. The first pair is used for the last 200kyr and the second pair for the last 1200kyr. The data is from the KL15 core.
 A proposed alternative is the use of K as a proxy for aridity.
 
 ### environmental processes
@@ -52,6 +37,21 @@ A proposed alternative is the use of K as a proxy for aridity.
 with literature (from Croudace ez Rothwell, chapter 2). 
 
 # Data overview
+
+Get the data objects from targets:
+
+```{r load data objects, eval=TRUE}
+data <- tar_read(data_kl15)
+data_qf <- tar_read(missings_depth)
+data_comp <- tar_read(data_kl15_comp)
+
+data_clr <- tar_read(data_kl15_comp_clr) %>% as.data.frame()
+data_ilr <- tar_read(data_kl15_comp_ilr) %>% as.data.frame()
+data_alr <- tar_read(data_kl15_comp_alr) %>% as.data.frame()
+
+variables <- colnames(data_comp)
+
+```
 
 ### Questions:
 
@@ -71,22 +71,13 @@ The analysis is done with Ti.AL as a proxy for wetness (?).
 In the XRF data we have the following variables:
 
 ```{r read data, eval=TRUE}
-data <- tar_read(data_kl15)
+
 colnames(data)
 ```
 
 Variable selection is done in the target for data_kl15. Nevertheless, we need a list of element names for labeling.
 
-```{r variable selection, eval=TRUE}
-# data_select <- data[, c("depth", "age", "Br_Area", "Rb_Area", "Sr_Area", "Zr_Area", "Ru_Area", "Mg_Area",
-#  "Al_Area", "Si_Area", "S_Area", "K_Area", "Ca_Area", "Ti_Area", "Fe_Area")]
-
-
-
-variables <- c("Br_Area", "Rb_Area", "Sr_Area", "Zr_Area", "Ru_Area", "Mg_Area",
- "Al_Area", "Si_Area", "S_Area", "K_Area", "Ca_Area", "Ti_Area", "Fe_Area")
-
-# # for compositional data, we are interested in the sum of all components
+```{r data summary, eval=TRUE}
 # data_select$aggregate <- rowSums(data_select[3:ncol(data_select)])
 summary(data)
 ```
@@ -189,22 +180,19 @@ But this effect is much stronger when dealing with absolute counts than with com
 #### Further Covariates or additional flags
 
 
-```{r, eval=FALSE}
+```{r summary agem, eval=FALSE}
 data_kl15_agem <- read.table("data/Africa_NE_200/data/data_KL15-2_smooth_spline_ages.txt", header = TRUE, sep = "\t")
 
-data_kl15_agem <- tar_read()
 summary(data_kl15_agem)
-
 ```
 
 This appears to be confidence intervals for the age data. "accrate" is the accumulation rate, which indicates the speed of sedimentation.
 
 We also need the data with "quality flags"
 
-```{r, eval=FALSE}
-data_kl15_qf <- read.table("data/Africa_NE_200/data/data_KL15_qf.txt", header = TRUE, sep = "\t")
+```{r summary quality flags, eval=TRUE}
 
-summary(data_kl15_qf)
+summary(data_qf)
 
 ```
 
@@ -224,7 +212,7 @@ summary(data_kl15_qf)
 
 Data reading functionality is stored in the */scripts* directory. However, targets are used for the rendering process of this html. 
 
-```{r, eval=FALSE, include=FALSE}
+```{r read script, eval=FALSE, include=FALSE}
 # run the read_data_200kyr_all.R script
 source("scripts/read_data_200kyr_all.r")
 ```
@@ -242,10 +230,8 @@ isometric log ratios (ilr) are more appropriate for our data and methods, that i
 
 Let's do the boxplot with clr coordinates:
 
-```{r, eval=TRUE,  fig.width=10, fig.height=30}
-data_clr <- tar_read(data_kl15_comp_clr) %>% as.data.frame()
-data_ilr <- tar_read(data_kl15_comp_ilr) %>% as.data.frame()
-data_alr <- tar_read(data_kl15_comp_alr) %>% as.data.frame()
+```{r boxplot for transformed coordinates, eval=TRUE,  fig.width=10, fig.height=30}
+
 
 
 par(mfrow = c(3,1))
@@ -265,8 +251,7 @@ We can see that the transformed coordinates are much less diverged than the orig
 
 Without further ado, since this is the most robust transformation for compositional data.
 
-```{r, eval=TRUE}
-data_comp <- tar_read(data_kl15_comp)
+```{r show scale invariance, eval=TRUE}
 
 # What happens with the relative information if we constrain each row to sum up to 1?
 data_comp_1 <- constSum(data_comp, const = 1) 
@@ -284,12 +269,12 @@ That looks nice, but is the relative information (i.e. the ratio of one mineral 
 By the way, the transformation above proves that relative information is scale invariant while absolute information is not.
 
 We can calculate the Aitchison distance between all elements for each point of time:
-```{r, eval=TRUE}
+```{r Aitchison distances, eval=TRUE}
 aDist(data_comp[1:7, ])
 ```
 
 Now we can calculate the clr transformation for the data:
-```{r, eval=TRUE}
+```{r plot clr, eval=TRUE}
 clr_coord <- cenLR(data_comp)$x.clr
 ggplot(clr_coord, aes(x = Ti_Area, y = Al_Area)) +
   geom_point(size = 2) +
@@ -308,7 +293,7 @@ more negative values, which makes sense since their importance goes into oblivio
 
 ### Dendrogram
 
-```{r, eval=TRUE}
+```{r dendrogram single, eval=TRUE}
 # TODO: the dataset needs to be transformed to a pivot table?
 res <- hclust(dist(data_comp_1), method = "single")
 plot(res)
@@ -319,10 +304,6 @@ And additionaly clusters of observations (that is times) are relevant as well.
 
 But now, how do we get the dendogram for the distances between the elements?
 
-```{r, eval=TRUE}
-res <- hclust(dist(t(data_comp_1)), method = "single")
-plot(res)
-```
 
 So at first sight, that is disappointing. Even regarding relative information Ca clearly dominates the picture. 
 
@@ -330,7 +311,7 @@ So at first sight, that is disappointing. Even regarding relative information Ca
 
 Also we should try other clustering methods then single linkage.
 
-```{r, eval=TRUE}
+```{r dendrogram ward, eval=TRUE}
 res <- hclust(dist(t(data_comp_1)), method = "ward.D2")
 plot(res)
 ```
@@ -372,10 +353,10 @@ The composition is represented in orthonormal coordinates, which are the ilr coo
 We can calculate the eigenvalues and eigenvectors for CoDa:
 
 ```{r eigenvalues for euclidean data, eval=TRUE}
-data_co <- tar_read(data_kl15_comp)
-pca_cov <- cov(data_co)
+
+pca_cov <- cov(data_comp)
 pca_eigen <- eigen(pca_cov)
-rownames(pca_eigen$vectors) <- colnames(data_co)
+rownames(pca_eigen$vectors) <- colnames(data_comp)
 pca_eigen$values
 
 ```
@@ -447,7 +428,7 @@ $U$ contains the scores or standardized coordinates, which we can use to derive 
 
 
 ```{r pca_rs, eval=TRUE, warning=FALSE}
-acomp <- acomp(data_co)
+acomp <- acomp(data_comp)
 pca_rs <- princomp(acomp)
 # str(pca_rs)
 pca_rs$loadings
@@ -549,6 +530,17 @@ par(mfrow = c(1,1))
 
 This graphic gives a very rough idea of the characteristica of the components. A better method would be to construct prototype compositions.
 
+By the way, in first sight it seems like it is not Ca that dominates the variation in the (transformed) data, but Br. What does Br do?
+Wikipedia => the high solubility of the bromide ion (Br−) has caused its accumulation in the oceans (Yeah that makes sense, but probably does not tell us much about
+specific clima-relevant processes?).
+
+##### Score plots
+
+We can use score plots to further investigate clusters of time dependend observations on a two dimensional plane with two components (and that is if possible two environmental processes).
+
+TODO
+
+
 #### Calculation of $\boldsymbol{x}_{\mathrm{i}}^{\prime}$
 
 We can use principal component to reconstruct the data with all or some of the components. One idea would be calculate an "average" composition and show the influence of every component on the compositional parts (over time).
@@ -607,14 +599,18 @@ ggplot(Z, aes(x = agem, y = Z[, 1])) +
 So that shows us some clear trends. If we would have a clear interpretation of the component (f.e. proxy for aridity), we can show a transformed picture that reduces the relative information to just this process and eliminates the "noise" of other processes.
 Additionally we can show the impact of the component onto an "average" composition to construct prototypical compositions of different processes.
 
-### Theorie
+### Predictive Modelling (PCA and Regression: Scalar on Composition)
+
+ToDo
+
+### Theorie CoDa
 
 A clr coordinate contains the relative information of one part related to all the others. I am not a geologist, but if that is what we are looking for, might depend on 
 the process of sedimentation. And to be honest, I have no idea about that one.
 
 ## DA Functions
 
-```{r, eval=TRUE, include=FALSE}
+```{r mathplot graph, eval=FALSE, include=FALSE}
 graph_ts_200ka <- function(display = TRUE, datasets = c("data_odp_967_22", "data_odp721_722_terr", "data_odp_709", "data_icdp_chb", "data_kl09", "data_kl11", "data_kl15", "data_lake_tana"), index = 1) {
     # with targets we can use read_target to load the data
     d <- get(datasets[index])
@@ -706,7 +702,7 @@ graph_ts_200ka <- function(display = TRUE, datasets = c("data_odp_967_22", "data
 ```
 
 
-  ```{r, eval=FALSE}
+  ```{r graph_ts, eval=FALSE}
   # this function is an artifact of the translation of mathplot functions and requires the read script to run beforehand
   graph_ts_200ka(display = TRUE, datasets = c("data_odp_967_22", "data_odp721_722_terr", "data_odp_709", "data_icdp_chb", "data_kl09", "data_kl11", "data_kl15", "data_lake_tana"), index = 1)
   ```
@@ -729,7 +725,7 @@ The first step is to reproduce the cross correlation analysis from the paper (es
 
 The following reads data objects from matlab files.
 
-```{r, eval=FALSE}
+```{r matlab conversion, eval=FALSE}
 # Install the R.matlab package if it's not already installed
 if (!require(R.matlab)) {
   install.packages("R.matlab")
@@ -746,6 +742,6 @@ data <- readMat("data/Africa_NE_200/data_pentagramm_5_1200_025kyr_XCorr.mat")
 
 Visualize the status of the targets pipeline:
 
-```{r, eval=TRUE}
+```{r target vis, eval=TRUE}
 tar_visnetwork()
 ```
