@@ -248,10 +248,13 @@ data_alr <- tar_read(data_kl15_comp_alr) %>% as.data.frame()
 
 
 par(mfrow = c(3,1))
-boxplot(data_clr, main="Boxplots of the clr coordinates for each element", las = 2)
+boxplot(data_clr,
+        main = "Boxplots of the clr coordinates for each element", las = 2)
 # boxplot(data_clr[, variables[variables != "Ca_Area"]], main="Boxplots of the clr coordinates for each element", las = 2)
-boxplot(data_ilr, main="Boxplots of the ilr coordinates for each element", las = 2)
-boxplot(data_alr, main="Boxplots of the alr coordinates for each element", las = 2)
+boxplot(data_ilr,
+        main = "Boxplots of the ilr coordinates for each element", las = 2)
+boxplot(data_alr,
+        main = "Boxplots of the alr coordinates for each element", las = 2)
 par(mfrow = c(1,1))
 ```
 
@@ -367,7 +370,7 @@ The composition is represented in orthonormal coordinates, which are the ilr coo
 
 We can calculate the eigenvalues and eigenvectors for CoDa:
 
-```{r, eval=TRUE}
+```{r eigenvalues for euclidean data, eval=TRUE}
 data_co <- tar_read(data_kl15_comp)
 pca_cov <- cov(data_co)
 pca_eigen <- eigen(pca_cov)
@@ -376,12 +379,12 @@ pca_eigen$values
 
 ```
 
-The eigenvalues are an indication of the explained variance from each component and thus used to order the components. The sum of the eigenvalues is equal to the 
+The eigenvalues are an indication of th-e explained variance from each component and thus used to order the components. The sum of the eigenvalues is equal to the 
 the total variance of the data (cp. chapter 28 SODA).
 
 The eigenvectors of the count data are as follows:
 
-```{r, eval=TRUE}
+```{r display result, eval=TRUE}
 pca_eigen$vectors
 ```
 
@@ -397,7 +400,7 @@ Ca as a basic component that we are not that interested in and want to take out 
 
 We can use ternary Diagrams to explore relative information for each component: 
 
-```{r, eval=TRUE}
+```{r ternaryDiag, eval=TRUE}
 
 data_3_comp <- data[, c("Br_Area", "Sr_Area", "Fe_Area")]
 ternaryDiag(data_3_comp, line = "pca")
@@ -407,7 +410,9 @@ There is something off with this diagram. TODO: investigate
 
 #### PCA calculation
 
-```{r, eval=TRUE}
+The 'robCompositions' package gives a practical functionlaity to do PCA, but its inner workings are not very clear (yet).
+
+```{r pcaCoDa, eval=TRUE}
 
 
 ## compositional PCA, non-robust
@@ -425,48 +430,67 @@ Also the Kaiser criterion can be used to determine the number of components.
 
 The 'robCompositions' package seems to make high level transformations if the input. 
 
-```{r, eval=FALSE}
+```{r str(pcaCoDa), eval=FALSE}
 str(p_comp_rob)
+```
+
+
+The PCA is calculated (with 'compositions') with a Singular Value Decomposition:
+ $$
+\operatorname{clr}\left(\mathbf{X}^*\right)=\mathbf{U} \cdot \mathbf{D} \cdot \mathbf{V}^t
+$$
+
+The columns of $V$ are the *loadings* or *principle components* of the clr-transformed data points. $D$ is a diagonal matrix with the "eigenvalues", which values can be interpretated as the sd of the coordinates on the new orthonormal basis ($V$).
+$U$ contains the scores or standardized coordinates, which we can use to derive synthetic data. (Cp. Boogart et al., page 177)
+
+
+```{r pca_rs, eval=TRUE, warning=FALSE}
+acomp <- acomp(data_co)
+pca_rs <- princomp(acomp)
+# str(pca_rs)
+pca_rs$loadings
+pca_rs$sdev
 ```
 
 
 Scores: Interpretation(?), but can be used to reconstruct the project values in $\boldsymbol{x}_{\mathrm{i}}^{\prime}$
 **Relevant for time analysis**: We can identify how much each obersavtion contributes to a component. In case we can actually identify the latent processes, we can observe the time frames when they are most relevant in the data.
 
-```{r, eval=TRUE}
+```{r display scores, eval=FALSE}
 head(p_comp_rob$scores)
+head(pca_rs$scores)
 ```
 
 
 Loadings: In euclidean space indication of the contribution of each compositional part to the respective component
 
-```{r, eval=TRUE}
+```{r display loadings, eval=FALSE}
 p_comp_rob$loadings
+pca_rs$loadings
 ```
+
+For 'compositios' results non significant values are not shown. But the explained variance can't be right. 
+We can calculate the explained variance for the first three components:
+
+```{r explained variance, eval=TRUE}
+sum(pca_rs$sdev[1:3]^2/mvar(acomp))
+```
+83% is consistent with the results from 'robCompositions'.
 
 Eigenvalues: sum up to one and indicate the contribution of each component to the total variance
 
-```{r, eval=TRUE}
+```{r display eigenvalues, eval=TRUE}
 p_comp_rob$eigenvalues
 ```
 
-```{r, eval=TRUE}
-p_comp_rob$princompOutputClr
-```
 
-
-```{r, eval=TRUE}
-p_comp_rob$mult_comp
-```
-
-
-### Exploratory Analysis of Components
+#### Exploratory Analysis of Components
 
 Let's plot the components in relation to the (dominant) first component:
 
 TODO! => check robCompositions to reconstruct the plots below since the choice argument does not work as intended.
 
-```{r, eval=TRUE, fig.width=10, fig.height=30}
+```{r biplot pcaCoDa, eval=TRUE, fig.width=10, fig.height=30}
 par(mfrow=c(5,1), mar = c(4,4,2,2))
 # biplot(p_comp, xlabs = rownames(data))
 biplot(p_comp_rob)
@@ -495,12 +519,12 @@ TODO: Validate result and compare it with euclidean distances -> explain the dif
 
 
 
-### Calculation of $\boldsymbol{x}_{\mathrm{i}}^{\prime}$
+#### Calculation of $\boldsymbol{x}_{\mathrm{i}}^{\prime}$
 
 We can use principal component to reconstruct the data with all or some of the components. One idea would be calculate an "average" composition and show the influence of every component on the compositional parts (over time).
 
-```{r, eval=TRUE}
-(pca_loading <- p_comp_rob$loadings[, 1:2] )
+```{r loadings pcaCoda, eval=TRUE}
+(pca_loading <- pca_rs$loadings[, 1:2])
 
 # calculate squared sum of loadings to check if the sum is 1
 apply(pca_loading^2, 2, sum)
@@ -511,7 +535,7 @@ Since  $\boldsymbol{x}_{\mathrm{i}}^{\prime}$ is a linear combination of the obs
 Remember that we need the transformed variables in the Simplex. To get the variables in Euclidean space (i.e. the original count space we need to retransform the result).
 
 
-```{r, eval=TRUE}
+```{r calc synthetic observations, eval=TRUE}
 # first observation projected on PC1
 # remember that we need the transformed variables in the Simplex. To get the variables in Euclidean space (i.e. the original count space we need to retransform the result)
 obs1 <- data[1, variables]
