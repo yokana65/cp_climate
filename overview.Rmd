@@ -210,6 +210,9 @@ summary(data_qf)
 
 # Data Analysis
 
+TODO: do we need z-transformations after the projection onto the Simplex? 
+TODO: Plots: differentiate cts, arl, clr, ilr
+
 Data reading functionality is stored in the */scripts* directory. However, targets are used for the rendering process of this html. 
 
 ```{r read script, eval=FALSE, include=FALSE}

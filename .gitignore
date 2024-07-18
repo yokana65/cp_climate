@@ -21,10 +21,6 @@
 # RStudio files
 .Rproj.user/
 
-# produced vignettes
-vignettes/*.html
-vignettes/*.pdf
-
 # OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
 .httr-oauth
 
@@ -49,7 +45,7 @@ po/*~
 rsconnect/
 
 # data folder
-data/
+# data/
 
 # graph output
 graph/
@@ -58,4 +54,4 @@ graph/
 spatial_temp_variations
 
 # redundant markdown output
-overview.html
+# overview.html
