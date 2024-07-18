@@ -599,6 +599,153 @@ ggplot(Z, aes(x = agem, y = Z[, 1])) +
 So that shows us some clear trends. If we would have a clear interpretation of the component (f.e. proxy for aridity), we can show a transformed picture that reduces the relative information to just this process and eliminates the "noise" of other processes.
 Additionally we can show the impact of the component onto an "average" composition to construct prototypical compositions of different processes.
 
+### EMMA
+
+The idea is quite similar to PCA with a decomposition of the data into loadings and scores:
+
+ $$
+\mathbf{X}_{n \times q}=\mathbf{M}_{n \times q} \mathbf{V}_{q \times q}^T
+$$
+
+Trough the separation of principal components and error we can separate signal and noise within the data to identify natural processes:
+
+"In EMMA, in addition to implementing dimensionality reduction through PCA, factor analysis is applied to simplify the structure of the eigenvector matrix, V, by an orthogonal rotation of the axes in the feature space. This rotation removes the order of the eigenvectors and redistributes the loadings more evenly − a condition often used to decipher natural processes (Dietze el al. 2012)."
+
+EMMA makes use of an iterative algorithm to find the best rotation of the axes in the feature space. The application of EMMA within the compositional framework offers some interesting perspectives:
+
+1. Can the rescaling steps 1 and 2 of the EMMA algorith be replaced by a transformation of the data to a simplex?
+2. Calculate the Eigenvectors and Eigenvalues of the covariance matrix of the data.
+3. Apply factor rotation 
+4. Normalize the loadings
+5. Apply inverse transformation to the eigenvectors and scores
+6. Calculate the model error: $E = X^{\prime} - X$ with $X^{\prime} = \mathbf{M}_{n \times r} \mathbf{V}_{r \times r}^T$
+7. iterate until optimal $r$ is reached (there shouldn't be a optimal transformation, but we should check that)
+
+But since one model is just a random selection from the sample space, we need a large set of models to get reliable results with EMMA (which we don't have? =>
+**We can treat each time dependend observation as a sample** -> that's interesting and probly allows for time dependend components).
+
+#### SOGA example
+
+with synthetic data resulting from 4 natural processes (r=4) that are randomly resampled. 
+
+We have 45 observations of 20 grain size classes in our sample (from a population of 99 classes). Each class value indicates the volumne and the volumne of all classes adds
+up to a constant. 
+
+Since it is simulated data we know that each natural process has a specific profile (thats what I called prototype earlier).
+
+By the way, since we have a continous space for grain sizes, what we are observing are densities and the data can be used to replicate the study from Prof. Greven.
+
+For our data, we have the disadvantage that elements are not ordered. Therefore the identification of profiles is more complicated. But the main idea remains the same.
+The idea we are simulating is that each natural process has an ideal profile (here it is the four different densities - with discrete data it would be specific compositions). 
+The data consisting of our 2117 observations is a mixture of the natural processes (and the error component -> which is only contained in the removed components => realistic?). 
+If we use this concept, we need to introduce a time component since the processes we are interested in are dynamically changing over time.
+
+```{r emma example, eval=FALSE}
+load(url("http://www.userpage.fu-berlin.de/~soga/300/30100_data_sets/data_emma.RData"))
+str(df.soil.samples[1:20, 1:20])
+
+# first sample (observation)
+phi <- colnames(df.soil.samples)
+plot(phi, df.soil.samples[1, ], type = "l", ylab = "")
+
+# Step 1
+X <- as.matrix(df.soil.samples) # convert data.frame object to matrix object
+c <- 1 # set constant sum, can be 1, or 100 (%), or any other meaningful constant
+X <- X / apply(X, 1, sum) * c
+
+# Step 2
+lw <- 0.05 # set percentile
+qts <- function(X, lw) quantile(X, c(lw, 1 - lw), type = 5) # define function
+ls <- t(apply(X, 2, qts, lw = lw)) # apply function column-wise
+W <- t((t(X) - ls[, 1]) / (ls[, 2] - ls[, 1])) # calculate weight transformation
+
+# Step 3
+## Eigen space extraction
+A <- t(W) %*% W # calculate minor product
+EIG <- eigen(A) # calculate eigenvectors and eigenvalues
+
+V <- EIG$vectors[, order(seq(ncol(A), 1, -1))]
+Vf <- V[, order(seq(ncol(A), 1, -1))] # eigenvector matrix
+
+L <- EIG$values[order(seq(ncol(A), 1, -1))]
+Lv <- cumsum(sort(L / sum(L), decreasing = TRUE)) # normalized eigenvalues
+
+# Step 4
+r <- 4
+# since factor analysis is deterministic regarding the number of components, we either need a very good argument or an iterative process to find optimal r
+Vr <- do.call(varimax, list(Vf[, 1:r])) 
+
+# Step 5
+# apply varimax function
+library(limSolve)
+# calculate the end-member loadings
+Vq <- Vr$loadings[, order(seq(r, 1, -1))] # extract and sort factor loadings
+Vqr <- t(t(Vq) / apply(Vq, 2, sum)) * c # rescale
+Vqr <- t(Vqr)
+Vqn <- t((Vqr - apply(Vqr, 1, min)) / # normalize factor loadings column-wise
+  (apply(Vqr, 1, max) - apply(Vqr, 1, min)))
+
+# calculate the end-member scores matrix by non-negative least square fitting
+Mq <- matrix(nrow = nrow(X), ncol = r)
+for (i in 1:nrow(X)) {
+  Mq[i, ] <- nnls(Vqn, as.vector(t(W[i, ])))$X
+}
+
+# Step 6: Rescale
+s <- (c - sum(ls[, 1])) / apply(Vqn * unname(ls[, 2] - ls[, 1]), 2, sum)
+Vqs <- Vqn
+for (i in 1:r) {
+  Vqs[, i] <- t(s[i] * t(Vqn[, i]) * (ls[, 2] - ls[, 1]) + ls[, 1])
+}
+Vqsn <- t(t(Vqs) / apply(Vqs, 2, sum)) * c # rescale loading matrix
+
+# Visualisation of the synthetic prototypes:
+library(RColorBrewer)
+
+par(mfrow = c(1, 1))
+cols <- brewer.pal(r, "Set2")
+
+## Modeled data ##
+plot(phi, Vqsn[, 1],
+  type = "l",
+  ylab = "Volume proportion",
+  main = "Modeled loadings",
+  col = cols[1], ylim = c(0, 0.10), lwd = 2
+)
+lines(phi, Vqsn[, 2], col = cols[2], lwd = 2)
+lines(phi, Vqsn[, 3], col = cols[3], lwd = 2)
+lines(phi, Vqsn[, 4], col = cols[4], lwd = 2)
+
+## natural end members ##
+lines(phi, EMa[[1]], col = "grey", lwd = 2)
+lines(phi, EMa[[2]], col = "grey", lwd = 2)
+lines(phi, EMa[[3]], col = "grey", lwd = 2)
+lines(phi, EMa[[4]], col = "grey", lwd = 2)
+
+legend("topright",
+  legend = c("EM 1", "EM 2", "EM 3", "EM 4", "natural end members"),
+  lwd = 2,
+  col = c(cols, "grey"),
+  cex = 0.85
+)
+
+```
+
+The result underestimates the natural processes (which can be expected with a linear fit), but clearly identifies them.
+The simulated data has a lot of advantages:
+- known number of processes
+- no noise
+- equally distributed processes
+- stable processes over all observations
+
+We should be able to reproduce that with an iterative process to identify the optimal number of processes.
+**Additionally, we need an idea about the seperation of signal and noise and their relations to the elements in the data!**
+Also there should be an argument to get rid of the rescaling steps when using the compositional framework. We will compare both ways.
+
+#### example with EMMAgeo
+
+### Time Series contributions
+
 ### Predictive Modelling (PCA and Regression: Scalar on Composition)
 
 ToDo
