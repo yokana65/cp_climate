@@ -250,6 +250,23 @@ par(mfrow = c(1,1))
 
 We can see that the transformed coordinates are much less diverged than the original count values.
 
+### Parameter Estimation of the discrete distribution
+
+Der Erwartungswert einer Komposition kann wie folgt berechnet werden:
+
+Die Komposition ist ein Vektor $\mathbf{x} = (x_1, \ldots, x_D)$, wobei $D$ die Anzahl der Komponenten (Elemente) ist und $\sum_{i=1}^D x_i = 1$ (or a arbitrary constant due to the scale invariance of CoDa). 
+Die clr-Transformation ist dann definiert als:
+$\text{clr}(\mathbf{x}) = \left(\ln\frac{x_1}{g(\mathbf{x})}, \ldots, \ln\frac{x_D}{g(\mathbf{x})}\right)$
+wobei $g(\mathbf{x}) = \left(\prod_{i=1}^D x_i\right)^{1/D}$ das geometrische Mittel der Komponenten ist.
+
+Für die clr-transformierten Daten ist der Erwartungswert jeder Komponente berechnen:
+
+$\mathbb{E}[\text{clr}(\mathbf{X})_i] = \mathbb{E}\left[\ln\frac{X_i}{g(\mathbf{X})}\right]$
+
+Dabei ist $\mathbf{X}$ eine Zufallsvariable, die Werte im Simplex annimmt, und $\mathbb{E}$ bezeichnet den Erwartungswert.
+
+TODO: Übertragung auf ilr-Transformation (Isometrie between Euclidean space and Simplex)
+
 ### Centered log ratios
 
 Without further ado, since this is the most robust transformation for compositional data.
