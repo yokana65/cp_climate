@@ -41,6 +41,11 @@ read_data_kl15_xrf <- function(data_kl15_xrf, data_kl15_agem) {
   data_select <- data_kl15[, c("depth", "age", "Br_Area", "Rb_Area", "Sr_Area", "Zr_Area", "Ru_Area", "Mg_Area",
   "Al_Area", "Si_Area", "S_Area", "K_Area", "Ca_Area", "Ti_Area", "Fe_Area")]
 
+  # rename the columns
+  colnames(data_select) <- c("depth", "age", "Br_cts", "Rb_cts", "Sr_cts",
+                             "Zr_cts", "Ru_cts", "Mg_cts", "Al_cts", "Si_cts",
+                             "S_cts", "K_cts", "Ca_cts", "Ti_cts", "Fe_cts")
+
   # for compositional data, we are interested in the sum of all components
   data_select$aggregate <- rowSums(data_select[3:ncol(data_select)])
 
@@ -49,8 +54,19 @@ read_data_kl15_xrf <- function(data_kl15_xrf, data_kl15_agem) {
 
   # transform the dompositional data into the simplex
   data_clr <- clr(data_comp)
+  colnames(data_clr) <- c("Br_clr", "Rb_clr", "Sr_clr",
+                          "Zr_clr", "Ru_clr", "Mg_clr", "Al_clr", "Si_clr",
+                          "S_clr", "K_clr", "Ca_clr", "Ti_clr", "Fe_clr")
+  
   data_ilr <- ilr(data_comp)
+  colnames(data_ilr) <- c("Br_ilr", "Rb_ilr", "Sr_ilr",
+                          "Zr_ilr", "Ru_ilr", "Mg_ilr", "Al_ilr", "Si_ilr",
+                          "S_ilr", "K_ilr", "Ca_ilr", "Ti_ilr", "Fe_ilr")
+  
   data_alr <- alr(data_comp)
+  colnames(data_alr) <- c("Br_alr", "Rb_alr", "Sr_alr",
+                          "Zr_alr", "Ru_alr", "Mg_alr", "Al_alr", "Si_alr",
+                          "S_alr", "K_alr", "Ca_alr", "Ti_alr", "Fe_alr")
 
   results <- list(
     data_kl15_itpol = data_kl15_itpol,
