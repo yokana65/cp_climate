@@ -36,6 +36,20 @@ A proposed alternative is the use of K as a proxy for aridity.
 
 with literature (from Croudace ez Rothwell, chapter 2). 
 
+### Sparse sampling
+
+It makes sense to assume that the observations are not equally distributed over the whole sample space and that we have areas where observations are sparse (from a density perspective: that would mean where we have very low count numbers OR very low counts overall for specific depths). This has a few consequences: TODO
+
+### Assumptions
+
+1. Discrete distributions of Elements are not directly observed, but trough a sample.
+
+We can account for the sampling error (which is highly relevant for PCA) by substracting the variance-covariance estimated for the error (by bootstraping from the sample -> see Doobs delta-method) from the sample covariance-variance.
+
+2. We observe "outliers" which diffuse the time-dependend processes and are results of specific natural phenomones like a tsunami or else (?).
+
+3. The relative information stored in proportions between elements is more important than the absolute count number of an element.
+
 # Data overview
 
 Get the data objects from targets:
@@ -57,14 +71,6 @@ variables <- colnames(data_comp)
 
 - [] In the KL15_xrf data, what is the difference between the Area estimates and the DArea? (it seems Area is used trough the analysis)
 
-## ODP
-
-This is the data from the Ocean Drilling Program close to Cyprus. Data contains several Cores, an age model and XRF data. XRF data is a proxy for the chemical composition of the sediment. 
-
-The analysis is done with Ti.AL as a proxy for wetness (?). 
-  
-
-## CHB 14
 
 ## KL 15
 
@@ -176,6 +182,18 @@ an measurement error of an area where the elementary density of the sediment is 
 But this effect is much stronger when dealing with absolute counts than with compositional parts. 
 **That could be an example to show the effect of spurios correlation and the advantage of CoDa**. 
 
+### Distribution of elements
+
+To get an idea about the multivariate distribution of our observations, we want to have a more detailed look at the distribution of each element:
+
+```{r plot distribution, eval=TRUE}
+# make a historgram for each column in data
+
+for (var in variables) {
+  hist(data[, var], main = paste("Histogram of", var),
+       xlab = var, probability = TRUE, col = "blue")
+}
+```
 
 #### Further Covariates or additional flags
 
@@ -229,6 +247,13 @@ second one is more focused on robust statistics, including ("robust" PCA)[https:
 In the following we take a first look at centered log ratios (clr), which are the most recommended technique. Anyway, bafter some deliberation it seems that 
 isometric log ratios (ilr) are more appropriate for our data and methods, that is for data centered around one dimension (Ca) ? and for PCA.
 
+### Theory 
+
+The aim of aitchison geometry is to measure dissimilarity between compositions. Since compositions are scale invariant that has to be a measure that accounts for changes in 
+relative information rather than obsolute information.
+
+The neutral element on the simplex is the vector with all elements set to 1.
+
 ### Exploratory Analysis
 
 Let's do the boxplot with clr coordinates:
@@ -252,7 +277,9 @@ We can see that the transformed coordinates are much less diverged than the orig
 
 ### Parameter Estimation of the discrete distribution
 
-Der Erwartungswert einer Komposition kann wie folgt berechnet werden:
+
+
+Der **Erwartungswert** einer Komposition kann wie folgt berechnet werden:
 
 Die Komposition ist ein Vektor $\mathbf{x} = (x_1, \ldots, x_D)$, wobei $D$ die Anzahl der Komponenten (Elemente) ist und $\sum_{i=1}^D x_i = 1$ (or a arbitrary constant due to the scale invariance of CoDa). 
 Die clr-Transformation ist dann definiert als:
@@ -266,6 +293,13 @@ $\mathbb{E}[\text{clr}(\mathbf{X})_i] = \mathbb{E}\left[\ln\frac{X_i}{g(\mathbf{
 Dabei ist $\mathbf{X}$ eine Zufallsvariable, die Werte im Simplex annimmt, und $\mathbb{E}$ bezeichnet den Erwartungswert.
 
 TODO: Übertragung auf ilr-Transformation (Isometrie between Euclidean space and Simplex)
+
+
+Die **Varianz** kann analog dazu berechnet werden:
+
+$\text{Var}[\text{clr}(\mathbf{X})_i] = \mathbb{E}\left[\left(\ln\frac{X_i}{g(\mathbf{X})} - \mathbb{E}\left[\ln\frac{X_i}{g(\mathbf{X})}\right]\right)^2\right]$
+
+
 
 ### Centered log ratios
 
@@ -619,6 +653,8 @@ ggplot(Z, aes(x = agem, y = Z[, 1])) +
 So that shows us some clear trends. If we would have a clear interpretation of the component (f.e. proxy for aridity), we can show a transformed picture that reduces the relative information to just this process and eliminates the "noise" of other processes.
 Additionally we can show the impact of the component onto an "average" composition to construct prototypical compositions of different processes.
 
+Further analysis should visualize a familiy of discrete distributions of elements with the "average" distribution being pertubated by the principal component of choice.
+
 ### EMMA
 
 The idea is quite similar to PCA with a decomposition of the data into loadings and scores:
@@ -768,7 +804,6 @@ Also there should be an argument to get rid of the rescaling steps when using th
 
 ### Predictive Modelling (PCA and Regression: Scalar on Composition)
 
-ToDo
 
 ### Theorie CoDa
 
