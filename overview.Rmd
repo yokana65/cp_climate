@@ -16,7 +16,7 @@ Install the required packages:
 
 ```{r preinstall libraries, eval=TRUE, include=FALSE}
 sapply(
-        c("rmarkdown", "targets", "visNetwork", "ggplot2", "robCompositions", "compositions"), 
+        c("rmarkdown", "targets", "visNetwork", "ggplot2", "robCompositions", "compositions", "patchwork"), 
           function(pkg) if (!require(pkg, character.only = TRUE)) install.packages(pkg)
           )
 
@@ -24,6 +24,7 @@ sapply(
 library(ggplot2)
 library(compositions)
 library(dplyr)
+library(patchwork)
 ```
 
 
@@ -55,6 +56,8 @@ We can account for the sampling error (which is highly relevant for PCA) by subs
 Get the data objects from targets:
 
 ```{r load data objects, eval=TRUE}
+tar_make()
+
 data <- tar_read(data_kl15)
 data_qf <- tar_read(missings_depth)
 data_comp <- tar_read(data_kl15_comp)
@@ -90,6 +93,30 @@ summary(data)
 
 
 ## Exploratory DA
+
+To evaluate the point of "sparse sampling" we can look at observations over time. 
+
+```{r hist time, eval=TRUE}
+ggplot(data, aes(x = age)) +
+  geom_histogram(binwidth = 5, fill = "#5381ca", color = "black") +
+  labs(x = "Alter (in tausend Jahren)", y = "Anzahl der Beobachtungen", 
+       title = "Verteilung der Beobachtungen über die Zeit (binwidth = 5 Tsd Jahre)") +
+  theme_minimal()
+
+```
+
+Comment: First bin is not correct since it starts at 0 and not at 2.017 years.
+
+Observations per time frame (5 Tsd years):
+
+```{r count per time, eval=TRUE}
+data_cts <- data %>%
+  mutate(age_group = cut(age, breaks = seq(2.017, max(age, na.rm = TRUE), by = 5))) %>%
+  group_by(age_group) %>%
+  summarise(count = n())
+
+summary(data_cts)
+```
 
 Lets do some boxplots for our variables:
 
@@ -146,25 +173,25 @@ In addition, let's plot important compositional parts (not in the Simplex though
 par(mfrow = c(4,1))
 
 # plot data with age and Ca_Area
-ggplot(data, aes(x = age, y = Ca_Area)) +
+ggplot(data, aes(x = age, y = Ca_cts)) +
 geom_line() +  geom_smooth(method = "loess") +
 labs(x = "Time BP", y = "CA", title = "Count values for Ca over time") +
   theme_minimal()
 
-ggplot(data, aes(x = age, y = Fe_Area)) +
+ggplot(data, aes(x = age, y = Fe_cts)) +
 geom_line() +
 geom_smooth(method = "loess") +
 labs(x = "Time BP", y = "Fe", title = "Count values for Fe over time") +
   theme_minimal()
 
-ggplot(data, aes(x = age, y = Sr_Area)) +
+ggplot(data, aes(x = age, y = Sr_cts)) +
 geom_line() +
 geom_smooth(method = "loess") +
 labs(x = "Time BP", y = "Sr", title = "Count values for Sr over time") +
   theme_minimal()
 
 
-ggplot(data, aes(x = age, y = K_Area)) +
+ggplot(data, aes(x = age, y = K_cts)) +
 geom_line() +
 geom_smooth(method = "loess") +
 labs(x = "Time BP", y = "K", title = "Count values for K over time") +
@@ -186,14 +213,140 @@ But this effect is much stronger when dealing with absolute counts than with com
 
 To get an idea about the multivariate distribution of our observations, we want to have a more detailed look at the distribution of each element:
 
+
 ```{r plot distribution, eval=TRUE}
 # make a historgram for each column in data
+# long format would be needed if I want to plot all elements in one plot
+# data_long <- pivot_longer(data, cols = all_of(variables), names_to = "Element", values_to = "Count")
 
-for (var in variables) {
-  hist(data[, var], main = paste("Histogram of", var),
-       xlab = var, probability = TRUE, col = "blue")
-}
+# list_p <- list()
+# for (var in variables) {
+  # hist(data[, var], main = paste("Histogram of", var),
+  #      xlab = var, density = TRUE, freq = TRUE)
+    # list_p <- ggplot(data, aes(x = var)) +
+    # geom_histogram(aes(y = ..density..), bins = 30, fill = "lightblue", color = "black") +
+    # geom_density(color = "red") +
+    # # facet_wrap(~ Element, scales = "free") +
+    # theme_minimal() +
+    # labs(title = "Histograms of Element ", x = "Count", y = "Density")
+# }
+# wrap_plots(list_p,ncol = 2)
+ggplot(data, aes(x = Br_cts)) +
+    geom_histogram(aes(y = ..density..), bins = 30, fill = "lightblue", color = "black") +
+    geom_density(color = "red") +
+    # facet_wrap(~ Element, scales = "free") +
+    theme_minimal() +
+    labs(title = "Histograms of Element ", x = "Count", y = "Density")
+
+ggplot(data, aes(x = Br_cts)) +
+    geom_histogram(aes(y = ..density..), bins = 30, fill = "lightblue", color = "black") +
+    geom_density(color = "red") +
+    # facet_wrap(~ Element, scales = "free") +
+    theme_minimal() +
+    labs(title = "Histograms of Element ", x = "Count", y = "Density")
+
+    ggplot(data, aes(x = Br_cts)) +
+    geom_histogram(aes(y = ..density..), bins = 30, fill = "lightblue", color = "black") +
+    geom_density(color = "red") +
+    # facet_wrap(~ Element, scales = "free") +
+    theme_minimal() +
+    labs(title = "Histograms of Element ", x = "Count", y = "Density")
+
+
+ggplot(data, aes(x = Br_cts)) +
+    geom_histogram(aes(y = ..density..), bins = 30, fill = "lightblue", color = "black") +
+    geom_density(color = "red") +
+    # facet_wrap(~ Element, scales = "free") +
+    theme_minimal() +
+    labs(title = "Histograms of Element ", x = "Count", y = "Density")
+
+    ggplot(data, aes(x = Rb_cts)) +
+    geom_histogram(aes(y = ..density..), bins = 30, fill = "lightblue", color = "black") +
+    geom_density(color = "red") +
+    # facet_wrap(~ Element, scales = "free") +
+    theme_minimal() +
+    labs(title = "Histograms of Element ", x = "Count", y = "Density")
+
+    ggplot(data, aes(x = Sr_cts)) +
+    geom_histogram(aes(y = ..density..), bins = 30, fill = "lightblue", color = "black") +
+    geom_density(color = "red") +
+    # facet_wrap(~ Element, scales = "free") +
+    theme_minimal() +
+    labs(title = "Histograms of Element ", x = "Count", y = "Density")
+
+    ggplot(data, aes(x = Zr_cts)) +
+    geom_histogram(aes(y = ..density..), bins = 30, fill = "lightblue", color = "black") +
+    geom_density(color = "red") +
+    # facet_wrap(~ Element, scales = "free") +
+    theme_minimal() +
+    labs(title = "Histograms of Element ", x = "Count", y = "Density")
+
+    ggplot(data, aes(x = Ru_cts)) +
+    geom_histogram(aes(y = ..density..), bins = 30, fill = "lightblue", color = "black") +
+    geom_density(color = "red") +
+    # facet_wrap(~ Element, scales = "free") +
+    theme_minimal() +
+    labs(title = "Histograms of Element ", x = "Count", y = "Density")
+
+    ggplot(data, aes(x = Mg_cts)) +
+    geom_histogram(aes(y = ..density..), bins = 30, fill = "lightblue", color = "black") +
+    geom_density(color = "red") +
+    # facet_wrap(~ Element, scales = "free") +
+    theme_minimal() +
+    labs(title = "Histograms of Element ", x = "Count", y = "Density")
+
+    ggplot(data, aes(x = Al_cts)) +
+    geom_histogram(aes(y = ..density..), bins = 30, fill = "lightblue", color = "black") +
+    geom_density(color = "red") +
+    # facet_wrap(~ Element, scales = "free") +
+    theme_minimal() +
+    labs(title = "Histograms of Element ", x = "Count", y = "Density")
+
+    ggplot(data, aes(x = Si_cts)) +
+    geom_histogram(aes(y = ..density..), bins = 30, fill = "lightblue", color = "black") +
+    geom_density(color = "red") +
+    # facet_wrap(~ Element, scales = "free") +
+    theme_minimal() +
+    labs(title = "Histograms of Element ", x = "Count", y = "Density")
+
+    ggplot(data, aes(x = S_cts)) +
+    geom_histogram(aes(y = ..density..), bins = 30, fill = "lightblue", color = "black") +
+    geom_density(color = "red") +
+    # facet_wrap(~ Element, scales = "free") +
+    theme_minimal() +
+    labs(title = "Histograms of Element ", x = "Count", y = "Density")
+
+    ggplot(data, aes(x = K_cts)) +
+    geom_histogram(aes(y = ..density..), bins = 30, fill = "lightblue", color = "black") +
+    geom_density(color = "red") +
+    # facet_wrap(~ Element, scales = "free") +
+    theme_minimal() +
+    labs(title = "Histograms of Element ", x = "Count", y = "Density")
+
+    ggplot(data, aes(x = Ca_cts)) +
+    geom_histogram(aes(y = ..density..), bins = 30, fill = "lightblue", color = "black") +
+    geom_density(color = "red") +
+    # facet_wrap(~ Element, scales = "free") +
+    theme_minimal() +
+    labs(title = "Histograms of Element ", x = "Count", y = "Density")
+
+    ggplot(data, aes(x = Ti_cts)) +
+    geom_histogram(aes(y = ..density..), bins = 30, fill = "lightblue", color = "black") +
+    geom_density(color = "red") +
+    # facet_wrap(~ Element, scales = "free") +
+    theme_minimal() +
+    labs(title = "Histograms of Element ", x = "Count", y = "Density")
+
+    ggplot(data, aes(x = Fe_cts)) +
+    geom_histogram(aes(y = ..density..), bins = 30, fill = "lightblue", color = "black") +
+    geom_density(color = "red") +
+    # facet_wrap(~ Element, scales = "free") +
+    theme_minimal() +
+    labs(title = "Histograms of Element ", x = "Count", y = "Density")
+
 ```
+
+In general this looks fine except of the Distribution of S.
 
 #### Further Covariates or additional flags
 
@@ -330,10 +483,10 @@ aDist(data_comp[1:7, ])
 Now we can calculate the clr transformation for the data:
 ```{r plot clr, eval=TRUE}
 clr_coord <- cenLR(data_comp)$x.clr
-ggplot(clr_coord, aes(x = Ti_Area, y = Al_Area)) +
+ggplot(clr_coord, aes(x = Ti_cts, y = Al_cts)) +
   geom_point(size = 2) +
-  xlab("Ti Area (clr)") +
-  ylab("Al Area (clr)")
+  xlab("Ti (clr)") +
+  ylab("Al (clr)")
 ```
 
 **Interpretation:** 
@@ -439,7 +592,7 @@ We can use ternary Diagrams to explore relative information for each component:
 
 ```{r ternaryDiag, eval=TRUE}
 
-data_3_comp <- data[, c("Br_Area", "Sr_Area", "Fe_Area")]
+data_3_comp <- data[, c("Br_cts", "Sr_cts", "Fe_cts")]
 ternaryDiag(data_3_comp, line = "pca")
 ```
 
