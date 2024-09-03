@@ -55,3 +55,10 @@ spatial_temp_variations
 
 # redundant markdown output
 # overview.html
+
+# project files 
+entree.Rproj
+files/
+graphs/
+overview_pandoc.html
+sample_error_estimation.Rmd

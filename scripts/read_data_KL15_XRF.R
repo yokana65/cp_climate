@@ -59,12 +59,13 @@ read_data_kl15_xrf <- function(data_kl15_xrf, data_kl15_agem) {
                           "S_clr", "K_clr", "Ca_clr", "Ti_clr", "Fe_clr")
   
   data_ilr <- ilr(data_comp)
-  colnames(data_ilr) <- c("Br_ilr", "Rb_ilr", "Sr_ilr",
+  # TODO: check if the first variable is used as pivot (also alr)
+  colnames(data_ilr) <- c("Rb_ilr", "Sr_ilr",
                           "Zr_ilr", "Ru_ilr", "Mg_ilr", "Al_ilr", "Si_ilr",
                           "S_ilr", "K_ilr", "Ca_ilr", "Ti_ilr", "Fe_ilr")
   
   data_alr <- alr(data_comp)
-  colnames(data_alr) <- c("Br_alr", "Rb_alr", "Sr_alr",
+  colnames(data_alr) <- c("Rb_alr", "Sr_alr",
                           "Zr_alr", "Ru_alr", "Mg_alr", "Al_alr", "Si_alr",
                           "S_alr", "K_alr", "Ca_alr", "Ti_alr", "Fe_alr")
 
