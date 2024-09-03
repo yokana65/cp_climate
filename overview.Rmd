@@ -407,6 +407,12 @@ relative information rather than obsolute information.
 
 The neutral element on the simplex is the vector with all elements set to 1.
 
+Aitchison compositions: We don't loose any information, when we calculate the composition as parts of a whole:
+
+```{r aitchison composition, eval=TRUE}
+data_acomp <- acomp(data_comp)
+```
+
 ### Exploratory Analysis
 
 Let's do the boxplot with clr coordinates:
@@ -427,6 +433,25 @@ par(mfrow = c(1,1))
 ```
 
 We can see that the transformed coordinates are much less diverged than the original count values.
+
+### Center of composition
+
+Formel: Pawlowski 2015, p. 66
+
+```{r center of composition, eval=TRUE}
+row <- mean(data_acomp)
+df_row <- data.frame(name = names(row), value = as.vector(row))
+
+# Create the bar plot
+ggplot(df_row, aes(x = name, y = value)) +
+  geom_bar(stat = "identity", fill = "blue") +
+  labs(x = "Element", y = "Value", title = "Sample Center") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+# Sample Variance
+mvar(data_acomp) 
+```
 
 ### Parameter Estimation of the discrete distribution
 
