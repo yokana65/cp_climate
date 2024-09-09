@@ -1,0 +1,169 @@
+---
+title: "PCA on sparsely sampled densities"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    number_sections: true
+    code_folding: hide
+---
+
+# Introduction
+
+Following the approach of Steyer and Greven (2023) is explained and analysed for deeper understanding of the methods at hand.
+In addition, the illustrations of their paper are reproduced for practical purposes.
+
+## Simulation
+
+In their paper, Steyer and Greven (2023) simulate several methods:
+1. Two-step approach: densities are estimated first and the PCA is conducted on the clr transformation
+2. ??
+
+### Setting
+
+n = number of densities $f_i$ on the interval $I=[0,1]$ from a Gaussian process with true clr transformed mean function $\mu(x)=-20\left(x-\frac{1}{2}\right)^{2}+\frac{5}{3}$
+
+
+### Data Generation
+
+Generate samples for each continious density:
+
+```{r simulate data, include = TRUE}
+# Function to generate samples from the simulation setting
+generate_samples_simplex <- function(n = 30, m_i = 40) {
+  # Define the grid points
+  # x_grid <- seq(0, 1, length.out = grid_points)
+  
+  # Define the true clr transformed mean function
+  mu <- function(x) -20 * (x - 0.5)^2 + 5/3
+  
+  # Define the principal component functions on clr level
+  g1 <- function(x) (1/5) * sin(10 * (x - 0.5))
+  g2 <- function(x) (1/10) * cos(2 * pi * (x - 0.5))
+  
+  # Generate factor scores for each density
+  z_i1 <- rnorm(n, mean = 0, sd = sqrt(0.5))
+  z_i2 <- rnorm(n, mean = 0, sd = sqrt(0.2))
+  
+  # Generate densities
+  clr_densities <- list()
+  for (i in 1:n) {
+    clr_density <- function(x) mu(x) + z_i1[i] * g1(x) + z_i2[i] * g2(x)
+    clr_densities[[i]] <- inverse_clr_trafo(clr_density)
+  }
+  
+  # Sample observations from each density
+  # this would be my observed dataset
+  observations <- list()
+  for (i in 1:n) {
+    observations[[i]] <- sapply(1:m_i, function(j) {
+    x <- runif(1, min = 0, max = 1)  # Zufällige Stelle x im Intervall [0, 1]
+    x * clr_densities[[i]](x)
+    })
+  }
+  
+  return(list(clr_densities = clr_densities, observations = observations))
+}
+
+# Function to perform inverse clr transformation (alternatively use compositions functionality)
+inverse_clr_trafo <- function(clr_function) {
+  function(x) {
+    exp(clr_function(x) - log(integrate(function(t) exp(clr_function(t)), 0, 1)$value))
+  }
+}
+```
+
+```{r generate densities, include = TRUE}
+
+generate_densities <- function(n = 30, m_i = 40, grid_points = 500) {
+  # Define the grid points
+  x_grid <- seq(0, 1, length.out = grid_points)
+  
+  # Define the true clr transformed mean composition
+  mu <- -20 * (x_grid - 0.5)^2 + 5/3
+  
+  # Define the principal component compositions on clr level
+  g1 <- (1/5) * sin(10 * (x_grid - 0.5))
+  g2 <- (1/10) * cos(2 * pi * (x_grid - 0.5))
+  
+  # Generate factor scores for each composition
+  z_i1 <- rnorm(n, mean = 0, sd = sqrt(0.5))
+  z_i2 <- rnorm(n, mean = 0, sd = sqrt(0.2))
+  
+  # Generate densities
+  densities <- matrix(0, nrow = n, ncol = grid_points)
+  for (i in 1:n) {
+    clr_density <- mu + z_i1[i] * g1 + z_i2[i] * g2
+    densities[i, ] <- inverse_clr_trafo(clr_density)
+  }
+  
+
+  
+  return(densities)
+}
+
+# Function to perform inverse clr transformation
+inverse_clr_trafo <- function(clr_composition) {
+  exp(clr_composition - log(sum(exp(clr_composition))))
+}
+
+```
+
+#### Reconstruction plots
+Plot results for Figure 5 middle row:
+
+Here the range of the pca (pca1: [-0.2, 0.2] ) is smaller than in Grevens Paper the function appears to be stretched. Both is adjustable 
+but it remains unclear what the cause is. One possible explanation could be that the sampling process introduces the difference.
+
+```{r plot  densities, include = TRUE}
+# Generate samples
+x_grid <- seq(0, 1, length.out = 40)
+mu <- -20 * (x_grid - 0.5)^2 + 5/3
+g1 <- (1/5) * sin(10 * (x_grid - 0.5))
+g2 <- (1/10) * cos(2 * pi * (x_grid - 0.5))
+
+# Plot selective functions on Bayes Space
+plot_data <- data.frame(x = x_grid, y = mu, pc1 = g1, pc2 = g2)
+
+plot_data_long <- tidyr::gather(plot_data, key = "variable", value = "value", -x)
+
+ggplot(plot_data_long, aes(x = x, y = value, color = variable)) +
+  geom_line() +
+  coord_cartesian(ylim = c(-2,2)) +
+  labs(x = "x", y = "mu") +
+  ggtitle("Plot of mu over x_grid") +
+  theme_minimal() 
+
+```
+
+
+Plot densities: Figure 5 first row:
+
+There are several differences: the variation is to low and the modes are slightly off. It is possible though that this is due to the representation. 
+TODO: the scale of the density values seems off.
+
+```{r plot densities, include = TRUE}
+plot_data <- data.frame(x = x_grid, t(densities))
+plot_data_long <- tidyr::gather(plot_data, key = "density", value = "value", -x)
+
+# Create the plot using ggplot2
+ggplot(plot_data_long, aes(x = x, y = value, group = density, color = density)) +
+  geom_line(alpha = 0.5) +  # Adjust the alpha value for transparency
+  labs(x = "x", y = "Density") +
+  ggtitle("Plot of Densities") +
+  theme_minimal()
+
+# Correlation Plot
+library(corrplot)
+cor_matrix <- cor(densities)
+
+# Create the correlation plot
+corrplot(cor_matrix, method = "color", type = "upper", order = "hclust", 
+         tl.col = "black", tl.srt = 45, addCoef.col = "black", 
+         title = "Correlation Plot of Densities")
+
+```
+
+## Questions for the compositional Setting
+
+What is the form of the "true" mean function? (the density of a multinormal distribution?)
