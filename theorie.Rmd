@@ -1,0 +1,131 @@
+---
+title: "Theory behind compositional PCA"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    number_sections: true
+    code_folding: hide
+---
+
+# Introduction
+
+The following section is meant to give a comprehensive overview of all formulars involved in the calculation of the compositional PCA.  
+
+## Latent density model
+
+Steyer and Greven (2023) propose a latent density model to conduct a functional principal component analysis in Bayes spaces for "sparsely observed" densities. Their approach is directly applicable for the analysis of discrete (count) compositions. 
+
+The model specifications can be adopted to the discrete case: 
+
+$$ X_{ij} = (X_{ij1}, ..., X_{ijN}) \stackrel{i.i.d.}{\sim} \operatorname{clr}^{-1}(G_i) = \left(\frac{\exp(G_{i1})}{\sum_{k=1}^N \exp(G_{ik})}, ..., \frac{\exp(G_{iN})}{\sum_{k=1}^N \exp(G_{ik})}\right)^T  $$
+
+$$ \text{with} \quad G_i = \sum_{k=1}^N \theta_{ik} e_k $$
+
+$$ \text{and} \quad \boldsymbol{\theta}_i = (\theta_{i1}, ..., \theta_{iN}) \stackrel{i.i.d.}{\sim} \mathcal{N}(\boldsymbol{\nu}, \boldsymbol{\Sigma}) $$
+
+$$
+\text{and} \quad e_k=\sqrt{\frac{k}{k+1}}(\overbrace{k^{-1}, \ldots, k^{-1}}^{k \text { times }},-1,0, \ldots, 0)^T
+$$
+
+
+In the framework of the latent density model the observed compositions $X_{i j}$ are D-dimensional vectors on the simplex that represent the j-th sample, with $j=1,\ldots, m_i$. Every observation is drawn from an unobserved density function $f_i, i = 1, ..., n$, which are 
+densities with respect to the discrete measure on $P({A_1, ..., A_N})$.
+Since we can identify every density $f$ with $\pi_k = f(A_k)$ for $k = 1, ..., N$, we can formalize the observed compositions without any loss of information as observed count compositions $\boldsymbol{\pi_1}, \ldots, \boldsymbol{\pi_n}$ in the simplex for which we want to conduct the principal component analysis.  
+
+Steyer and Greven show that a N-1 dimensional Hilbert Space $\mathcal{H}=\mathbb{R}_0^N\left\{\boldsymbol{\rho} \in \mathbb{R}^N \mid \sum_{k=1}^N\rho_k=0\right\}$ can be identified via the simplex and the discrete centered log-ratio transformation of the count compositions $\boldsymbol{\pi_i}$:
+
+$$
+\boldsymbol{\rho}=\operatorname{clr}(\boldsymbol{\pi})=\left(\log \left(\pi_1\right)-\frac{1}{N} \sum_{k=1}^N \log \left(\pi_k\right), \ldots, \log \left(\pi_N\right)-\frac{1}{N} \sum_{k=1}^N \log \left(\pi_k\right)\right)
+$$
+
+Within the latent density model, it is assumed that the count composition $\boldsymbol{\pi_i}$ can be represented by the inverse centered log-ratio transformation of the realizations of a Gaussian process $G_i$. The Karhunen-Loève decomposition (Karhunen 1946, Loève 1946)
+can then be used for principal component representation of the Gaussian process with orthonormal basis $e_k$ (cf. Egozcue et al. 2003) and basis coefficients $\theta_{i}$. 
+
+The goal is to estimate the parameters $\boldsymbol{\nu}$ and $\boldsymbol{\Sigma}$ of the Gaussian process $G_i$ via maximum likelihood estimation. Steyer and Greven show that this can be done using a Bayesian approach with a multivariate normal distribution as prior 
+for the marginal distribution of $\theta_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}$. The Monte Carlo Expectation Maximization (MCEM) algorithm is proposed for numerical solution to the maximum likelihood estimation problem.
+
+## Bayes Space with regard to the lebesgue measure
+
+A general approach is formulated by Boogart et al. 2014. 
+
+The specified Hilbert Space can contain probability measures as well as discrete measures. A measure is identified by its density function.
+
+The Aitchison geometry is a special case of the Hilbert Space with a measure with discrete and finite support. 
+
+## Scores Median
+
+We want to find the median of the posterior score distribution:
+
+$p(\mathbf{z}{i} \mid \boldsymbol{x}{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}) \propto p(\boldsymbol{x}{i} \mid \mathbf{z}{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}) \cdot p(\mathbf{z}_{i})$
+
+We use an optimization algorithm to to estimate the clr density of the scores for the given data (**conditional scores log density**).
+
+The scores are the coefficients of an observation in the basis of the principal components. 
+The are the result of $\boldsymbol{z}_{i}=\boldsymbol{V}^{(h)}\left(\boldsymbol{\theta}_{i}-\boldsymbol{\nu}^{(h)}\right) \sim \mathcal{N}\left(\mathbf{0}, \operatorname{diag}\left(\sigma_{1}^{2}(h), \ldots, \sigma_{N}^{2}{ }^{(h)}\right)\right)$
+
+In der **conditional scores log density** wird zunächst einmal die Dichte der Scores aus der Multiplikation der Hauptkomponenten der initial PCA auf den beabachteten Dichten (mit kernel estimation), mit den Scores aus derselben PCA.
+
+```{r, formular score density, eval=FALSE}
+clr_density <- cbind(x_grid, pca$center + pca$rotation %*% scores)
+```
+
+Dies entspricht: $\mu^{(h)}(x) + \sum_{k=1}^{N} \boldsymbol{z}{i}^{T} \boldsymbol{v}{k}^{(h)} e_{k}(x)$, i.e. the estimated density for the scores, from Formular 9 (Steyer and Greven, 2023):
+
+$$ p\left(\mathbf{z}{i} \mid \boldsymbol{x}{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) \propto \frac{\exp \left(\sum_{j=1}^{m_{i}}\left(\mu^{(h)}\left(x_{i j}\right)+\sum_{k=1}^{N} \boldsymbol{z}{i}^{T} \boldsymbol{v}{k}^{(h)} e_{k}\left(x_{i j}\right)\right)\right)}{\left(\int_{I} \exp \left(\mu^{(h)}(x)+\sum_{k=1}^{N} \boldsymbol{z}{i}^{T} \boldsymbol{v}{k}^{(h)} e_{k}(x)\right) d x\right)^{m_{i}}} \prod_{k=1}^{N} p\left(z_{i k} \mid \sigma_{k}^{2^{(h)}}\right) $$
+
+```{r, formular, eval=FALSE}
+  sum(clr_density[idxs, 2]) - length(idxs)*log(f_integral) - sum(0.5*scores^2/(pca$sdev^2))
+```
+
+1. part calculates: $\sum_{j=1}^{m_{i}}\left(\mu^{(h)}\left(x_{i j}\right)+\sum_{k=1}^{N} \boldsymbol{z}{i}^{T} \boldsymbol{v}{k}^{(h)} e_{k}\left(x_{i j}\right)\right)$, i.e. the sum of the estimated log-densities at $x_i$
+2. part calculates: $\left(\int_{I} \exp \left(\mu^{(h)}(x)+\sum_{k=1}^{N} \boldsymbol{z}{i}^{T} \boldsymbol{v}{k}^{(h)} e_{k}(x)\right) d x\right)^{m_{i}}$, i.e. the log of the integral multiplied by $m_i$.
+3. part calculates: $-\log\left(\prod_{k=1}^{N} p\left(z_{i k} \mid \sigma_{k}^{2^{(h)}}\right)\right)$, i.e. the negative log of the prior density of scores. This is a direct consequence of the assumption that the conditional score density
+follows a normal distribution with zero mean and variance $\sigma_{k}^{2^{(h)}}$. The product comes directly from the density of a normal distibution. 
+
+The code above could also be written as:
+
+$$ \log p\left(\mathbf{z}{i} \mid \boldsymbol{x}{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) = \sum_{j=1}^{m_{i}}\left(\mu^{(h)}\left(x_{i j}\right)+\sum_{k=1}^{N} \boldsymbol{z}{i}^{T} \boldsymbol{v}{k}^{(h)} e_{k}\left(x_{i j}\right)\right) - m_i \log\left(\int_{I} \exp \left(\mu^{(h)}(x)+\sum_{k=1}^{N} \boldsymbol{z}{i}^{T} \boldsymbol{v}{k}^{(h)} e_{k}(x)\right) d x\right) + \sum_{k=1}^{N} \log p\left(z_{i k} \mid \sigma_{k}^{2^{(h)}}\right) $$
+
+Since we calculate the log posterior multiplication becomes addition and division becomes subtraction: 
+
+$$ \log\left(\frac{a}{b} \cdot c\right) = \log(a) - \log(b) + \log(c) $$
+
+The gradient is then needed to optimize the log-likelihood:
+$$
+\nabla \log \left(p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)\right)=\sum_{k=1}^{N} \boldsymbol{v}_{k}^{(h)}\left(\sum_{j=1}^{m_{i}} e_{k}\left(x_{i j}\right)-m_{i}\left\langle f_{\mathbf{z}_{i}}, e_{k}\right\rangle_{\mathbb{L}_{2}}\right)-\left(\frac{z_{i l}}{\sigma_{l}^{2^{(h)}}}\right)_{l=1, \ldots, N}
+$$
+
+
+
+
+## Importance  Sampling
+
+Sample the proposal scores from 
+$\boldsymbol{z}_{i}=\boldsymbol{V}^{(h)}\left(\boldsymbol{\theta}_{i}-\boldsymbol{\nu}^{(h)}\right) \sim \mathcal{N}\left(\mathbf{0}, \operatorname{diag}\left(\sigma_{1}^{2}(h), \ldots, \sigma_{N}^{2}{ }^{(h)}\right)\right)$
+
+Calculate the weights:
+
+```{r, formular weights, eval=FALSE}
+log_weights <- apply(proposal_scores[[i]], 2, function(scores){
+    conditional_scores_log_density(scores, x_grid, x_data[[i]], pca) -
+      sum(dnorm(scores, mean = scores_median, sd = lambda*pca$sdev, log = TRUE))
+  })
+
+```
+
+Dies entspricht:
+$\log w_i = \log p(\mathbf{z}_i|\mathbf{x}_i, \boldsymbol{\nu}, \boldsymbol{\Sigma}) - \log q(\mathbf{z}_i)$
+
+which is the log of: 
+$\omega_{i t}=\frac{p\left(\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)}{p_{i}^{*}\left(\boldsymbol{\theta}_{i}^{(t)}\right)}$
+with `density`being: 
+ $f_{\mathbf{z}_{i}}=\operatorname{clr}^{-1}\left(\mu^{(h)}+\sum_{k=1}^{N} \underline{\boldsymbol{z}_{i}^{T}} \boldsymbol{v}_{k}^{(h)} e_{k}\right)$ for all $\mathbf{z}_{i}=\left(z_{i 1}, \ldots, z_{i N}\right)^{T} \in \mathbb{R}^{N}$.
+
+The weight for the $i$-th observation is calculated as:
+
+```{r, formular weights, eval=FALSE}
+weights[[i]] <- exp(log_weights)/sum(exp(log_weights))
+```
+
+"Das Importance Sampling ermöglicht es, die posteriore Verteilung der Scores genauer zu approximieren, indem Proposal-Scores aus einer bekannten Verteilung (hier einer Normalverteilung um den Median) gezogen werden und dann entsprechend ihrer Importance-Gewichte neu gewichtet werden. Die Gewichte korrigieren die Diskrepanz zwischen der Proposal-Verteilung und der wahren posterioren Verteilung."

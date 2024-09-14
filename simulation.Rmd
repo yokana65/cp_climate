@@ -1,0 +1,343 @@
+---
+title: "Simulation study CoDa"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    number_sections: true
+    code_folding: hide
+---
+
+
+### Simulation
+
+The simplest simulation uses three Dirichlet distributions with two distinctive driving elements.
+
+We calculate the proportions for each of the thirteen elements (which could be translated into counts). 
+
+```{r simulation, eval=TRUE}
+library(MCMCpack)
+
+# remember that 1 is the neutral element
+alpha_sand <- c(5, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+alpha_clay <- c(1, 1, 5, 5, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+alpha_organic <- c(1, 1, 1, 1, 5, 5, 1, 1, 1, 1, 1, 1, 1)
+
+simulate_mixture_selective <- function(n_samples, mix_proportions) {
+  n_processes <- length(mix_proportions)
+
+  # JESUS? This means that the "mixture" is a mix of independent draws for each process instead of a mixture of processes. 
+  # I don't want seperated observations for each process but a mix of processes within every observation.
+  samples_per_process <- rmultinom(1, n_samples, mix_proportions)
+  
+  result <- matrix(0, nrow = n_samples, ncol = 13)
+  current_row <- 1
+  
+  for (i in 1:n_processes) {
+    if (i == 1) {
+      process_samples <- rdirichlet(samples_per_process[i], alpha_sand)
+    } else if (i == 2) {
+      process_samples <- rdirichlet(samples_per_process[i], alpha_clay)
+    } else {
+      process_samples <- rdirichlet(samples_per_process[i], alpha_organic)
+    }
+    
+    end_row <- current_row + samples_per_process[i] - 1
+    result[current_row:end_row,] <- process_samples
+    current_row <- end_row + 1
+  }
+  
+  return(result)
+}
+
+simulate_mixture_multi <- function(n, alpha1, alpha2, p) {
+  samples1 <- rdirichlet(n, alpha1)
+  samples2 <- rdirichlet(n, alpha2)
+  
+  mix <- rbinom(n, 1, p)
+  
+  result <- mix * samples1 + (1 - mix) * samples2
+  return(result)
+}
+
+set.seed(123)
+mixed_data <- simulate_mixtur_selective(10000, c(0.8, 0.1, 0.1))
+
+# calculate a simple pca on the results
+pca_sim <- princomp(mixed_data)
+pca_sim$loadings
+pca_sim$sdev
+plot(pca_sim)
+
+
+```
+
+What happens if we use the clr transformation?
+
+```{r clr_sim, eval=TRUE}
+data_sim_clr <- clr(mixed_data)
+pca_clr_sim <- princomp(data_sim_clr)
+
+pca_clr_sim$loadings
+pca_clr_sim$sdev
+plot(pca_clr_sim)
+```
+
+(We will run the simulation with a variation of sample sizes, but it is already clear that $n$ has a strong impact on PCA)
+
+
+# MCEM
+
+```{r mcem, eval=TRUE}
+# MCEM-Algorithmus zur Schätzung der Parameter
+mcem <- function(data, n_iter = 100, tol = 1e-6) {
+  n_samples <- nrow(data)
+  n_processes <- length(alphas)
+  n_elements <- ncol(data)
+  
+  # Initialisierung der Parameter
+  alpha_est <- lapply(1:n_processes, function(i) rep(1, n_elements))
+  
+  log_likelihood <- function(data, alpha) {
+    sum(dlogis(data, alpha))
+  }
+  
+  for (iter in 1:n_iter) {
+    # E-Schritt: Berechnung der erwarteten vollständigen Log-Likelihood
+    expected_log_likelihood <- 0
+    for (i in 1:n_processes) {
+      expected_log_likelihood <- expected_log_likelihood + log_likelihood(data, alpha_est[[i]])
+    }
+    
+    # M-Schritt: Maximierung der erwarteten vollständigen Log-Likelihood
+    for (i in 1:n_processes) {
+      alpha_est[[i]] <- optim(alpha_est[[i]], log_likelihood, data = data)$par
+    }
+    
+    # Überprüfung der Konvergenz
+    if (iter > 1 && abs(expected_log_likelihood - prev_log_likelihood) < tol) {
+      break
+    }
+    
+    prev_log_likelihood <- expected_log_likelihood
+  }
+  
+  return(alpha_est)
+}
+
+# Schätzung der Parameter
+alpha_est <- mcem(data)
+print(alpha_est)
+```
+
+## Theory
+
+Corollary 2.4. For any orthonormal basis e1 , . . . , eN ⊂ L2 with H ⊆ span{e1 , . . . , eN } we have that G ∼
+GP (μ, K) is equivalent to G =
+ PN
+ k=1
+ θk ek with θ = (θ1 , . . . , θN )T i.i.d.
+ ∼ N (ν, Σ) for μ =
+ PN
+ k=1 νk ek and
+PN PN
+ T
+K(x1 , x2 ) = k=1 l=1 ek (x1 )el (x2)Σkl , where Σ = (Σkl )k,l=1,...,N and ν = (ν1 , . . . , νN ) .
+If v 1 , . . . , v N are the eigenvectors of Σ with corresponding eigenvalues σ1 2, . . . , σN
+ 2
+ then φl =
+ PN
+ k=1 vlk ek ,
+l = 1, . . . , N are the eigenfunctions of the covariance operator given by the covariance function K with the same
+eigenvalues σ1 2 , . . . , σN
+ 2
+ , where v l = (vl1 , . . . , vlN ) for all l = 1, . . . , N .
+
+
+ A simple example of simulating descrete data:
+```{r sim_discrete, eval=TRUE}
+library(compositions)
+
+# Funktion zur Generierung der wahren clr-transformierten Mittelwertfunktion und Hauptkomponenten
+    generate_true_functions <- function(N) {
+    # mean function => generates the mean composition; this identifies the theta vector
+    # Sollten hier nicht die Ergebnisse einer Multinormalverteilung einfließen?
+    # mu <- function(x) -20 * (x - 0.5)^2 + 5/3
+    # g1 <- function(x) 15 * sin(10 * (x - 0.5))
+    # g2 <- function(x) 10 * cos(2 * pi * (x - 0.5))
+    mu_discrete <- rmultinom(N, size = sample_size, prob = mu_params)
+    g1_discrete <- rmultinom(N, size = sample_size, prob = g1_params)
+    g2_discrete <- rmultinom(N, size = sample_size, prob = g2_params)
+
+    x <- seq(0, 1, length.out = N)
+    mu_discrete <- mu(x)
+    g1_discrete <- g1(x)
+    g2_discrete <- g2(x)
+    
+    # Zentrieren der Funktionen -> Warum?
+    mu_discrete <- mu_discrete - mean(mu_discrete)
+    g1_discrete <- g1_discrete - mean(g1_discrete)
+    g2_discrete <- g2_discrete - mean(g2_discrete)
+
+    basis <- generate_orthonormal_basis(N)
+    # Projizieren auf die Basis
+    mu_coef <- solve(t(basis) %*% basis) %*% t(basis) %*% mu_discrete
+    g1_coef <- solve(t(basis) %*% basis) %*% t(basis) %*% g1_discrete
+    g2_coef <- solve(t(basis) %*% basis) %*% t(basis) %*% g2_discrete
+    
+    # Normalisieren von g1 und g2
+    g1_coef <- g1_coef / sqrt(sum(g1_coef^2))
+    g2_coef <- g2_coef / sqrt(sum(g2_coef^2))
+    
+    list(mu = mu_discrete, g1 = g1_discrete, g2 = g2_discrete)
+    }
+
+generate_orthonormal_basis <- function(N) {
+  basis <- matrix(0, nrow = N, ncol = N-1)
+  for (k in 1:(N-1)) {
+    basis[1:k, k] <- 1 / k
+    # mistake here
+    basis[k+1, k] <- -1
+    basis[, k] <- sqrt(k / (k + 1)) * basis[, k]
+  }
+  basis
+}
+
+# Simulation der Kompositionen
+# n: number of observations
+# N: number of elements
+simulate_compositions <- function(n, N, true_functions) {
+  compositions <- matrix(0, nrow = n, ncol = N)
+  for (i in 1:n) {
+    # für jede Beobachtung wird eine Komposition generiert aus
+    # dem zufälligen Wert einer Normalverteilung mit Mittelwert 0 und Varianz 0.5
+    z1 <- rnorm(1, 0, sqrt(0.5))
+    z2 <- rnorm(1, 0, sqrt(0.2))
+    # der Dekomposition des Gauß-Prozesses -> Dichte auf dem diskreten Intervall [0, 1]
+    clr_comp <- true_functions$mu + z1 * true_functions$g1 + z2 * true_functions$g2
+    compositions[i,] <- clrInv(clr_comp)
+  }
+  compositions
+}
+
+# Generieren von Beobachtungen
+generate_observations <- function(compositions, m) {
+  n <- nrow(compositions)
+  observations <- matrix(0, nrow = n, ncol = ncol(compositions))
+  for (i in 1:n) {
+    observations[i,] <- rmultinom(1, m, compositions[i,])
+  }
+  observations
+}
+
+# Hauptsimulationsfunktion
+run_simulation <- function(n = 30, N = 13, m_values = c(20, 40, 80, 160), num_simulations = 100) {
+  true_functions <- generate_true_functions(N)
+  
+  results <- list()
+  for (m in m_values) {
+    for (sim in 1:num_simulations) {
+      compositions <- simulate_compositions(n, N, true_functions)
+      observations <- generate_observations(compositions, m)
+      
+      # Hier würden Sie Ihre Schätzmethoden anwenden
+      # z.B. latent_density_estimate <- your_latent_density_method(observations)
+      # kernel_density_estimate <- your_kernel_density_method(observations)
+      # compositional_spline_estimate <- your_compositional_spline_method(observations)
+      
+      # Berechnen Sie die Distanzen zu den wahren Werten
+      # distances <- calculate_distances(true_functions, latent_density_estimate, kernel_density_estimate, compositional_spline_estimate)
+      
+      # Speichern Sie die Ergebnisse
+      # results[[as.character(m)]][[sim]] <- distances
+    }
+  }
+  
+  results
+}
+
+# Führen Sie die Simulation aus
+simulation_results <- run_simulation()
+```
+
+Multivariate Normalverteilung
+
+```{r mvn, eval=TRUE}
+library(mvtnorm)
+
+N <- 13  # Anzahl der Komponenten
+n <- 30  # Anzahl der zu generierenden Theta-Vektoren; entspricht m_i
+
+# Definieren Sie die Mittelwerte für jede Komponente
+# TODO: Es sollten für jeden Prozess eine eigene Mittelwertfunktion definiert werden
+means <- rnorm(N-1)
+
+# Center the means to sum to zero to ensure that the entries of v are zero, 
+# d.h die Bedingung für unseren Wahrscheinlichkeitsraum erfüllt ist
+means <- means - mean(means)
+
+# Definieren Sie eine Kovarianzmatrix (hier als Beispiel eine Diagonalmatrix)
+covariance <- diag(N-1)
+
+# Ziehen Sie n Theta-Vektoren aus der Multinormalverteilung
+# Dies entspricht n samples für theta_i und TODO muss für i = 1, ... , n wiederholt werden
+theta <- rmvnorm(n, mean = means, sigma = covariance)
+
+# Berechnung des Gaußprozess als Linearkombination von theta und den orthonormalen Basisvektoren
+# TODO: Was passiert an dieser Stelle mit der Summe über N (in Linearkombination enthalten)
+G <- theta %*% t(basis)
+
+# X kann aus der isomporphen Rücktransformation der G-Werte ermittelt werden
+X <- clrInv(G)
+# X sollten die Anteile der 13 compositional parts enthalten > Sum to 1
+sum(X[1,])
+```
+
+TODO: check dimensions of G,X (or of $e_k$)
+
+$v$ und $/sigma$ werden für den jeweiligen Prozess $i$ bestimmt. 
+
+Frage: Wie werden die Restriktionen auf die Parameter gesetzt? Bzw. gibt es im Gaußschen Prozess überhaupt Restriktionen? -> Raum der Loadings ist 
+
+# Formeln
+
+1. Latent density model als Gaußprozess(?)
+$R^N$$X_{G_i} = \sum_{k} \theta_{ik} e_k$
+2. Wahl der orthonormalen Basis (Egozcue et al. 2003):
+
+## orthonormal basis
+
+```{r basis, eval=TRUE}
+e_k <- function(k, N) {
+  v <- c(rep(1/k, k), -1, rep(0, N-k-1))
+  return(sqrt(k/(k+1)) * v)
+}
+
+N <- 13  # Total number of dimensions
+E <- lapply(1:(N-1), function(k) e_k(k, N))
+
+```
+
+## MCEM Algorithmus
+
+1. Implementierung der Likelihood-Funktion
+
+```{r likelihood, eval=TRUE}
+
+
+```
+
+### Importance sampling
+
+```{r importance_sampling, eval=TRUE}
+# Number of samples
+M <- 10000
+# parameter space -> which is not directly available in our case
+theta <- rbeta(M, 4.5,1.5)
+# sample from auxiliary uniform distribution
+u <- runif(M) 
+
+w <- dbeta(u, 4.5, 1.5)
+
+(Etheta.u <- sum(u * w) / sum(w))
+```
