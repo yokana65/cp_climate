@@ -96,8 +96,25 @@ $$
 \nabla \log \left(p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)\right)=\sum_{k=1}^{N} \boldsymbol{v}_{k}^{(h)}\left(\sum_{j=1}^{m_{i}} e_{k}\left(x_{i j}\right)-m_{i}\left\langle f_{\mathbf{z}_{i}}, e_{k}\right\rangle_{\mathbb{L}_{2}}\right)-\left(\frac{z_{i l}}{\sigma_{l}^{2^{(h)}}}\right)_{l=1, \ldots, N}
 $$
 
+The code has to evaluate a discrete approximation of the formular at the points of the grid. 
 
+1. $\sum_{k=1}^{N} \boldsymbol{v}{k}^{(h)}\left(\sum{j=1}^{m_{i}} e_{k}\left(x_{i j}\right)-m_{i}\left\langle f_{\mathbf{z}{i}}, e{k}\right\rangle_{\mathbb{L}_{2}}\right)$
+For every principal component $k$ we calculate the difference between the sum of the components at the data points $\sum_{j=1}^{m_{i}} e_{k}\left(x_{i j}\right)$ and 
+the produkt of the number of data points $m_i$  with $f_{\mathbf{z}{i}}$ mit der Hauptkomponente $\left\langle f{\mathbf{z}{i}}, e{k}\right\rangle_{\mathbb{L}_{2}}$.
 
+In Code this is equivalent to:
+
+```{r, formular gradient, eval=FALSE}
+scalar_prod <- sum(density[,2]*pca$rotation[, k]*diff(mid_points))
+sum(pca$rotation[idxs, k]) - length(idxs)*scalar_prod
+
+```
+
+The last multiplication becomes an substraction since we take the logarithm (-> addition) of the normal density (negativ coefficient).
+
+`- scores[k]/(pca$sdev[k]^2)`
+
+or $-\left(\frac{z_{i l}}{\sigma_{l}^{2^{(h)}}}\right)_{l=1, \ldots, N}$
 
 ## Importance  Sampling
 
