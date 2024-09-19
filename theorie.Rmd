@@ -146,3 +146,13 @@ weights[[i]] <- exp(log_weights)/sum(exp(log_weights))
 ```
 
 "Das Importance Sampling ermöglicht es, die posteriore Verteilung der Scores genauer zu approximieren, indem Proposal-Scores aus einer bekannten Verteilung (hier einer Normalverteilung um den Median) gezogen werden und dann entsprechend ihrer Importance-Gewichte neu gewichtet werden. Die Gewichte korrigieren die Diskrepanz zwischen der Proposal-Verteilung und der wahren posterioren Verteilung."
+
+
+## Application to the compositional framework
+
+Zunächst einmal kann das latente Datenmodell vereinfacht werden, da auf die Basisentwicklung verzichtet werden kann.
+
+$$ X_{ij} = (X_{ij1}, ..., X_{ijN}) \stackrel{i.i.d.}{\sim} \operatorname{clr}^{-1}(G_i) $$
+
+$$ \text{with} \quad G_i =  \stackrel{i.i.d.}{\sim} \mathcal{N}(\boldsymbol{\nu}, \boldsymbol{\Sigma}) $$
+
