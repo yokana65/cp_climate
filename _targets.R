@@ -12,6 +12,7 @@ library(tidyr)
 # This is where you write source(\"R/functions.R\")
 # if you keep your functions in external scripts.
 source("scripts/read_data_KL15_XRF.R")
+source("scripts/fit_density_pca.R")
 
 # Set target-specific options such as packages:
 # tar_option_set(packages = c("dplyr", "tidyr"))
@@ -81,5 +82,22 @@ list(
   }),
   tar_target(data_kl15_comp_alr, {
     data_alr <- results$data_alr
+  }),
+  tar_target(simulation_densities_greven, {
+    # define simulation parameters
+    n_data <- 30
+    n_samples <- 40
+    x_grid_sim <- seq(0, 1, length.out = 1000)
+    lambda_1 <- 0.5
+    lambda_2 <- 0.2
+
+    sim_densities_results <- simulate_densities_greven(n_data, n_samples, x_grid = x_grid_sim, lambda_1, lambda_2)
+  }),
+  tar_target(density_pca, {
+    x_data <- simulation_densities_greven$x_data
+    density_pca <- fit_density_pca(x_data, max_iter = 50)
+  }),
+  tar_target(plot_pca_results, {
+    plot_pca(density_pca$pca, x_grid = density_pca$x_grid)
   })
 )

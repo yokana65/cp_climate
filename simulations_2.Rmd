@@ -11,9 +11,15 @@ output:
 
 # Simulation study Greven
 
-Get all relevant functions:
+Get all relevant functions: (To avoid unneccassary system calls, all functions and results are stored in targets and are not evaluated here)
 
-```{r fit density pca, eval=TRUE}
+```{r load libraries, eval=TRUE}
+library(targets)
+library(ggplot2)
+```
+
+
+```{r fit density pca, eval=FALSE}
 fit_density_pca <- function(x_data, x_grid = seq(min(unlist(x_data)), max(unlist(x_data)), length = 200),
                             max_iter = 50, r = 10, lambda = 1, dim_reduction = 0.001,
                             bw = (max(x_grid) - min(x_grid))/10, eps = 0.01){
@@ -213,7 +219,7 @@ There are several parameters that can be tweaked:
 - `n`: number of latent densities
 - `max_iter`: number of iterations the algorithm is allowed to run
 
-```{r simulation part 1, eval=TRUE}
+```{r simulation part 1, eval=FALSE}
 # x_grid <- seq(-5,5,0.1)
 x_grid <- seq(0,1,0.001)
 # f_data <- data.frame("x" = x_grid, "y" = -0.2*x_grid^2)
@@ -233,10 +239,18 @@ lambda_1 <- 0.5
 lambda_2 <- 0.2
 ```
 
+```{r simulation target 2, eval=TRUE}
+simulation_densities_results <- tar_read(simulation_densities_greven)
+clr_mean <- simulation_densities_results$clr_mean
+pc_1 <- simulation_densities_results$pc_1
+pc_2 <- simulation_densities_results$pc_2
+x_grid <- simulation_densities_results$x_grid
+```
+
 Plot the latent processes (this should be recovered by the PCA)
 
 ```{r plot latent densities, eval=TRUE}
-library(ggplot2)
+
 densities <- list(
   mean = clr_mean[,2],
   pc_1 = pc_1[,2],
@@ -261,7 +275,7 @@ This gives a good representation of Greven's Figure 5: oracle: $g(x)$
 
 Now we create our stochhastic densities $f_i$ and $g_i$ and draw $m_i$ samples from them.
 
-```{r simulation part 2, eval=TRUE}
+```{r simulation part 2, eval=FALSE}
 # true densities
 set.seed(12)
 n_data <- 30
@@ -281,15 +295,54 @@ x_data <- lapply(1:n_data, function(i){
 })
 ```
 
+```{r simulation targets 2, eval=TRUE}
+x_data <- simulation_densities_results$x_data
+```
+
+
+
 Finally, we perform the PCA with latent densities and plot the results:
 
-```{r density estimation, eval=TRUE} 
+```{r density estimation, eval=FALSE} 
 # estimate density pca
 density_pca <- fit_density_pca(x_data, max_iter = 50)
 
 plot_pca(density_pca$pca, x_grid = density_pca$x_grid)
 
 density_pca$iteration
+```
+
+```{r targets density estimation, eval=TRUE}
+density_pca <- tar_read(density_pca)
+
+plt <- tar_read(plot_pca_results)
+plt()
+# Use base-R-plotting
+# par(mar = c(5, 4, 4, 2) + 0.1)
+# plt
+
+# print(format("Number of iterations: ",density_pca$iteration))
+print(paste("Number of iterations:", density_pca$iteration))
+```
+
+Additional plots:
+
+1. Observed (sampled) densities
+
+```{r plot true observed densities, eval=TRUE}
+true_observed_densities <- simulation_densities_results$true_observed_densities
+
+plot_data_densities <- data.frame(
+  x = rep(x_grid, times = length(true_observed_densities)),
+  y = unlist(lapply(true_observed_densities, function(df) df[, 2])),
+  line = as.factor(rep(seq_along(true_observed_densities), each = length(x_grid)))
+)
+ggplot(plot_data_densities, aes(x = x, y = y, color = line)) +
+  geom_line() +
+  labs(x = "x", y = "Value", color = "Line") +
+  ggtitle("Observed Densities") +
+  theme_minimal()
+
 ```
 
 
