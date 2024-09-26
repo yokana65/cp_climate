@@ -345,5 +345,192 @@ ggplot(plot_data_densities, aes(x = x, y = y, color = line)) +
 
 ```
 
+## fit density pca function
+
+To get a better understanding of the function `fit_density_pca` we will go through it step by step.
+
+1. Initial values are calculated on $\hat{\boldsymbol{f}}_{i}$, i.e. the kernel density estimates of the observed data.
+2. The clr transformed densities are calculated: $\hat{\boldsymbol{g}}_{1}, \dots, \hat{\boldsymbol{g}}_{n}$ given 
+$$
+\begin{equation*}
+\operatorname{clr}^{-1}(g)=\frac{\exp (g)}{\int_{I} \exp (g(x)) d x} \tag{4}
+\end{equation*}
+$$
+3. Estimate $\boldsymbol{\nu}^{(0)}$ and $\boldsymbol{\Sigma}^{(0)}$ as the empirical mean and covariance of the coefficients $\boldsymbol{\theta}_{1} \ldots, \boldsymbol{\theta}_{n}$ of $\hat{g}_{1}, \ldots, \hat{g}_{n}$, respectively. That is 
+conducting a PCA on the clr transformed densities.
+
+```{r initial values, eval=TRUE}
+center_function <- function(f_data){
+  mid_points <- c(f_data[1,1], f_data[-1,1] - 0.5*diff(f_data[,1]), f_data[nrow(f_data),1])
+  f_integral <- sum(f_data[,2]*diff(mid_points))
+  f_data[,2] <- f_data[,2] - f_integral/(mid_points[length(mid_points)] - mid_points[1])
+  f_data
+}
+
+clr_trafo <- function(f_data){
+  f_data[,2] <- log(f_data[,2])
+  center_function(f_data)
+}
+
+# set values as in fit_density_pca
+x_grid = seq(min(unlist(x_data)), max(unlist(x_data)), length = 200)
+bw = (max(x_grid) - min(x_grid))/10
+  # kernel density estimates
+  densities_estimated <- lapply(1:length(x_data), function(i){
+    density <- density(x_data[[i]], from = min(x_grid), to = max(x_grid), 
+                       kernel = "gaussian", bw, 
+                       n = length(x_grid))
+    data.frame("x" = density$x, "y" = density$y)
+  })
+
+clr_densities_estimated <- lapply(densities_estimated, clr_trafo)
+clr_densities <- do.call("rbind", sapply(clr_densities_estimated, '[', 2))
+pca <- prcomp(na.omit(clr_densities))
+```
+
+### Expectation step: Importance Sampling
+
+We need to work trough an *importance sampling* Algorithm (see Monte Calro Methods). This enables us to calculate a weighted maximum likelihood estimate of the parameters $/nu$ and $/sigma$.
+
+The first step is to find the mode of the posterior score distributen. We do this by maximizing the posterior score function: 
+$$
+\begin{align*}
+& p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) \propto p\left(\mathbf{x}_{i} \mid \mathbf{z}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) p\left(\mathbf{z}_{i} \mid \boldsymbol{\Sigma}^{(h)}\right)=p\left(\mathbf{x}_{i} \mid \boldsymbol{\theta}_{i}=\boldsymbol{V}^{(h) T} \mathbf{z}_{i}+\boldsymbol{\nu}^{(h)}\right) \prod_{k=1}^{N} p\left(z_{i k} \mid \sigma_{k}^{2}{ }^{(h)}\right) \\
+& =\prod_{j=1}^{m_{i}} \operatorname{clr}^{-1}\left(\sum_{k=1}^{N} \nu_{k}^{(h)} e_{k}+\boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} e_{k}\right)\left(x_{i j}\right) \prod_{k=1}^{N} p\left(z_{i k} \mid \sigma_{k}^{2(h)}\right) \\
+& =\frac{\exp \left(\sum_{j=1}^{m_{i}}\left(\mu^{(h)}\left(x_{i j}\right)+\sum_{k=1}^{N} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} e_{k}\left(x_{i j}\right)\right)\right)}{\left(\int_{I} \exp \left(\mu^{(h)}(x)+\sum_{k=1}^{N} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} e_{k}(x)\right) d x\right)^{m_{i}}} \prod_{k=1}^{N} p\left(z_{i k} \mid \sigma_{k}^{2^{(h)}}\right) \tag{9}
+\end{align*}
+$$
+
+for each estimated density $i$ for $i = 1, \dots, n$.
+
+Given the mode  $\mathbf{z}_{i}^{*}=\operatorname{argmax}_{\mathbf{z}_{i} \in \mathbb{R}^{N}} p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)$, we can calculate the weights with:
+
+$\omega_{i t}, t=1, \ldots, r$ given as $\omega_{i t}=\frac{p\left(\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)}{p_{i}^{*}\left(\boldsymbol{\theta}_{i}^{(t)}\right)}$ for all $i=1, \ldots, n$. 
+
+to approximate the conditional expectation: 
+$$
+\begin{equation*}
+\mathbb{E}\left(\log \left(p\left(\boldsymbol{\theta}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)\right)\right) \approx \sum_{t=1}^{r} \frac{\omega_{i t}}{\sum_{t=1}^{r} \omega_{i t}} \log \left(p\left(\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)\right) \tag{8}
+\end{equation*}
+$$
+
+The mode $\mathbf{z}_{i}^{*}$ enables us to draw from $\mathcal{N}\left(\boldsymbol{z}_{i}^{*}, \lambda \operatorname{diag}\left(\sigma_{1}^{2(h)}, \ldots, \sigma_{N}^{2}{ }^{(h)}\right)\right)$ which represents the auxiliary distribution of 
+the importance sampling formular in (8).
+
+The $r*t$ samples from  $p_{i}^{*}\left(\boldsymbol{z}_{i}\right)$ enable us to calculate the weights **$\omega_{i t}$**.
+In the following code this is the $Nx(r*t)$ matrix `scores`.
+```{r expectation step, eval=TRUE}
+# set iteration == 1
+k <- 1
+# parameter to increase (why?) the number of samples in the importance sampling for each iteration
+r = 10
+# parameter to restrict the covariance space
+lambda = 1
+
+proposal_scores <- list(length(x_data))
+weights <- list(length(x_data))
+
+inverse_clr_trafo <- function(clr_density){
+  mid_points <- c(clr_density[1, 1], clr_density[-1, 1] - 0.5*diff(clr_density[,1]),
+                  clr_density[nrow(clr_density),1])
+  f_integral <- sum(exp(clr_density[,2])*diff(mid_points))
+  data.frame("x" = clr_density[,1], "y" = exp(clr_density[,2])/f_integral)
+}
+
+# objective function
+conditional_scores_log_density <- function(scores, x_grid, x_data_i, pca){
+  clr_density <- cbind(x_grid, pca$center + pca$rotation%*%scores)
+  idxs <- sapply(x_data_i, function(x) {
+    which.min((x - x_grid) ^ 2)
+  })
+  mid_points <- c(x_grid[1], x_grid[-1] - 0.5*diff(x_grid), x_grid[length(x_grid)])
+  f_integral <- sum(exp(clr_density[,2])*diff(mid_points))
+  
+  sum(clr_density[idxs, 2]) - length(idxs)*log(f_integral) - sum(0.5*scores^2/(pca$sdev^2))
+}
+
+# gradient
+gradient_csld <- function(scores, x_grid, x_data_i, pca){
+  idxs <- sapply(x_data_i, function(x) {
+    which.min((x - x_grid) ^ 2)
+  })
+  mid_points <- c(x_grid[1], x_grid[-1] - 0.5*diff(x_grid), x_grid[length(x_grid)])
+  density <- inverse_clr_trafo(cbind(x_grid, pca$center + pca$rotation%*%scores))
+  
+  sapply(seq_along(scores), function(k){
+    scalar_prod <- sum(density[,2]*pca$rotation[, k]*diff(mid_points))
+    sum(pca$rotation[idxs, k]) - length(idxs)*scalar_prod - scores[k]/(pca$sdev[k]^2)
+  })
+}
+
+for(i in 1:nrow(clr_densities)){
+  optim_result <- optim(rep(0, length = length(pca$sdev)), conditional_scores_log_density, gr = gradient_csld,
+                              x_grid = x_grid, x_data_i = x_data[[i]], pca = pca,
+                              control = list(fnscale = -1), method = "BFGS")
+  scores_median <- as.vector(optim_result$par)
+  # importance sampling
+  proposal_scores[[i]] <- sapply(1:(r*k), function(t){
+    matrix(rnorm(length(scores_median), mean = scores_median, sd = lambda*pca$sdev))
+  })
+  log_weights <- apply(proposal_scores[[i]], 2, function(scores){
+    conditional_scores_log_density(scores, x_grid, x_data[[i]], pca) -
+      sum(dnorm(scores, mean = scores_median, sd = lambda*pca$sdev, log = TRUE))
+  })
+  # increase numerical stability
+  log_weights <- log_weights - mean(log_weights, na.rm = TRUE)
+  weights[[i]] <- exp(log_weights)/sum(exp(log_weights))
+}
+
+```
+
+### Maximization step
+
+
+Given the weights $\omega_{i t}$ we can calculate the conditional expectation:
+$$
+\begin{equation*}
+\mathbb{E}\left(\log \left(p\left(\boldsymbol{\theta}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)\right)\right) \approx \sum_{t=1}^{r} \frac{\omega_{i t}}{\sum_{t=1}^{r} \omega_{i t}} \log \left(p\left(\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)\right) \tag{8}
+\end{equation*}
+$$
+
+where the distribution of $\theta_{i}$ is given by the calculated distribution of scores $z_{i}^{(t)}$.
+This equals the approximation of conditional expectation of scores (n-dimensional Vektor) given the current parameters $\nu$ and $\Sigma$.
+
+```{r maximization step, eval=TRUE}
+# M-Step ###################
+mu_scores <- rowMeans(sapply(seq_along(weights), function(i){
+  proposal_scores[[i]]%*%weights[[i]]
+}))
+```
+
+Given the vector of scores $\theta_{i}$, we can calculate all relevant parameters of a typical principal component analysis as well as an approximation
+of the original data. TODO
+
+### Update parameters
+
+For the next iteration of the MCEM-algorithm we update the parameters $\nu$ and $\Sigma$:
+
+$$
+\begin{aligned}
+\boldsymbol{\nu}^{(h+1)} & =\frac{1}{\sum_{i=1}^{n} \sum_{t=1}^{r} \omega_{i t}} \sum_{i=1}^{n} \sum_{t=1}^{r} \omega_{i t} \boldsymbol{\theta}_{i}^{(t)} \\
+\boldsymbol{\Sigma}^{(h+1)} & =\frac{1}{\sum_{i=1}^{n} \sum_{t=1}^{r} \omega_{i t}} \sum_{i=1}^{n} \sum_{t=1}^{r} \omega_{i t}\left(\boldsymbol{\theta}_{i}^{(t)}-\boldsymbol{\nu}^{(h+1)}\right)\left(\boldsymbol{\theta}_{i}^{(t)}-\boldsymbol{\nu}^{(h+1)}\right)^{T}
+\end{aligned}
+$$
+
+```{r update parameters, eval=FALSE}
+pca$center_updated <- center_function(cbind(x_grid, pca$center + pca$rotation%*%mu_scores))[,2]
+
+Sigma <- Reduce("+", lapply(seq_along(weights), function(i){
+  Reduce("+", lapply(1:(r*k), function(t){
+    C_it <- weights[[i]][t]*(proposal_scores[[i]][,t] - mu_scores)%*%
+      t((proposal_scores[[i]][,t] - mu_scores))
+  }))
+}))/length(weights)
+eigen_decomp <- eigen(Sigma)
+pca$sdev <- sqrt(eigen_decomp$values)
+pca$rotation <- pca$rotation%*%eigen_decomp$vectors
+pca$rotation <- apply(pca$rotation, 2, function(g) center_function(cbind(x_grid, g))[,2])
+      
+```
 
 # Simulation study compositional data
