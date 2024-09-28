@@ -35,6 +35,7 @@ fit_density_pca <- function(x_data, x_grid = seq(min(unlist(x_data)), max(unlist
           matrix(rnorm(length(scores_median), mean = scores_median, sd = lambda*pca$sdev))
         })
         log_weights <- apply(proposal_scores[[i]], 2, function(scores){
+          # Formular 8
           conditional_scores_log_density(scores, x_grid, x_data[[i]], pca) -
             sum(dnorm(scores, mean = scores_median, sd = lambda*pca$sdev, log = TRUE))
         })

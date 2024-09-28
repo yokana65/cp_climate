@@ -12,6 +12,33 @@ output:
 
 The following section is meant to give a comprehensive overview of all formulars involved in the calculation of the compositional PCA.  
 
+## Model Steyer and Greven (2023)
+
+## Application to compositional data
+
+
+The general reasoning for the application is that it is well suited to PCA on "sparesely observed" data, i.e. where some of the categories have
+low counts of observations. Since we model the observations as samples from a stochhastic process, we can account for the sampling errors in the data.
+
+The key is the translate the application from densities with respect to the lebesgue measure to densities with respect to the discrete measure.
+
+For our application with 13 elements, we derive the following measure:
+
+$\mathcal{f} : \left\{A_{1}, \ldots, A_{k}\right\} \rightarrow \mathbb{R}$
+
+with $\pi_{k}=f\left(A_{k}\right)$ for all $k=1, \ldots, N$
+and the restriction:  $\sum_{k=1}^{N} \pi_{k}=1$, which defines the **simplex**  identified with the simplex $\left\{\boldsymbol{\pi} \in \mathbb{R}^{N} \mid \sum_{k=1}^{N} \pi_{k}=1, \pi_{k} \geq 0 \forall k=1, \ldots, N\right\}$
+that identifies a $mathcal{N-1}$-dimensional Hilbert space  dimensional Hilbert space $\mathcal{H}=\mathbb{R}_{0}^{N}=\left\{\boldsymbol{\rho} \in \mathbb{R}^{N} \mid \sum_{k=1}^{N} \rho_{k}=0\right\}$ (Aitchison 1982) with the 
+clr transformation ratio transformation $\boldsymbol{\rho}=\operatorname{clr}(\boldsymbol{\pi})=\left(\log \left(\pi_{1}\right)-\frac{1}{N} \sum_{k=1}^{N} \log \left(\pi_{k}\right), \ldots, \log \left(\pi_{N}\right)-\frac{1}{N} \sum_{k=1}^{N} \log \left(\pi_{k}\right)\right)$.
+
+TODO: What is the Bayes Hilbert Space in the compositional case? What is the "Aitchison Geometry on B?" -> Egozcue
+
+
+
+### The discrete measure
+
+
+
 ## Latent density model
 
 Steyer and Greven (2023) propose a latent density model to conduct a functional principal component analysis in Bayes spaces for "sparsely observed" densities. Their approach is directly applicable for the analysis of discrete (count) compositions. 
@@ -74,7 +101,7 @@ Dies entspricht: $\mu^{(h)}(x) + \sum_{k=1}^{N} \boldsymbol{z}{i}^{T} \boldsymbo
 
 $$ p\left(\mathbf{z}{i} \mid \boldsymbol{x}{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) \propto \frac{\exp \left(\sum_{j=1}^{m_{i}}\left(\mu^{(h)}\left(x_{i j}\right)+\sum_{k=1}^{N} \boldsymbol{z}{i}^{T} \boldsymbol{v}{k}^{(h)} e_{k}\left(x_{i j}\right)\right)\right)}{\left(\int_{I} \exp \left(\mu^{(h)}(x)+\sum_{k=1}^{N} \boldsymbol{z}{i}^{T} \boldsymbol{v}{k}^{(h)} e_{k}(x)\right) d x\right)^{m_{i}}} \prod_{k=1}^{N} p\left(z_{i k} \mid \sigma_{k}^{2^{(h)}}\right) $$
 
-```{r, formular, eval=FALSE}
+```{r, formular 1, eval=FALSE}
   sum(clr_density[idxs, 2]) - length(idxs)*log(f_integral) - sum(0.5*scores^2/(pca$sdev^2))
 ```
 
@@ -123,7 +150,7 @@ $\boldsymbol{z}_{i}=\boldsymbol{V}^{(h)}\left(\boldsymbol{\theta}_{i}-\boldsymbo
 
 Calculate the weights:
 
-```{r, formular weights, eval=FALSE}
+```{r, formular weights 2, eval=FALSE}
 log_weights <- apply(proposal_scores[[i]], 2, function(scores){
     conditional_scores_log_density(scores, x_grid, x_data[[i]], pca) -
       sum(dnorm(scores, mean = scores_median, sd = lambda*pca$sdev, log = TRUE))
@@ -141,7 +168,7 @@ with `density`being:
 
 The weight for the $i$-th observation is calculated as:
 
-```{r, formular weights, eval=FALSE}
+```{r, formular weights 3, eval=FALSE}
 weights[[i]] <- exp(log_weights)/sum(exp(log_weights))
 ```
 
@@ -156,3 +183,213 @@ $$ X_{ij} = (X_{ij1}, ..., X_{ijN}) \stackrel{i.i.d.}{\sim} \operatorname{clr}^{
 
 $$ \text{with} \quad G_i =  \stackrel{i.i.d.}{\sim} \mathcal{N}(\boldsymbol{\nu}, \boldsymbol{\Sigma}) $$
 
+### orthonormal basis
+
+Ergozcue 2003, p. 291
+
+Definere eine orthonormale Basis $e_1, ..., e_N$ in $R^{D-1}$:
+$$
+\begin{equation*}
+\mathbf{e}_{i}=\sqrt{\frac{i}{i+1}}[\underbrace{\frac{1}{i}, \ldots, \frac{1}{i}}_{i \text { elements }},-1,0, \ldots, 0] \tag{17}
+\end{equation*}
+$$
+
+Dies entspricht der normierten Version des "Auswahlvektors" $[1,-1,0, .... , 0], [0,1,-1,0, .... , 0], ... , [0,0, .... , 0,1,-1]$ (see Gram-Schmidt Prozedure).
+
+```{r define orthonormal basis, eval=TRUE}
+library(compositions)
+
+generate_orthonormal_basis <- function(k, D) {
+  # i: index of the basis vector (1-based index)
+  # n: total number of elements in the vector
+  
+  # Calculate the scaling factor
+  scaling_factor <- sqrt(k / (k + 1))
+  
+  # Create the vector with i elements of 1/i, followed by -1, and then zeros
+  basis_vector <- c(rep(1 / k, k), -1, rep(0, D - k - 1))
+  
+  # Scale the vector
+  basis_vector <- scaling_factor * basis_vector
+  
+  return(basis_vector)
+}
+
+
+```
+
+Firstly, the vectors $e_k$ are orthonormal, i.e. $\langle e_k, e_l \rangle = {0}$ and constitute the basis of a (D-1) linear subspace.
+
+```{r check orthogonality, eval=FALSE}
+scalar_products <- crossprod(basis_vectors)
+```
+
+Durch die inverse clr-Transformation kann eine Aithcison orthonormale Basis erzeugt werden.
+
+```{r aitchison orthonormal basis, eval=FALSE}
+basis_matrix_a <- clrInv(basis_matrix)
+```
+
+Define $e_i$ mit
+
+$$
+\begin{equation*}
+\mathbf{e}_{i}=\mathcal{C}\left(\exp \mathbf{u}_{\mathrm{i}}\right)=\mathcal{C}[\exp (\underbrace{\sqrt{\frac{1}{i(i+1)}}, \ldots, \sqrt{\frac{1}{i(i+1)}}}_{i \text { elements }},-\sqrt{\frac{i}{i+1}}, 0, \ldots, 0)] \tag{18}
+\end{equation*}
+$$
+
+```{r aitchison orthonormal basis 2, eval=TRUE}
+
+generate_orthonormal_basis_e <- function(k, D) {
+  # i: index of the basis vector (1-based index)
+  # n: total number of elements in the vector
+  
+  # Create the vector with i elements of 1/i, followed by -1, and then zeros
+  basis_vector <- c(rep(sqrt(1 / k*(k+1)), k), -sqrt(1 / (k+1)), rep(0, D - k - 1))
+  
+  # transform the vector
+  basis_vector <- exp(basis_vector)
+  return(basis_vector)
+}
+
+```
+
+TODO: we still need to find the correct closure operator on this vector, but we can use $u_i$ and the clrInv operation instead.
+
+
+The Aitchison inner product is defined as:
+
+$$
+\begin{equation*}
+\langle\mathbf{x}, \mathbf{y}\rangle_{A}=\frac{1}{D} \sum_{i>j}^{D} \ln \frac{x_{i}}{x_{j}} \ln \frac{y_{i}}{y_{j}} \tag{2.4}
+\end{equation*}
+$$
+
+```{r aitchison inner product, eval=FALSE}
+scalar(basis_matrix_a[1,], basis_matrix_a[12,])  
+```
+
+Zusätzlich gilt, dass $e_k$ aus Unit-Vektoren besteht.
+
+Mit orthonormalen Basen ist es möglich Koordinatensysteme mit **Partitionen** von Komponenten zu definieren, was ein wichtiger Teil der fortgeschrittenen Analyse werden könnte.
+
+Außerdem dienen orthonormale Basen als Grundlage der ilr-Transformation.
+
+$$
+\begin{equation*}
+\mathbf{y}=\operatorname{ilr}(\mathbf{x})=\left[\left\langle\mathbf{x}, \mathrm{e}_{1}\right\rangle_{a},\left\langle\mathbf{x}, \mathrm{e}_{2}\right\rangle_{a}, \ldots,\left\langle\mathbf{x}, \mathbf{e}_{D-1}\right\rangle_{a}\right] \tag{23}
+\end{equation*}
+$$
+
+```{r ilr, eval=FALSE}
+x_ilr <- ilr(x)
+
+x_ilr_2 <- ilr(x, basis = basis_matrix_a)
+
+# be aware that scalar is a function of the composition package
+scalar_products <- sapply(1:nrow(basis_matrix_a), function(k) {
+  scalar(x, basis_matrix_a[k, ])
+})
+
+x_ilr_3 <- as.data.frame(scalar_products)
+
+```
+
+The three different ways of calculating lead to the same results (except of an arbitrary direction factor).
+
+Die orthonormalen Basen geben uns dementsprechend eine Möglichkeit die Originaldaten im Simplex eindeutig über die 
+ilr-transformierten Koordinaten zu identifizieren:
+
+$$
+\begin{equation*}
+\mathbf{x}=\operatorname{ilr}^{-1}(\mathbf{y})=\bigoplus_{i=1}^{D-1}\left(\left\langle\mathbf{y}, \vec{e}_{i}\right\rangle \otimes \mathbf{e}_{i}\right) \tag{24}
+\end{equation*}
+$$
+
+mit 
+
+
+$\left\langle\mathbf{y}, \vec{e}_{i}\right\rangle=\left\langle\mathbf{x}, \mathbf{e}_{i}\right\rangle_{a}=y_{i}$
+
+#### summary
+
+```{r summary, eval=TRUE}
+# example data
+x <-matrix(c(0.2,0.5,0.3,0.1,0.4,0.5,0.4,0.3,0.3,0.3,0.5,0.2), nrow=4,ncol=3,byrow=TRUE)
+x_clr <- clr(x)
+
+n <- 3  # Total number of elements in the vector
+basis_vectors <- lapply(1:(n - 1), generate_orthonormal_basis, D = n)
+
+basis_matrix <- do.call(rbind, basis_vectors)
+```
+
+The orthonormal basis in clr-Space are defined by:
+$$
+\begin{equation*}
+\mathbf{u}_{i}=\sqrt{\frac{i}{i+1}}[\underbrace{\frac{1}{i}, \ldots, \frac{1}{i}}_{i \text { elements }},-1,0, \ldots, 0] \tag{17}
+\end{equation*}
+$$
+
+```{r summary 2, eval=TRUE}
+basis_matrix
+scalar(basis_matrix[1,], basis_matrix[2,])
+sum(basis_matrix[1,])
+```
+
+Mit unit norm Null und Orthogonalität untereinander.
+
+Dies entspricht den relativen Beziehungen der Teile A,B,C:
+1. $u_1$ entspricht A gegen B bei neutralem C
+2. $u_2$ entspricht C gegen neutrale A und B
+
+Damit sind alle relativen Beziehungen erfasst. Z.B. ist A gegen C bei konstanten B in 2. enthalten und A gegen B bei neutralem C in 1.
+
+$\operatorname{clr}\left(\mathbf{e}_{i}\right)=\mathbf{u}_{i}$
+
+```{r summary 3, eval=TRUE}
+(basis_matrix_a <- clrInv(basis_matrix))
+scalar(basis_matrix_a[1,], basis_matrix_a[2,])
+sum(basis_matrix_a[1,])
+```
+
+Wir wissen, dass das Aitchison-Skalarprodukt der Originalkoordinaten identisch dem Skalarprodukt im transformierten Raum ist.
+
+```{r summary 4, eval=TRUE}
+x_acomp <- acomp(x)
+# Aitchison-Skalarprodukt
+scalar(x_acomp[1,], x_acomp[2,])
+x_clr_acomp <- clr(x_acomp)
+# Standard Skalarprodukt
+crossprod(x_clr_acomp[1,], x_clr_acomp[2,])
+# Dies entspricht der Summe der Produkte der clr-Komponenten
+sum(x_clr_acomp[1,] * x_clr_acomp[2,])
+
+
+# vec_e_1 <- ilr(basis_matrix_a[1,])
+```
+
+Folgender Teil ist noch nicht ganz klar:  $\operatorname{ilr}\left(\mathbf{e}_{i}\right)=\vec{e}_{i}$ 
+
+Die Dekomposition einer Komposition im clr-Raum kann durch die folgende Formel beschrieben werden:
+$$
+\begin{equation*}
+\operatorname{clr}(\mathbf{x})=\sum_{k=1}^{D-1} y_{k} \operatorname{clr}\left(\mathbf{e}_{k}\right)=\sum_{k=1}^{D-1} y_{k} \mathbf{u}_{k}=\operatorname{ilr}(\mathbf{x}) \mathbf{U} \tag{27}
+\end{equation*}
+$$
+
+```{r summary 5, eval=TRUE}
+x_ilr <- ilr(x)
+clrInv(x_ilr %*% basis_matrix*(-1))
+
+
+col_vec <- matrix(c(x_ilr[,1]), ncol=1)
+row_vec <- matrix(c(basis_matrix[1,]), nrow=1)
+sum_1 <- col_vec %*% row_vec
+col_vec <- matrix(c(x_ilr[,2]), ncol=1)
+row_vec <- matrix(c(basis_matrix[2,]), nrow=1)
+sum_2 <- col_vec %*% row_vec
+clrInv((sum_1 + sum_2)*(-1))
+```
+
+More importantly, this implies that the clr-coordinates are identical to the projected ilr-coordinates onto the orthonormal basis vectors. **Which basically means we can just use the clr-coordinates in our calculations??**

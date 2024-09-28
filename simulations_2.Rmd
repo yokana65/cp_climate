@@ -533,4 +533,165 @@ pca$rotation <- apply(pca$rotation, 2, function(g) center_function(cbind(x_grid,
       
 ```
 
+
+### Weighted likelihood estimation
+
+The core of the Expectation step is the approximation of the conditional expectation:
+$$
+\begin{equation*}
+Q\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) \approx \sum_{i=1}^{n} \sum_{t=1}^{r} \frac{\omega_{i t}}{\sum_{t=1}^{r} \omega_{i t}} \log \left(p\left(\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)\right)+\text { const. } \tag{10}
+\end{equation*}
+$$
+
+where every weight is a weighted sample t from the distribution of scores conditional on $x_1$ and the current parameters $\nu$ and $\Sigma$ over the auxiliary distribution, which is denoted as 
+`conditional_scores_log_density`.
+
+This function calculates $\theta_i$ (`clr_density`) as a function of the scores $z_i$ and $\mu$ and $V$. $\theta_i$ is evaluated on an approximationof the compact intervall $[0,1]$.
+In the compositional case, this would be a D-dimensional vector.
+This function is then evaluated at `idxs`, i.e. the index of the closest point in the grid to the respective data point in $x_i$.
+Then Formular 9 is evaluted with $\theta$ at each index of `idxs`over the integral of all the points in the grid.
+Here the clr-transformation is given by:
+$$
+\begin{equation*}
+\operatorname{clr}^{-1}(g)=\frac{\exp (g)}{\int_{I} \exp (g(x)) d x} \tag{4}
+\end{equation*}
+$$
+
+For doing the transformation from the original data to the compositional data, the open question is how we translate the product over $m_i$ times the inverse clr-transformation, 
+which is:
+$\mathbf{x}=\mathscr{C}\left[\exp \left(\mathbf{x}^{*}\right)\right]$ (Delgado et al. 2013, p.441).
+
+Another question is how the information of $x_i$ is actually incorporated into the `conditional_scores_log_density` function.
+
+```{r weighted likelihood estimation 2, eval=FALSE}
+
+# objective function
+conditional_scores_log_density <- function(scores, x_grid, x_data_i, pca){
+  clr_density <- cbind(x_grid, pca$center + pca$rotation%*%scores)
+  idxs <- sapply(x_data_i, function(x) {
+    which.min((x - x_grid) ^ 2)
+  })
+  mid_points <- c(x_grid[1], x_grid[-1] - 0.5*diff(x_grid), x_grid[length(x_grid)])
+  f_integral <- sum(exp(clr_density[,2])*diff(mid_points))
+  
+  sum(clr_density[idxs, 2]) - length(idxs)*log(f_integral) - sum(0.5*scores^2/(pca$sdev^2))
+}
+
+```
+
+After drawing from the auxiliary distribution, we calculate the weights $\omega_{i t}$ as the ratio of the conditional density of the scores and the draws from auxiliary distribution  $p_{i}^{*}$.
+
+```{r weighted likelihood estimation 3, eval=FALSE}
+        log_weights <- apply(proposal_scores[[i]], 2, function(scores){
+          # Formular 8
+          conditional_scores_log_density(scores, x_grid, x_data[[i]], pca) -
+            sum(dnorm(scores, mean = scores_median, sd = lambda*pca$sdev, log = TRUE))
+        })
+```
+
+The weights are finally multiplied with the proposal scores, which is equivalent to the weighted likelihood estimation of the scores.
+
+```{r weighted likelihood estimation 4, eval=FALSE}
+      mu_scores <- rowMeans(sapply(seq_along(weights), function(i){
+        proposal_scores[[i]]%*%weights[[i]]
+      }))
+```
+
+### Toy example
+
+For a given sample $i$ the mode is calculated as a N-Dimensional vector:
+
+```{r toy example, eval=TRUE}
+plot(scores_median)
+abline(h = 0)
+```
+
+From this mode, the scores are drawn from a normal distribution with the mode as mean and the diagonal matrix of eigenvalues from $\sigma$ as the covariance matrix.
+This is stored in `proposal_scores` as a $Nxr$ matrix containing $r$ draws. Since the eigenvalues are sorted in descending order, the proposal scores are more spread for the first
+components (out of N components).
+
+```{r toy example 2, eval=TRUE}
+proposal_scores[[1]] <- sapply(1:(r*k), function(t){
+  matrix(rnorm(length(scores_median), mean = scores_median, sd = lambda*pca$sdev))
+})
+
+num_columns <- ncol(proposal_scores[[1]])
+
+# Create a new plot window
+plot(NULL, xlim = c(1, nrow(proposal_scores[[1]])), ylim = range(proposal_scores[[1]]),
+     xlab = "Index", ylab = "Value", main = "Column Plots")
+
+# Plot each column
+for (i in 1:num_columns) {
+  points(proposal_scores[[1]][, i], col = i)
+}
+
+# Add a legend
+legend("topright", legend = paste("Column", 1:num_columns),
+       col = 1:num_columns, lty = 1)
+```
+
+Those proposal scores are then evaluated at the at the respective indexes for the distribution of $theta_i$ given the initial parameters $\nu$ and $\Sigma$ and their 
+**eigendecomposition**.
+The "Nenner" of the weights is calculated as the sum of the probability of each proposal score given the auxiliary distribution.
+
+```{r toy example 3, eval=TRUE}
+log_weights <- apply(proposal_scores[[i]], 2, function(scores){
+  # Formular 8
+  conditional_scores_log_density(scores, x_grid, x_data[[i]], pca) -
+    sum(dnorm(scores, mean = scores_median, sd = lambda*pca$sdev, log = TRUE))
+})
+```
+
+The weights are an estimator of the likelihood of the proposed scores  for each i.
+
+Finally, in the maximisation step the conditional expectation of the scores is estimated as mean of the weighted scores.
+
+```{r toy example 4, eval=TRUE}
+mu_scores <- rowMeans(sapply(seq_along(weights), function(i){
+  proposal_scores[[i]]%*%weights[[i]]
+}))
+
+plot(mu_scores)
+```
+
+Open question: Since all calculations are done on the latent transformed densities $g_{i}=\mu^{(h)}+\sum_{\underline{k=1}}^{N} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} e_{k}, i=1, \ldots, n$ and
+we set initial values for $\mu^{(h)}$ and $\Sigma^{(h)}$, when do we ever take $x_i$ into account?
+
+
 # Simulation study compositional data
+
+```{r weighted likelihood estimation, eval=FALSE}
+
+# objective function
+conditional_scores_log_density <- function(scores, x_data_i, pcx){
+  # synthetic data with CoDa PCA results
+  clr_comp <- pcx$center[1:D-1] + as.vector(scores%*%pcx$loadings)
+
+  norm_constant <- sum(exp(clr_comp))
+  
+  # sum(clr_density[idxs, 2]) - length(idxs)*log(f_integral) - sum(0.5*scores^2/(pca$sdev^2))
+  sum(clr_comp) - log(norm_constant) - sum(0.5*scores[1:12]^2/(pcx$sdev^2))
+}
+
+# adjusted gradient
+
+for(i in 1:nrow(clr_densities)){
+  optim_result <- optim(rep(0, length = length(pca$sdev)), conditional_scores_log_density, gr = gradient_csld,
+                              x_grid = x_grid, x_data_i = x_data[[i]], pca = pca,
+                              control = list(fnscale = -1), method = "BFGS")
+  scores_median <- as.vector(optim_result$par)
+  # importance sampling
+  proposal_scores[[i]] <- sapply(1:(r*k), function(t){
+    matrix(rnorm(length(scores_median), mean = scores_median, sd = lambda*pca$sdev))
+  })
+  log_weights <- apply(proposal_scores[[i]], 2, function(scores){
+    conditional_scores_log_density(scores, x_grid, x_data[[i]], pca) -
+      sum(dnorm(scores, mean = scores_median, sd = lambda*pca$sdev, log = TRUE))
+  })
+  # increase numerical stability
+  log_weights <- log_weights - mean(log_weights, na.rm = TRUE)
+  weights[[i]] <- exp(log_weights)/sum(exp(log_weights))
+}
+
+```
