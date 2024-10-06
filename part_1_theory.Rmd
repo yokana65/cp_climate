@@ -1,0 +1,26 @@
+---
+title: "Theoretical Framework"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    number_sections: true
+    code_folding: hide
+---
+
+# Introduction
+
+# Theoretical Framework
+
+The observed data is considered a *count composition*, which is a specific type of compositional data (Boogart et al. 2013, p. 34). 
+The counts can be seen as proportional to the relative sizes of the parts of a whole.
+
+## Likelihood function
+
+$$
+p(\mathbf{x}_i \mid \boldsymbol{\theta}i) = \text{Multinomial}(\mathbf{x}i; m_i, \mathbf{p}i(\boldsymbol{\theta}i)) = \frac{m_i!}{\prod{j=1}^{D} x{ij}!} \prod{j=1}^{D} p{ij}(\boldsymbol{\theta}i)^{x{ij}}
+$$
+
+$$
+\log p(\mathbf{x}i \mid \boldsymbol{\theta}i) = \sum{j=1}^{D} x{ij} \log p_{ij} 
+$$
