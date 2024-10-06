@@ -16,6 +16,7 @@ Get all relevant functions: (To avoid unneccassary system calls, all functions a
 ```{r load libraries, eval=TRUE}
 library(targets)
 library(ggplot2)
+library(compositions)
 ```
 
 
@@ -360,6 +361,7 @@ $$
 conducting a PCA on the clr transformed densities.
 
 ```{r initial values, eval=TRUE}
+
 center_function <- function(f_data){
   mid_points <- c(f_data[1,1], f_data[-1,1] - 0.5*diff(f_data[,1]), f_data[nrow(f_data),1])
   f_integral <- sum(f_data[,2]*diff(mid_points))
@@ -367,9 +369,21 @@ center_function <- function(f_data){
   f_data
 }
 
+L_2_norm <- function(f_data){
+  mid_points <- c(f_data[1,1], f_data[-1,1] - 0.5*diff(f_data[,1]), f_data[nrow(f_data),1])
+  sqrt(sum(f_data[,2]^2*diff(mid_points)))
+}
+
 clr_trafo <- function(f_data){
   f_data[,2] <- log(f_data[,2])
   center_function(f_data)
+}
+
+inverse_clr_trafo <- function(clr_density){
+  mid_points <- c(clr_density[1, 1], clr_density[-1, 1] - 0.5*diff(clr_density[,1]),
+                  clr_density[nrow(clr_density),1])
+  f_integral <- sum(exp(clr_density[,2])*diff(mid_points))
+  data.frame("x" = clr_density[,1], "y" = exp(clr_density[,2])/f_integral)
 }
 
 # set values as in fit_density_pca
@@ -483,6 +497,168 @@ for(i in 1:nrow(clr_densities)){
 
 ```
 
+#### Conditional score function
+
+This function includes the information given un the observations $x_{i}$ and the current parameters $\nu$ and $\Sigma$.
+
+To better understand what is happening, lets digest the data. First, what is our observation $x_{i}$?
+
+- 40 samples from $f_i$ on the Intervall $[0,1]$
+
+We can use Kernel estimation to estimate the density of $f_i$ given the observations $x_{i}$:
+
+```{r plot_data x_i, eval=TRUE}
+summary(x_data[[1]])
+
+density_1 <- density(x_data[[1]], from = min(x_grid), to = max(x_grid), 
+                       kernel = "gaussian", bw,
+                       n = length(x_grid))
+plot(density_1, main = "Density of x_1")
+```
+
+Here each point on the interval has a density $f(x_{i})$ and the density is given by the Kernel function with its integral being equal to 1.
+
+To be able to make calculations on the observed data, we need the functional clr transformation and preserve the grid:
+
+```{r clr data x_i, eval=TRUE}
+densities_estimated <- lapply(1:length(x_data), function(i){
+  density <- density(x_data[[i]], from = min(x_grid), to = max(x_grid), 
+                      kernel = "gaussian", bw, 
+                      n = length(x_grid))
+  data.frame("x" = density$x, "y" = density$y)
+})
+
+clr_densities_estimated <- lapply(densities_estimated, clr_trafo)
+clr_densities <- do.call("rbind", sapply(clr_densities_estimated, '[', 2))
+
+clr_density_1 <- clr_densities_estimated[[1]]
+
+plot(clr_density_1, type = "l", main = "Density of clr(x_1)")
+```
+
+The clr coordinates (of all observations) are now the basis to evaluate $\mu$ and $\Sigma$ of the stochhastic process:
+$$
+\begin{equation*}
+X_{i j} \stackrel{i . i . d .}{\sim} \operatorname{clr}^{-1}\left(G_{i}\right)=\frac{\exp \left(G_{i}\right)}{\int_{I} \exp \left(G_{i}(x)\right) d x} \quad \text { with } \quad G_{i}=\sum_{k=1}^{N} \theta_{i k} e_{k} \text { and } \boldsymbol{\theta}_{i}=\left(\theta_{i 1}, \ldots, \theta_{i N}\right) \stackrel{i . i . d .}{\sim} \mathcal{N}(\boldsymbol{\nu}, \boldsymbol{\Sigma}) \tag{5}
+\end{equation*}
+$$
+
+Given the current estimates of $\nu$ and $\Sigma$ we can calculate the conditional distribution of the scores $z_{i}$: $ p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) $
+
+Only that we replace this by the conditional distribution of our observations $x_{i}$ given the scores. To get a better understanding of what this means, we will look at all relevant conditional distributions in this process.
+
+1. we find the mode of the posterior distribution for observation i
+
+```{r mode calculation, eval=TRUE}
+optim_result <- optim(rep(0, length = length(pca$sdev)), conditional_scores_log_density, gr = gradient_csld,
+                        x_grid = x_grid, x_data_i = x_data[[1]], pca = pca,
+                        control = list(fnscale = -1), method = "BFGS")
+  scores_median <- as.vector(optim_result$par)
+
+length(scores_median)
+```
+
+The mode is in  $\mathbb{R}^{n}$ since it is a Projection onto the principal component space given by $\boldsymbol{V}^{(h)}$. It gives the coefficients of the linear combinations of the eigenvectors $\left(\boldsymbol{v}_{1}^{(h)}, \ldots, \boldsymbol{v}_{N}^{(h)}\right)$ 
+that approximate $clr(x_i)$ the best given the current parameters $\nu$ and $\Sigma$.
+
+We can check the approximation by 
+
+```{r approximation of x_i, eval=TRUE}
+
+x_1_approx <- pca$center + pca$rotation%*%scores_median
+
+# lässt sich nur an den indecies von x_i auf x_grid sehen
+plot(x_1_approx, type = "l", main = "Compare clr-coordinates of x_1 and reconstructed x_1 (first iteration)")
+lines(clr_density_1$y, col = "red")
+lines(pca$center, col = "green")
+
+```
+
+with every iteration, this approximation should get better. (A problem is that the estimates here are basically zero).
+
+Actually, nothing happens here. Maybe its just a step for constructing the (arbitrary) auxiliary distribution?
+That is given that we are looking for the mode of the posterior distribution, nothing much is updated given our observations. 
+
+With the mode, we can sample from $p_{i}^{*}\left(\boldsymbol{z}_{i}\right)$ to be $\mathcal{N}\left(\boldsymbol{z}_{i}^{*}, \lambda \operatorname{diag}\left(\sigma_{1}^{2(h)}, \ldots, \sigma_{N}^{2}{ }^{(h)}\right)\right)$
+
+```{r sample from auxiliary distribution, eval=FALSE}
+proposal_scores <- list(length(x_data))
+lambda <- 1
+
+proposal_scores[[1]] <- sapply(1:(10*1), function(t){
+  matrix(rnorm(length(scores_median), mean = scores_median, sd = lambda*pca$sdev))
+})
+
+```
+
+This gives us N by t matrices, i.e. each column is a sample of scores. Those samples are the 
+"points" at which the density functions are evaluated. With that we can calculate our weights.
+
+That is first of all, the conditional_scores_log_density function is evaluated at the given score for
+sample t.
+
+```{r calculate weights, eval=FALSE}
+# apply goes over all columns of the proposal_scores list
+log_weights <- apply(proposal_scores[[1]], 2, function(scores){
+  conditional_scores_log_density(scores, x_grid, x_data[[1]], pca) -
+    sum(dnorm(scores, mean = scores_median, sd = lambda*pca$sdev, log = TRUE))
+})
+
+# lets calculate an example for t = 1
+ density_at_score_1 <- conditional_scores_log_density(proposal_scores[[1]][,1], x_grid, x_data[[1]], pca)
+
+# now what happens inside that function?
+# first the clr density given sigma and the sampled scores_t is calculated
+x_data_i <- x_data[[1]]
+scores_1 <- proposal_scores[[1]][,1]
+clr_density_2 <- cbind(x_grid, pca$center + pca$rotation%*%scores_1)
+scores_2 <- proposal_scores[[1]][,2]
+clr_density_2 <- cbind(x_grid, pca$center + pca$rotation%*%scores_2)
+plot(clr_density_1, type = "l", main = "Density of clr(x_1)")
+lines(clr_density_2, type = "l", col = "red")
+# then the indices for x_i are found
+idxs <- sapply(x_data_i, function(x) {
+  which.min((x - x_grid) ^ 2)
+})
+# the clr density is then evaluated at the indices
+clr_density_at_x_i_1 <- clr_density_1[idxs,2]
+sum(clr_density_at_x_i_1)
+# the prior is substracted
+sum(0.5*scores_1^2/(pca$sdev^2))
+
+clr_density_at_x_i_2 <- clr_density_2[idxs,2]
+sum(clr_density_at_x_i_2)
+# the prior is substracted
+sum(0.5*scores_2^2/(pca$sdev^2))
+
+## How do those results differ for different observations x_i?
+x_data_i_2 <- x_data[[2]]
+scores_1 <- proposal_scores[[1]][,1]
+clr_density_2 <- cbind(x_grid, pca$center + pca$rotation%*%scores_1)
+scores_2 <- proposal_scores[[1]][,2]
+clr_density_2 <- cbind(x_grid, pca$center + pca$rotation%*%scores_2)
+plot(clr_density_1, type = "l", main = "Density of clr(x_1)")
+lines(clr_density_2, type = "l", col = "red")
+# then the indices for x_i are found
+idxs <- sapply(x_data_i_2, function(x) {
+  which.min((x - x_grid) ^ 2)
+})
+# the clr density is then evaluated at the indices
+clr_density_at_x_i_1 <- clr_density_1[idxs,2]
+sum(clr_density_at_x_i_1)
+# the prior is substracted
+sum(0.5*scores_1^2/(pca$sdev^2))
+
+clr_density_at_x_i_2 <- clr_density_2[idxs,2]
+sum(clr_density_at_x_i_2)
+# the prior is substracted
+sum(0.5*scores_2^2/(pca$sdev^2))
+
+
+```
+
+At the end of that the expected complete-data log likelihood is approximated as a weighted sum of the sampled scores resulting in the most likely score (`mu_scores`) 
+
 ### Maximization step
 
 
@@ -595,6 +771,31 @@ The weights are finally multiplied with the proposal scores, which is equivalent
       mu_scores <- rowMeans(sapply(seq_along(weights), function(i){
         proposal_scores[[i]]%*%weights[[i]]
       }))
+```
+
+### The gradient
+
+The gradient of the objective function is given by:
+
+$$
+\nabla \log \left(p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)\right)=\sum_{k=1}^{N} \boldsymbol{v}_{k}^{(h)}\left(\sum_{j=1}^{m_{i}} e_{k}\left(x_{i j}\right)-m_{i}\left\langle f_{\mathbf{z}_{i}}, e_{k}\right\rangle_{\mathbb{L}_{2}}\right)-\left(\frac{z_{i l}}{\sigma_{l}^{2^{(h)}}}\right)_{l=1, \ldots, N}
+$$
+
+This is computed as: 
+
+```{r gradient, eval=FALSE}
+gradient_csld <- function(scores, x_grid, x_data_i, pca){
+  idxs <- sapply(x_data_i, function(x) {
+    which.min((x - x_grid) ^ 2)
+  })
+  mid_points <- c(x_grid[1], x_grid[-1] - 0.5*diff(x_grid), x_grid[length(x_grid)])
+  density <- inverse_clr_trafo(cbind(x_grid, pca$center + pca$rotation%*%scores))
+  
+  sapply(seq_along(scores), function(k){
+    scalar_prod <- sum(density[,2]*pca$rotation[, k]*diff(mid_points))
+    sum(pca$rotation[idxs, k]) - length(idxs)*scalar_prod - scores[k]/(pca$sdev[k]^2)
+  })
+}
 ```
 
 ### Toy example
