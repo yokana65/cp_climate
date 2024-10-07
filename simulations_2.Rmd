@@ -862,9 +862,170 @@ we set initial values for $\mu^{(h)}$ and $\Sigma^{(h)}$, when do we ever take $
 
 # Simulation study compositional data
 
+We try to transform the MCEM algorithm to the compositional case. Firstly, we need some data. In a first approach the 
+data is generated using the orthonormal bases $e_k$ from Egozcue et al. 2003 to construct the principal components.
+
+```{r simulation compositional data, eval=TRUE}
+
+# define number of components
+n_components <- 13
+x_grid <- seq(1, n_components)
+# make the neutral element the center for a start
+raw_data <- data.frame("x" = x_grid, "y" = rep(0, n_components))
+
+center_function_comp <- function(comp_data){
+  mean <- mean(comp_data[,2])
+  comp_data[,2] <- comp_data[,2] - mean
+  comp_data
+}
+
+clr_mean <- center_function_comp(raw_data)
+
+# zwei Hauptkomponenten im clr-Raum
+# PC1 is a balancing effect between the the first five elements and the sixths element
+# alternative: use Egozcue et al. (2003) orthogonal basis
+pc_1 <- data.frame("x" = x_grid, "y" = c(rep(sqrt(5/(5+1)*5^(-1)), 5),-1, rep(0, 7)))
+pc_1 <- center_function_comp(pc_1)
+# centering resolves in the sum of all elements being zero
+# Normalisierung
+pc_1[,2] <- pc_1[,2]/norm(pc_1[,2],type="2")
+
+
+pc_2 <- data.frame("x" = x_grid, "y" = c(rep(sqrt(12/(12+1)*12^(-1)), 12),0))
+pc_2 <- center_function_comp(pc_2)
+pc_2[,2] <- pc_2[,2]/norm(pc_2[,2], type="2")
+
+lambda_1 <- 0.5
+lambda_2 <- 0.2
+
+# Schritt 2: Simulieren Sie die Scores und konstruieren Sie die Dichten
+n_data <- 30
+true_observed_clr_comp <- sapply(1:n_data, function(i){
+  clr_mean[,2] + rnorm(1, 0, lambda_1)*pc_1[,2] + rnorm(1, 0, lambda_2)*pc_2[,2]
+})
+
+# error checking: Sum to zero
+check_columns_sum_to <- function(data, integer) {
+  n_cols <- ncol(data)
+  
+  columns_sum_to_zero <- logical(n_cols)
+  
+  for (i in 1:n_cols) {
+    column_sum <- sum(data[, i])
+    columns_sum_to_zero[i] <- (column_sum < integer)
+  }
+  
+  return(columns_sum_to_zero)
+}
+check_columns_sum_to(true_observed_clr_comp, 0.001)
+
+inverse_clr_trafo <- function(clr_density){
+  f_integral <- sum(exp(clr_density[,2]))
+  data.frame("x" = clr_density[,1], "y" = exp(clr_density[,2])/f_integral)
+}
+
+true_observed_comp <- lapply(1:n_data, function(i){
+  # TODO: remove x_grid
+  clr_density <- data.frame(x_grid, true_observed_clr_comp[,i])
+  inverse_clr_trafo(clr_density)
+})
+
+# Schritt 3: Datenpunkte aus den Dichten ziehen
+# Define number of counts when dealing with multinomial distributions
+n_counts <- 2000
+n_samples <- 40
+# change the structure to a list of compositions
+# x_data <- lapply(1:n_data, function(i){
+#   probs <- true_observed_densities[[i]][,2]
+#   t(rmultinom(n_samples, n_counts, probs))
+# })
+x_data <- unlist(lapply(1:n_data, function(i) {
+  probs <- true_observed_comp[[i]][,2]
+  # TODO: needs to be redesigned since X is modelled as a latent process G_i and not as Multinomial
+  samples <- t(rmultinom(n_samples, n_counts, probs))
+  lapply(1:nrow(samples), function(j) samples[j,])
+}), recursive = FALSE)
+
+# turn x_data into a matrix
+# TODO: Why do I need a list at all? 
+x_data_matrix <- do.call(rbind, x_data)
+
+
+```
+
+With this simplified data, we can run the MCEM algorithm, which should produce similar results to a classic pca:
+
+```{r classic pca, eval=TRUE}
+library(compositions)
+
+x_acomp <- acomp(x_data_matrix)
+x_clr <- clr(x_acomp)
+# dies ist equivalent zur Summe über k bis D-1 con clr(x_acomp[,k]*e_k))
+# TODO
+
+# # Schritt 4: Dichte-PCA schätzen
+
+# pcx <- princomp(x_acomp)
+# plot(pcx)
+# biplot(pcx)
+# pcx$loadings
+# alternative without compositions
+pca <- prcomp(na.omit(x_clr))
+plot(pca)
+biplot(pca)
+
+```
+
+The key for the transformation is the adjustment of the objective function and its gradient:
+
+```{r adjusted conditional scores function, eval=FALSE}
+# TODO: use an easier example with four components or so
+D <- 13
+# to check computation we need a random vector of scores
+# we can just choose a vector of pcx$scores
+scores <- as.vector(pcx$scores[1,])
+x_data_i <- x_data[[1]]
+
+clr_comp <- pca$center + pca$rotation%*%scores
+norm_constant <- sum(exp(clr_comp))
+
+# 1 calculate the log likelihood part sum(clr_comp) -> sum(x_data_i * clr_comp) 
+sum(x_data_i * clr_comp) - sum(x_data_i)*log(norm_constant) - sum(0.5*scores^2/(pca$sdev^2))
+```
+
+```{r adjusted gradient, eval=FALSE}
+# TODO: remove grid, replace counts, 
+gradient_csld_discrete <- function(scores, x_grid, x_data_i, pca) {
+  # Calculate probabilities in the original space
+  clr_density <- cbind(x_grid, pca$center + pca$rotation %*% scores)
+  # TODO: replace with correct clr inverse 
+  probs <- exp(clr_density[,2])
+  probs <- probs / sum(probs)
+  
+  # Count the frequencies of observations
+  counts <- table(factor(x_data_i, levels = x_grid))
+  
+  # Calculate the gradient
+  sapply(seq_along(scores), function(k) {
+    # Calculate the expected value of the k-th principal component
+    expected_pc <- sum(probs * pca$rotation[, k])
+    
+    # Calculate the observed value of the k-th principal component
+    observed_pc <- sum(counts / sum(counts) * pca$rotation[, k])
+    
+    # Gradient component
+    gradient_k <- observed_pc - sum(counts) * expected_pc - scores[k] / (pca$sdev[k]^2)
+    
+    return(gradient_k)
+  })
+}
+
+```
+
+
 ```{r weighted likelihood estimation, eval=FALSE}
 
-# objective function
+# adjusted objective function
 conditional_scores_log_density <- function(scores, x_data_i, pcx){
   # synthetic data with CoDa PCA results
   clr_comp <- pcx$center[1:D-1] + as.vector(scores%*%pcx$loadings)
