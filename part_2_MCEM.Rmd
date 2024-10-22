@@ -1,0 +1,480 @@
+---
+title: "Implementation MCEM algorithm"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    number_sections: true
+    code_folding: hide
+---
+
+
+## Methods
+
+In general, it is possible to use the `compositions`package to get most relevant methods. But we want to implement our own Methods
+to get a better understanding of the underlying functions.
+
+### ilrBase
+
+### clr
+
+### ilr
+
+# Algorithm
+
+We assume that `x_data` is a list of D-dimensional vectorsm representing the count composition of observation i. 
+
+For this simulation approach, we use specific orthonormal bases as representatives for the principal components. With that
+we can directly calculate the "true" densities $\pi_i$ as back transformations of $\rho_i$, which are linear combinations
+of the principal components.
+
+```{r simulation pcas, eval=TRUE}
+# PCA 1 with lambda = 0.5
+(c(rep(sqrt(5/(5+1)*5^(-1)), 5),-1, rep(0, 7)))
+# PCA 2 with lambda = 0.2
+(c(rep(sqrt(12/(12+1)*12^(-1)), 12),0))
+
+```
+
+
+```{r test data, eval=TRUE}
+
+# define number of components
+n_components <- 13
+x_grid <- seq(1, n_components)
+# make the neutral element the center for a start
+raw_data <- data.frame("x" = x_grid, "y" = rep(0, n_components))
+
+center_function_comp <- function(comp_data){
+  mean <- mean(comp_data[,2])
+  comp_data[,2] <- comp_data[,2] - mean
+  comp_data
+}
+
+clr_mean <- center_function_comp(raw_data)
+
+# zwei Hauptkomponenten im clr-Raum
+# PC1 is a balancing effect between the the first five elements and the sixths element
+# alternative: use Egozcue et al. (2003) orthogonal basis
+pc_1 <- data.frame("x" = x_grid, "y" = c(rep(sqrt(5/(5+1)*5^(-1)), 5),-1, rep(0, 7)))
+pc_1 <- center_function_comp(pc_1)
+# centering resolves in the sum of all elements being zero
+# Normalisierung
+pc_1[,2] <- pc_1[,2]/norm(pc_1[,2],type="2")
+
+
+pc_2 <- data.frame("x" = x_grid, "y" = c(rep(sqrt(12/(12+1)*12^(-1)), 12),0))
+pc_2 <- center_function_comp(pc_2)
+pc_2[,2] <- pc_2[,2]/norm(pc_2[,2], type="2")
+
+lambda_1 <- 0.5
+lambda_2 <- 0.2
+
+# Schritt 2: Simulieren Sie die Scores und konstruieren Sie die Dichten
+n_data <- 30
+true_observed_clr_comp <- sapply(1:n_data, function(i){
+  clr_mean[,2] + rnorm(1, 0, lambda_1)*pc_1[,2] + rnorm(1, 0, lambda_2)*pc_2[,2]
+})
+
+# error checking: Sum to zero
+check_columns_sum_to <- function(data, integer) {
+  n_cols <- ncol(data)
+  
+  columns_sum_to_zero <- logical(n_cols)
+  
+  for (i in 1:n_cols) {
+    column_sum <- sum(data[, i])
+    columns_sum_to_zero[i] <- (column_sum < integer)
+  }
+  
+  return(columns_sum_to_zero)
+}
+check_columns_sum_to(true_observed_clr_comp, 0.001)
+
+inverse_clr_trafo <- function(clr_density){
+  f_integral <- sum(exp(clr_density[,2]))
+  data.frame("x" = clr_density[,1], "y" = exp(clr_density[,2])/f_integral)
+}
+
+true_observed_comp <- lapply(1:n_data, function(i){
+  # TODO: remove x_grid
+  clr_density <- data.frame(x_grid, true_observed_clr_comp[,i])
+  inverse_clr_trafo(clr_density)
+})
+
+# Schritt 3: Datenpunkte aus den Dichten ziehen
+# Define number of counts when dealing with multinomial distributions
+n_counts <- 2000
+n_samples <- 40
+# change the structure to a list of compositions
+# x_data <- lapply(1:n_data, function(i){
+#   probs <- true_observed_densities[[i]][,2]
+#   t(rmultinom(n_samples, n_counts, probs))
+# })
+x_data <- unlist(lapply(1:n_data, function(i) {
+  probs <- true_observed_comp[[i]][,2]
+  # TODO: needs to be redesigned since X is modelled as a latent process G_i and not as Multinomial
+  samples <- t(rmultinom(n_samples, n_counts, probs))
+  lapply(1:nrow(samples), function(j) samples[j,])
+}), recursive = FALSE)
+
+# turn x_data into a matrix
+# TODO: Why do I need a list at all? 
+x_data_matrix <- do.call(rbind, x_data)
+
+```
+
+The key in the implementation is the eigendecomposition of $\Sigma$ with the resulting eigenvectors as principal components which 
+work as our orthonormal basis.
+
+- $\Sigma$ is the covariance matrix of the ilr-coefficients of our data, i.e. it is a $D-1xD-1$ matrix.
+- We need $V$ from the eigendecomposition of $\Sigma=V\Lambda V^T$ to be $D-1xD$ matrix
+- We use Singular Value Decomposition (Boogart et al. 2013, p. 177) to compute $$
+\operatorname{clr}\left(\mathbf{X}^{*}\right)=\mathbf{U} \cdot \mathbf{D} \cdot \mathbf{V}^{t}
+$$ 
+
+```{r simulation decomposition pcas, eval=TRUE}
+library(compositions)
+
+x_acomp <- acomp(x_data_matrix)
+x_clr <- clr(x_acomp)
+x_ilr <- ilr(x_acomp)
+pca <- prcomp(na.omit(x_clr))
+pcx <- princomp(x_clr)
+pcy <- princomp(x_acomp)
+pcz <- princomp(x_ilr)
+pcq <- prcomp(na.omit(x_ilr))
+# pcx$loadings
+# pca$rotation
+# pcy$loadings
+ilr_eigenvectors <- pcz$loadings
+clr_eigenvectors <- ilr2clr(ilr_eigenvectors)
+biplot(pcq)
+```
+
+TODO! Warum funktioniert eine PCA auf dem ilr-Raum nicht? Bzw. muss ich die Eigenvectoren wieder transformieren (Sieht erst mal nicht so aus)?
+Bzw. kann es sein, dass sie "besser" funktioniert? Schließlich werden die beiden Pivots exakt erfasst.
+
+### Mittelwertvektor
+
+
+
+We need the computation of the orthonormal bases $e_k$
+
+```{r bases, eval=FALSE}
+x <- matrix(c(0.2, 0.5, 0.3,
+              0.1, 0.4, 0.5,
+              0.4, 0.3, 0.3,
+              0.3, 0.5, 0.2), nrow = 4, ncol = 3, byrow = TRUE)
+
+# Zugriff auf die Funktion
+optimal_basis <- compositions:::gsi.optimalilrBase(x)
+build_base <- compositions:::gsi.buildilrBase(x)
+# Ausgabe der optimalen ilr-Basis
+build_base
+
+```
+
+## Fit Compositional PCA
+
+For the Expectation step of the MCEM algorithm, we apply importance sampling to generate samples of the conditional distribution 
+$\theta_i \mid \boldsymbol{x}_i, \boldsymbol{\nu}, \boldsymbol{\Sigma}$ for $i=1, \ldots, n$.
+
+$x_i$ are the observed count compositions $x_{i} = (x_{i1}, x_{i2}, ..., x_{iD})^T$ of our random variable $X_{i} \sim \text{Multinom}(m_i, \boldsymbol{\pi_i})$
+that is modelled through the following latent process: 
+
+$$
+\begin{equation*}
+X_{i j} \stackrel{i . i . d .}{\sim} \operatorname{clr}^{-1}\left(G_{i}\right) \quad \text { with } \quad G_{i}=\sum_{k=1}^{D-1} \theta_{i k} e_{k} \text { and } \boldsymbol{\theta}_{i}=\left(\theta_{i 1}, \ldots, \theta_{i D-1}\right) \stackrel{i . i . d .}{\sim} \mathcal{N}(\boldsymbol{\nu}, \boldsymbol{\Sigma}) \tag{5}
+\end{equation*}
+$$
+
+We use the eigendecomposition of $\Sigma^{(h)}$ to select an auxiliary distribution: 
+$\boldsymbol{\theta}_{i} \sim \mathcal{N}\left(\boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)$ is equivalent to $\boldsymbol{z}_{i}=\boldsymbol{V}^{(h)}\left(\boldsymbol{\theta}_{i}-\boldsymbol{\nu}^{(h)}\right) \sim \mathcal{N}\left(\mathbf{0}, \operatorname{diag}\left(\sigma_{1}^{2}(h), \ldots, \sigma_{D-1}^{2}{ }^{(h)}\right)\right)$
+to approximate the conditional distribution by a weighted sum of 
+$$
+\begin{equation*}
+\mathbb{E}\left(\log \left(p\left(\boldsymbol{\theta}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)\right)\right) \approx \sum_{t=1}^{r} \frac{\omega_{i t}}{\sum_{t=1}^{r} \omega_{i t}} \log \left(p\left(\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)\right) \tag{8}
+\end{equation*}
+$$
+
+with weights $\omega_{i t}, t=1, \ldots, r$ given as $\omega_{i t}=\frac{p\left(\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)}{p_{i}^{*}\left(\boldsymbol{\theta}_{i}^{(t)}\right)}$ for all $i=1, \ldots, n$ 
+
+### Conditional Score Density
+
+This gives us our objective function:
+
+$$
+\begin{align*}
+& p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) \propto p\left(\mathbf{x}_{i} \mid \mathbf{z}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) p\left(\mathbf{z}_{i} \mid \boldsymbol{\Sigma}^{(h)}\right)=p\left(\mathbf{x}_{i} \mid \boldsymbol{\theta}_{i}=\boldsymbol{V}^{(h) T} \mathbf{z}_{i}+\boldsymbol{\nu}^{(h)}\right) \prod_{k=1}^{D-1} p\left(z_{i k} \mid \sigma_{k}^{2}{ }^{(h)}\right) \\
+& =\prod_{j=1}^{D} \operatorname{clr}^{-1}\left(\sum_{k=1}^{D-1} \nu_{k}^{(h)} e_{k}+\boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} e_{k}\right)\left(x_{i j}\right) \prod_{k=1}^{D-1} p\left(z_{i k} \mid \sigma_{k}^{2(h)}\right) \\
+& =\frac{\exp \left(\sum_{j=1}^{D} \, x_{ij} \, \left(\mu^{(h)}\left(A_{j}\right)+\sum_{k=1}^{D-1} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} e_{k}\left(A_{j}\right)\right)\right)}{\left(\sum_{j=1}^{D}  \exp \left(\mu^{(h)}(A_{j})+\sum_{k=1}^{D-1} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} e_{k}(A_j)\right)\right)^{m_{i}}} \prod_{k=1}^{D-1} p\left(z_{i k} \mid \sigma_{k}^{2^{(h)}}\right) \tag{1}
+\end{align*}
+$$
+
+Computationally, we can work with the clr-coordinates, since: 
+$$
+\begin{align*}
+\operatorname{clr}(\mathbf{x}) \cdot \mathbf{V}^{t}= & \ln (\mathbf{x}) \cdot \mathbf{V}^{t}=: \operatorname{ilr}(\mathbf{x})=\xi  \tag{2.9}\\
+& \operatorname{ilr}(\mathbf{x}) \cdot \mathbf{V}=\operatorname{clr}(\mathbf{x}) \longrightarrow \mathbf{x}=\mathscr{C}[\exp (\xi \cdot \mathbf{V})] \tag{2.10}
+\end{align*}
+$$
+
+We just have to be aware of the problems that arise when computing the covariance matrix with the clr-coordinates. 
+
+Given that the covariance matrix of $G_i$ is $K$ and $\Sigma$ is the covariance matrix of the basis coefficients $\boldsymbol{\theta}_i$, we have the following relationship between $K$ and $\Sigma$:
+and $clr(x)=irl(x)E$, with $E$ being the matrix of orthonormal basis with each row being:
+$$
+e_{k}=\sqrt{\frac{k}{k+1}}(\overbrace{k^{-1}, \ldots, k^{-1}}^{k \text { times }},-1,0, \ldots, 0)^{T}
+$$
+
+The D-dimensional vector $\mu$ can be calculated with the following formula:
+$$\mu=\sum{k=1}^{D-1} \nu_{k}^{(h)} e_{k}$$ 
+
+
+```{r conditional scores density, eval=TRUE}
+# objective function
+conditional_scores_log_clr_composition <- function(scores, x_data_i, pca){
+#   clr_density <- cbind(x_grid, pca$center + pca$rotation%*%scores)
+clr_comp <- pca$center + pca$rotation%*%scores
+norm_constant <- sum(exp(clr_comp))
+log_likelihood <- sum(x_data_i * clr_comp) - sum(x_data_i)*log(norm_constant)
+log_prior <- - sum(0.5*scores^2/(pca$sdev^2))
+log_posterior <- log_likelihood + log_prior
+
+return(log_posterior) 
+}
+```
+
+TODO: build error check for correct structure of x_data_i
+TODO: build numerical stability functions
+TODO: check zentrierung der Daten
+
+### The gradient
+
+The gradient from the continous case:
+
+$$
+\nabla \log \left(p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)\right)=\sum_{k=1}^{N} \boldsymbol{v}_{k}^{(h)}\left(\sum_{j=1}^{m_{i}} e_{k}\left(x_{i j}\right)-m_{i}\left\langle f_{\mathbf{z}_{i}}, e_{k}\right\rangle_{\mathbb{L}_{2}}\right)-\left(\frac{z_{i l}}{\sigma_{l}^{2^{(h)}}}\right)_{l=1, \ldots, N}
+$$
+
+where $f_{\mathbf{z}_{i}}=\operatorname{clr}^{-1}\left(\mu^{(h)}+\sum_{k=1}^{N} \underline{\boldsymbol{z}_{i}^{T}} \boldsymbol{v}_{k}^{(h)} e_{k}\right)$ for all $\mathbf{z}_{i}=\left(z_{i 1}, \ldots, z_{i N}\right)^{T} \in \mathbb{R}^{N}$.
+
+Can be adapted to the compositional case as follows:
+$$
+\nabla \log \left(p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)\right)=\sum_{k=1}^{D-1} \boldsymbol{v}_{k}^{(h)}\left(\sum_{j=1}^{D} x_{i j} e_{k}\left(A_{j}\right)-m_{i}\left\langle \pi_{\mathbf{z}_{i}}, e_{k}\right\rangle\right)-\left(\frac{z_{i l}}{\sigma_{l}^{2^{(h)}}}\right)_{l=1, \ldots, D-1}
+$$
+
+where $\pi_{\mathbf{z}_{i}}=\operatorname{clr}^{-1}\left(\mu^{(h)}+\sum_{k=1}^{D-1} \underline{\boldsymbol{z}_{i}^{T}} \boldsymbol{v}_{k}^{(h)} e_{k}\right)$ for all $\mathbf{z}_{i}=\left(z_{i 1}, \ldots, z_{i D-1}\right)^{T} \in \mathbb{R}^{D-1}$.
+
+```{r gradient, eval=TRUE}
+gradient_cslc <- function(scores, x_data_i, pca){
+
+  m_i <- sum(x_data_i)
+
+  composition <- clrInv(pca$center + pca$rotation%*%scores)
+
+  grad <- sapply(seq_along(scores), function(k) {
+    # Zugriff auf den k-ten Basisvektor
+    e_k <- pca$rotation[, k]
+
+    # Term 1: Summe über die beobachteten Daten und den Basisvektor
+    term1 <- sum(x_data_i * e_k)
+
+    # Term 2: m_i * Skalarprodukt von pi_z_i und e_k
+    term2 <- m_i * sum(composition * e_k)
+
+    # Gradient für die k-te Komponente
+    grad_k <- term1 - term2 - scores[k] / (pca$sdev[k]^2)
+
+    return(grad_k)
+})
+
+return(grad)
+#   sapply(seq_along(scores), function(k){
+#     scalar_prod <- sum(density[,2]*pca$rotation[, k]*diff(mid_points))
+#     sum(pca$rotation[idxs, k]) - length(idxs)*scalar_prod - scores[k]/(pca$sdev[k]^2)
+#   })
+}
+```
+
+### test
+
+we test the objective function and the gradient With
+
+```{r test, eval=TRUE}
+# x_data is set
+D <- 13
+# scores can be the clr-coordinates of a random sample
+scores <- clr(x_data[[1]])
+# check restriction
+sum(scores)<0.0001
+# calculate the pca on the clr-coordinates
+x_clr <- clr(x_data_matrix)
+pca <- prcomp(na.omit(x_clr))
+# test the calculation of clr-coordinates (\rho) with scores and clr-eigenvectors
+clr_comp <- pca$center + pca$rotation%*%scores
+# test clrInv
+composition <- clrInv(pca$center + pca$rotation%*%scores)
+# finally run with inital values
+nu <- numeric
+nu <- rep(0, D)
+Sigma <- diag(D)
+# compute the pca
+eigen_decomp <- eigen(Sigma)
+pca <- list()
+pca$sdev <- sqrt(eigen_decomp$values)
+# do I need a transpose? -> every column is supposed to be one eigenvector: yes, check ?eigen
+pca$rotation <- eigen_decomp$vectors
+# center the eigenvectors to achieve the restriction of sum zero
+pca$rotation <- apply(pca$rotation, 2, function(g) g - mean(g))
+pca$center <- apply(pca$rotation, 2, function(g) mean(g))
+```
+
+Lets test the optimization function
+
+```{r test optimization, eval=TRUE}
+i <- 1
+optim_result <- optim(rep(0, length = length(pca$sdev)), conditional_scores_log_clr_composition, gr = gradient_cslc,
+                        x_data_i = x_data[[i]], pca = pca,
+                        control = list(fnscale = -1), method = "BFGS")
+optim_result
+```
+
+For the optim function, an integer 0 indicates successful completion.
+Also $counts gives the number of calls to the objective function and the gradient. 1 means that the iteration limit has been reached -> **increase max_iter**
+
+### Update parameters and convergence criterium
+
+Both can be easily adopted from the density case: 
+1. update 
+$$
+\begin{aligned}
+\boldsymbol{\nu}^{(h+1)} & =\frac{1}{\sum_{i=1}^{n} \sum_{t=1}^{r} \omega_{i t}} \sum_{i=1}^{n} \sum_{t=1}^{r} \omega_{i t} \boldsymbol{\theta}_{i}^{(t)} \\
+\boldsymbol{\Sigma}^{(h+1)} & =\frac{1}{\sum_{i=1}^{n} \sum_{t=1}^{r} \omega_{i t}} \sum_{i=1}^{n} \sum_{t=1}^{r} \omega_{i t}\left(\boldsymbol{\theta}_{i}^{(t)}-\boldsymbol{\nu}^{(h+1)}\right)\left(\boldsymbol{\theta}_{i}^{(t)}-\boldsymbol{\nu}^{(h+1)}\right)^{T}
+\end{aligned}
+$$
+2. check convergence:
+ $\left\|\boldsymbol{\nu}^{(h+1)}-\boldsymbol{\nu}^{(h)}\right\|<\epsilon$ and $\left\|\boldsymbol{\Sigma}^{(h+1)}-\boldsymbol{\Sigma}^{(h)}\right\|<\epsilon$ for a threshold $\epsilon>0$
+
+```{r fit pca function, eval=TRUE}
+fit_compositional_pca <- function(x_data,
+                            max_iter = 50, r = 10, lambda = 1, dim_reduction = 0.001,
+                            eps = 0.01){
+  start_time <- Sys.time()
+  # TODO: error checks for structure of x_data
+  # initial estimates
+  D <- length(x_data[[1]])
+  nu <- rep(0, D)
+  Sigma <- diag(D)
+  # compute initial pca
+    eigen_decomp <- eigen(Sigma)
+    pca <- list()
+    pca$sdev <- sqrt(eigen_decomp$values)
+    pca$rotation <- eigen_decomp$vectors
+    # center the eigenvectors to achieve the restriction of sum zero (implies D-1 space)
+    pca$rotation <- apply(pca$rotation, 2, function(g) g - mean(g))
+    pca$center <- nu
+    # apply(pca$rotation, 2, function(g) mean(g))
+  
+  proposal_scores <- list(length(x_data))
+  weights <- list(length(x_data))
+  if(max_iter > 0){
+    for(k in 1:max_iter){
+      # E-Step ###################
+      # draw densities conditional on observations and current pca
+      for(i in 1:length(x_data)){
+        # find median of the posterior score distribution
+        optim_result <- optim(rep(0, length = length(pca$sdev)), conditional_scores_log_clr_composition, gr = gradient_cslc,
+                              x_data_i = x_data[[i]], pca = pca,
+                              control = list(fnscale = -1), method = "BFGS")
+        scores_median <- as.vector(optim_result$par)
+        # importance sampling
+        proposal_scores[[i]] <- sapply(1:(r*k), function(t){
+          matrix(rnorm(length(scores_median), mean = scores_median, sd = lambda*pca$sdev))
+        })
+        log_weights <- apply(proposal_scores[[i]], 2, function(scores){
+          conditional_scores_log_clr_composition(scores, x_data[[i]], pca) -
+            sum(dnorm(scores, mean = scores_median, sd = lambda*pca$sdev, log = TRUE))
+        })
+        # increase numerical stability
+        log_weights <- log_weights - mean(log_weights, na.rm = TRUE)
+        weights[[i]] <- exp(log_weights)/sum(exp(log_weights))
+      }
+      # M-Step ###################
+      mu_scores <- rowMeans(sapply(seq_along(weights), function(i){
+        proposal_scores[[i]]%*%weights[[i]]
+      }))
+      
+      # update pca
+      pca_old <- pca
+      pca$center <- pca$rotation%*%mu_scores
+      # epsilon <- 1e-6 # oder ein anderer kleiner Wert
+      # TODO: Regularisierung der Kovarianzmatrix prüfen: 
+      # Sigma_regularized <- Sigma + epsilon * diag(nrow(Sigma))
+      Sigma <- Reduce("+", lapply(seq_along(weights), function(i){
+        Reduce("+", lapply(1:(r*k), function(t){
+          C_it <- weights[[i]][t]*(proposal_scores[[i]][,t] - mu_scores)%*%
+            t((proposal_scores[[i]][,t] - mu_scores))
+        }))
+      }))/length(weights)
+      eigen_decomp <- eigen(Sigma, symmetric = TRUE)
+      # error check eigenvalues > 0
+      negative_eigenvalues <- eigen_decomp$values < 0
+        if (any(negative_eigenvalues)) {
+        warning(sprintf("Warning: %d eigenvalues are negative. They have been set to zero.", sum(negative_eigenvalues)))
+        }
+      pca$sdev <- sqrt(pmax(eigen_decomp$values, 0))
+      pca$rotation <- pca$rotation%*%eigen_decomp$vectors
+      pca$rotation <- apply(pca$rotation, 2, function(g) g - mean(g))
+      
+      # check convergence
+      critical_value_1 <- sqrt(sum((pca_old$center - pca$center)^2))
+      K_old <- Reduce("+", lapply(seq_along(pca_old$sdev), function(k){
+        pca_old$rotation[,k]%*%t(pca_old$rotation[,k])*(pca_old$sdev[k]^2)
+      }))
+      K_new <- Reduce("+", lapply(seq_along(pca$sdev), function(k){
+        pca$rotation[,k]%*%t(pca$rotation[,k])*(pca$sdev[k]^2)
+      }))
+    #   critical_value_2 <- L_2_norm(cbind(x_grid, sapply(1:nrow(K_old), function(k){
+    #     L_2_norm(cbind(x_grid, K_old[k,] - K_new[k,]))
+    #   })))
+      # TODO: Überprüfen
+        K_diff <- K_old - K_new
+        # Berechne die Frobenius-Norm der Differenzmatrix
+        critical_value_2 <- norm(K_diff, type = "F")
+
+      if(max(critical_value_1, critical_value_2) < eps){
+        # normalize result
+        # constant <- apply(pca$rotation, 2,  function(g){
+        #   L_2_norm(cbind(x_grid, g))
+        # })
+        # pca$rotation <- t(t(pca$rotation)/constant)
+        # pca$sdev <- pca$sdev*constant
+        constant <- apply(pca$rotation, 2, function(g) { sqrt(sum(g^2)) })
+        pca$rotation <- t(t(pca$rotation)/constant)
+        pca$sdev <- pca$sdev*constant
+        
+        end_time <- Sys.time()
+        elapsed_time <- end_time - start_time
+        print(paste("The algorithm converged after:", elapsed_time, "seconds"))
+        return(list("iteration" = k, "pca" = pca, "x_data" = x_data))
+      }
+    #   which_reduced <- rev(cumsum(rev(pca$sdev^2))/sum(pca$sdev^2) > dim_reduction)
+    #   which_reduced <- which_reduced|c(TRUE, TRUE, rep(FALSE, length(which_reduced) - 2))
+    #   pca$sdev <- pca$sdev[which_reduced]
+    #   pca$rotation <- pca$rotation[,which_reduced, drop = FALSE]
+    }
+  }
+  # normalize result
+  # constant <- apply(pca$rotation, 2,  function(g){
+  #   L_2_norm(cbind(x_grid, g))/(max(x_grid) - min(x_grid))
+  # })
+  # pca$rotation <- t(t(pca$rotation)/constant)
+  # pca$sdev <- pca$sdev*constant
+  constant <- apply(pca$rotation, 2, function(g) { sqrt(sum(g^2)) })
+  pca$rotation <- t(t(pca$rotation)/constant)
+  pca$sdev <- pca$sdev*constant
+  return(list("iteration" = max_iter, "pca" = pca, "x_data" = x_data))
+}
+```
