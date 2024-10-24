@@ -1,6 +1,7 @@
 library(targets)
 library(dplyr)
 library(tidyr)
+library(compositions)
 # This is an example _targets.R file. Every
 # {targets} pipeline needs one.
 # Use tar_script() to create _targets.R and tar_edit()
@@ -13,6 +14,7 @@ library(tidyr)
 # if you keep your functions in external scripts.
 source("scripts/read_data_KL15_XRF.R")
 source("scripts/fit_density_pca.R")
+source("scripts/fit_composition_pca.R")
 
 # Set target-specific options such as packages:
 # tar_option_set(packages = c("dplyr", "tidyr"))
@@ -54,7 +56,8 @@ list(
   }),
   tar_target(data_kl15_qf, {
     tryCatch({
-      data_kl15_qf <- read.table(paste0(dir,'data_KL15_qf.txt'), header = TRUE, sep = "\t")
+      data_kl15_qf <- read.table(paste0(dir,'data_KL15_qf.txt'),
+                                 header = TRUE, sep = "\t")
     }, error = function(e) {
       message("Error in reading the file: ", e)
     })
@@ -91,7 +94,12 @@ list(
     lambda_1 <- 0.5
     lambda_2 <- 0.2
 
-    sim_densities_results <- simulate_densities_greven(n_data, n_samples, x_grid = x_grid_sim, lambda_1, lambda_2)
+    sim_densities_results <-
+      simulate_densities_greven(
+                                n_data,
+                                n_samples,
+                                x_grid = x_grid_sim,
+                                lambda_1, lambda_2)
   }),
   tar_target(density_pca, {
     x_data <- simulation_densities_greven$x_data
@@ -99,5 +107,25 @@ list(
   }),
   tar_target(plot_pca_results, {
     plot_pca(density_pca$pca, x_grid = density_pca$x_grid)
+  }),
+  tar_target(simulation_composition_1, {
+    n_components <- 13
+    n_data <- 30
+    n_counts <- 2000
+    n_samples <- 30
+    lambda_1 <- 0.5
+    lambda_2 <- 0.2
+
+    sim_composition_1_results <-
+      simulate_composition_1(
+                             n_components,
+                             n_data,
+                             n_counts,
+                             n_samples,
+                             lambda_1, lambda_2)
+  }),
+  tar_target(composition_pca_sim_1, {
+    x_data <- simulation_composition_1$x_data
+    composition_pca_sim_1_results <- fit_compositional_pca_vs1_0(x_data, max_iter = 50)
   })
 )

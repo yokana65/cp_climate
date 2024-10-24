@@ -122,3 +122,67 @@ gradient_cslc <- function(scores, x_data_i, pca){
 
 return(grad)
 }
+
+
+############ Simulate composition data ############ 
+simulate_composition_1 <- function(n_components, n_data, n_counts, n_samples, lambda_1, lambda_2){
+set.seed(123)
+x_grid <- seq(1, n_components)
+raw_data <- data.frame("x" = x_grid, "y" = rep(0, n_components))
+
+clr_mean <- center_function_comp(raw_data)
+
+pc_1 <- data.frame("x" = x_grid, "y" = c(rep(sqrt(5/(5+1)*5^(-1)), 5),-1, rep(0, 7)))
+pc_1 <- center_function_comp(pc_1)
+pc_1[, 2] <- pc_1[, 2] / norm(pc_1[, 2], type = "2")
+
+pc_2 <- data.frame("x" = x_grid, "y" = c(rep(sqrt(12/(12+1)*12^(-1)), 12),0))
+pc_2 <- center_function_comp(pc_2)
+pc_2[, 2] <- pc_2[,2]/norm(pc_2[,2], type="2")
+
+true_observed_clr_comp <- sapply(1:n_data, function(i){
+  clr_mean[,2] + rnorm(1, 0, lambda_1)*pc_1[,2] + rnorm(1, 0, lambda_2)*pc_2[,2]
+})
+
+check_columns_sum_to(true_observed_clr_comp, 0.001)
+
+true_observed_comp <- lapply(1:n_data, function(i){
+  # TODO: remove x_grid
+  clr_density <- data.frame(x_grid, true_observed_clr_comp[,i])
+  inverse_clr_trafo(clr_density)
+})
+
+x_data <- unlist(lapply(1:n_data, function(i) {
+  probs <- true_observed_comp[[i]][,2]
+  samples <- t(rmultinom(n_samples, n_counts, probs))
+  lapply(1:nrow(samples), function(j) samples[j,])
+}), recursive = FALSE)
+
+x_data_matrix <- do.call(rbind, x_data)
+
+return(list(x_data = x_data, x_data_matrix = x_data_matrix, true_observed_comp = true_observed_comp))
+}
+
+center_function_comp <- function(comp_data){
+  mean <- mean(comp_data[,2])
+  comp_data[,2] <- comp_data[,2] - mean
+  comp_data
+}
+
+check_columns_sum_to <- function(data, integer) {
+  n_cols <- ncol(data)
+  
+  columns_sum_to_zero <- logical(n_cols)
+  
+  for (i in 1:n_cols) {
+    column_sum <- sum(data[, i])
+    columns_sum_to_zero[i] <- (column_sum < integer)
+  }
+  
+  return(columns_sum_to_zero)
+}
+
+inverse_clr_trafo <- function(clr_density){
+  f_integral <- sum(exp(clr_density[,2]))
+  data.frame("x" = clr_density[,1], "y" = exp(clr_density[,2])/f_integral)
+}
