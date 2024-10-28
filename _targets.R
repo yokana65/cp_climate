@@ -110,7 +110,7 @@ list(
   }),
   tar_target(simulation_composition_1, {
     n_components <- 13
-    n_data <- 30
+    n_data <- 40
     n_counts <- 2000
     n_samples <- 30
     lambda_1 <- 0.5

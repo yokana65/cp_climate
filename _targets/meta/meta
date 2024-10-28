@@ -1,10 +1,10 @@
 name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
-.Random.seed|object|0142e34647d23c07|||||||||||||||
+.Random.seed|object|f8450431434aa8e1|||||||||||||||
 center_function|function|bc43bb164ac1bac7|||||||||||||||
 center_function_comp|function|466b07a28ee18c68|||||||||||||||
 check_columns_sum_to|function|8f4a846f01a40bee|||||||||||||||
 clr_trafo|function|31f189924c76d9d0|||||||||||||||
-composition_pca_sim_1|stem|66d713cd896afe2c|0075c2f0443afc26|d894cde4af1e2478|1775787839||t20020.3756611648s|6e804f215b42ba16|19757|rds|local|vector|||14.863||
+composition_pca_sim_1|stem|66d713cd896afe2c|2b6df4719ed1c83a|d894cde4af1e2478|1775787839||t20020.4324919544s|6e804f215b42ba16|19757|rds|local|vector|||14.958||
 conditional_scores_log_clr_composition|function|8bfa5ec585befe8b|||||||||||||||
 conditional_scores_log_density|function|cfdf71a8a9e6b27e|||||||||||||||
 data_kl15|stem|0b56a12a6b326222|e40521be6a483b04|96cf86a4f8a0f31d|-1926964946||t19927.3667109166s|b6fef1c29d630dc8|90172|rds|local|vector|||0||

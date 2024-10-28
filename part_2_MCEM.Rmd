@@ -132,7 +132,10 @@ $$
 2. check convergence:
  $\left\|\boldsymbol{\nu}^{(h+1)}-\boldsymbol{\nu}^{(h)}\right\|<\epsilon$ and $\left\|\boldsymbol{\Sigma}^{(h+1)}-\boldsymbol{\Sigma}^{(h)}\right\|<\epsilon$ for a threshold $\epsilon>0$
 
+## Inital values
 
+The inital values are set to
+$\boldsymbol{\nu}^{(0)}=\mathbf{0} \in \mathbb{R}^{D-1}$ and $\boldsymbol{\Sigma}^{(0)}=\mathbb{I}_{D} \in \mathbb{R}^{(D-1) \times(D-1)}$
 
 ## clr and ilr coordinates
 
@@ -156,6 +159,151 @@ $$
 The D-dimensional vector $\mu$ can be calculated with the following formula:
 $$\mu=\sum{k=1}^{D-1} \nu_{k}^{(h)} e_{k}$$ 
 
+To get a better understanding, we want to check the differences between clr- and ilr-PCA:
+
+```{r clr vs ilr, eval=TRUE}
+x <-matrix(c(0.2,0.5,0.3,0.1,0.4,0.5,0.4,0.3,0.3,0.3,0.5,0.2), nrow=4,ncol=3,byrow=TRUE)
+
+# Compute the clr-coordinates
+clr_coords <- clr(x)
+ilr_coords <- ilr(x)
+
+pca_clr <-prcomp(clr_coords)
+pca_ilr <- prcomp(ilr_coords)
+
+# Plot the first two principal components
+# TODO: find out how to plot the principal components
+scale <- 1
+# TODO: translate that into a function
+plot(pca_clr$rotation[, 1], pca_clr$rotation[, 2], xlab = "PC1", ylab = "PC2", main = "PCA - clr")
+  # Add arrows for each variable
+  arrows(0, 0, pca_clr$rotation[,1] * scale, pca_clr$rotation[,2] * scale, 
+         length = 0.1, col = "blue")
+  # Add origin lines
+  abline(h = 0, v = 0, lty = 2, col = "gray")
+biplot(pca_clr)
+biplot(pca_ilr)
+```
+
+As we can see, the principal components are different (and have dimension D-1).
+
+We should be able to reconstruct one from the other with the help of orthonormal bases:
+
+```{r orthonormal basis, eval=TRUE}
+generate_orthonormal_basis <- function(k, D) {
+  # i: index of the basis vector (1-based index)
+  # n: total number of elements in the vector
+  
+  # Calculate the scaling factor
+  scaling_factor <- sqrt(k / (k + 1))
+  
+  # Create the vector with i elements of 1/i, followed by -1, and then zeros
+  basis_vector <- c(rep(1 / k, k), -1, rep(0, D - k - 1))
+  
+  # Scale the vector
+  basis_vector <- scaling_factor * basis_vector
+  
+  return(basis_vector)
+}
+D <- 3
+
+basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+
+(basis_matrix <- do.call(rbind, basis_vectors))
+```
+
+In addition, we want to check if the `center` is the sum of all eigenvectors and if we can transfrom them from ilr to clr
+
+$\mu=\sum_{k=1}^{D-1} \nu_{k}^{(h)} e_{k}$ 
+
+But the center is calculated as the column means of the respective coordinates:
+
+center <- colMeans(X)
+
+```{r check center, eval=TRUE}
+# Summe als Multiplikation mit dem Einheitsvektor
+mu_clr <- colMeans(clr_coords)
+nu_ilr <- colMeans(ilr_coords)
+# this is equivalent to pca$center
+
+# Now, how can I calculate mu with pca_ilr$rotation?
+
+# what is this?
+# mu_pca <- pca_ilr$rotation %*% pca_ilr$center
+
+```
+
+Transformation ilr -> clr with (D-1)x(D) basis_matrix
+
+Remember that one dimension of the eigenvectors of the clr coordinates is irrelevant, i.e. its eigenvalue is zero
+
+```{r transform clr to ilr, eval=TRUE}
+x_clr <- ilr_coords %*% basis_matrix*(-1)
+# thats equal to clr_coords
+
+# the question is does that hold for eigenvectors to?
+clr_v <- t(pca_ilr$rotation %*% basis_matrix)
+# Now each row of clr_v is an eigenvector of the clr coordinates!!
+
+
+# joker <- colMeans(clr_v)
+# clr_v[,1]
+# pca_clr$rotation[,1]
+# it does not
+clr_v <- ilr2clr(pca_ilr$rotation)
+clr_v[,1]
+pca_clr$rotation[,1]
+# that is exactly the same as before (theory vs. praxis?)
+```
+
+ACHTUNG! Die Koordinaten sind angeordnet! (Wieso??)
+
+```{r equivalenz test, eval=TRUE}
+angle <- acos(abs(sum(clr_v[,1] * pca_clr$rotation[,1])) / 
+             (sqrt(sum(clr_v[,1]^2)) * sqrt(sum(pca_clr$rotation[,1]^2))))
+(angle_degrees <- angle * 180/pi)
+
+# Vergleich der erklärten Varianzen
+var_explained_clr <- pca_clr$sdev^2 / sum(pca_clr$sdev^2)
+var_explained_ilr <- pca_ilr$sdev^2 / sum(pca_ilr$sdev^2)
+```
+
+The elements are equivilent. We have a problem though, because the order of coordinates can change. 
+
+Let's try to visualise that:
+
+```{r transformed visualization, eval=TRUE}
+plot(pca_clr$rotation[, 1], pca_clr$rotation[, 2], xlab = "PC1", ylab = "PC2", main = "PCA - clr")
+  # Add arrows for each variable
+  arrows(0, 0, pca_clr$rotation[,1] * scale, pca_clr$rotation[,2] * scale, 
+         length = 0.1, col = "blue")
+  text(pca_clr$rotation[,1] * scale * 1.1, pca_clr$rotation[,2] * scale * 1.1, 
+       rownames(pca_clr$rotation), cex = 0.8)
+  # Add origin lines
+  abline(h = 0, v = 0, lty = 2, col = "gray")
+```
+
+```{r transformed visualization 2, eval=TRUE}
+# Now we try to get the same from the ilr coordinates
+clr_v <- t(pca_ilr$rotation %*% basis_matrix*(-1))
+plot(clr_v[, 1], clr_v[, 2], xlab = "PC1", ylab = "PC2", main = "PCA - clr")
+  # Add arrows for each variable
+  arrows(0, 0, clr_v[,1] * scale, clr_v[,2] * scale, 
+         length = 0.1, col = "blue")
+  text(clr_v[,1] * scale * 1.1, clr_v[,2] * scale * 1.1, 
+       rownames(clr_v), cex = 0.8)
+  # Add origin lines
+  abline(h = 0, v = 0, lty = 2, col = "gray")
+```
+
+Normal computation leads to same representation but with upside down orientation. Multiplikation witrh (-1) for the bases solves that problem.
+Ok, it remains "Spiegelverkehrt" but that does not really matter for the results.
+
+That means I can switch between W and V (and in general between the two spaces of clr and ilr coordinates).
+
+Also the **argument** for working in ilr-coordinates is that I dont have to calculate coordinates for the redundant dimension and
+therefore dont need to be bothered with zero eigenvalues. **Another** way would be to restrict Sigma to be (D-1)x(D-1), but then
+I still have to deal with weird weights before (?).
 
 ## Methods
 
@@ -163,6 +311,11 @@ In general, it is possible to use the `compositions`package to get most relevant
 to get a better understanding of the underlying functions.
 
 ### ilrBase
+
+with:
+$$
+e_{k}=\sqrt{\frac{k}{k+1}}(\overbrace{k^{-1}, \ldots, k^{-1}}^{k \text { times }},-1,0, \ldots, 0)^{T}
+$$
 
 ### clr
 
@@ -430,19 +583,39 @@ build_base
 
 Since our data has a very big sample size (~600.000 per observation), we need to adjust the likelihood function to avoid infinite or zero weight calculations.
 
-```{r adjusted conditional scores density, eval=TRUE}
+```{r adjusted ilr conditional scores density, eval=TRUE}
+# objective function
+conditional_scores_log_ilr <- function(scores, x_data_i, pca, basis_matrix){
+ilr_comp <- pca$center + scores%*%pca$rotation
+clr_comp <- ilr_comp%*%basis_matrix
+norm_constant <- sum(exp(clr_comp))
+# if (!is.finite(norm_constant) || norm_constant <= 0) {
+#   print("norm constant for scores :")
+#   print(scores)
+#   print(norm_constant)
+#   stop("norm_constant ist nicht finit oder nicht positiv.")
+# }
+
+log_likelihood <- sum(x_data_i * clr_comp) - sum(x_data_i)*log(norm_constant)
+
+log_prior <- - sum(0.5 * scores^2 / (pca$sdev^2))
+log_posterior <- log_likelihood + log_prior
+
+return(log_posterior)
+}
+```
+
+```{r adjusted clr conditional scores density, eval=TRUE}
 # objective function
 conditional_scores_log_clr_adjusted <- function(scores, x_data_i, pca){
-clr_comp <- pca$center + pca$rotation%*%scores
-norm_constant <- sum(exp(clr_comp))
-if (!is.finite(norm_constant) || norm_constant <= 0) {
-  print("norm constant for scores :")
-  print(scores)
-  print(norm_constant)
-  stop("norm_constant ist nicht finit oder nicht positiv.")
-}
-# Numerische Stabilisierung durch Abziehen des Maximums
-clr_comp_adj <- clr_comp - max(clr_comp)
+clr_ilr <- pca$center + pca$rotation%*%scores
+norm_constant <- sum(exp(ilr_comp))
+# if (!is.finite(norm_constant) || norm_constant <= 0) {
+#   print("norm constant for scores :")
+#   print(scores)
+#   print(norm_constant)
+#   stop("norm_constant ist nicht finit oder nicht positiv.")
+# }
 
 log_likelihood <- sum(x_data_i * clr_comp_adj) - sum(x_data_i)*log(norm_constant)
 
@@ -462,15 +635,17 @@ TODO: build numerical stability functions
 TODO: check zentrierung der Daten -->
 
 ```{r gradient adjusted, eval=FALSE}
-gradient_cslc_adjusted <- function(scores, x_data_i, pca){
+gradient_cslc_ilr <- function(scores, x_data_i, pca, basis_matrix){
 
   m_i <- sum(x_data_i)
 
-  composition <- clrInv(pca$center + pca$rotation%*%scores)
+  ilr_comp <- pca$center + pca$rotation%*%scores
+  clr_comp <- t(ilr_comp)%*%basis_matrix
+  composition <- clrInv(clr_comp)
 
   grad <- sapply(seq_along(scores), function(k) {
     # Zugriff auf den k-ten Basisvektor
-    e_k <- pca$rotation[, k]
+    e_k <- basis_matrix[k, ]
 
     # Term 1: Summe über die beobachteten Daten und den Basisvektor
     term1 <- sum(x_data_i * e_k)
@@ -485,17 +660,287 @@ gradient_cslc_adjusted <- function(scores, x_data_i, pca){
 })
 
 return(grad)
-#   sapply(seq_along(scores), function(k){
-#     scalar_prod <- sum(density[,2]*pca$rotation[, k]*diff(mid_points))
-#     sum(pca$rotation[idxs, k]) - length(idxs)*scalar_prod - scores[k]/(pca$sdev[k]^2)
-#   })
 }
 ```
+
+## ilr implementation
+
+```{r ilr implementation, eval=TRUE}
+
+fit_compositional_pca_ilr <- function(x_data,
+                            max_iter = 50, r = 10, lambda = 1, dim_reduction = 0.001,
+                            eps = 0.01){
+  start_time <- Sys.time()
+  # TODO: error checks for structure of x_data
+  D <- length(x_data[[1]])  
+  # create orthonormal basis
+  basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+  basis_matrix <- do.call(rbind, basis_vectors)
+  
+  # initial estimates
+  nu <- rep(0, D-1)
+  Sigma <- diag(D-1)
+  # compute initial pca
+  pca <- list()
+  eigen_decomp <- eigen(Sigma)
+  pca$rotation <- eigen_decomp$vectors
+  pca$sdev <- eigen_decomp$values
+  pca$center <- nu
+  
+  proposal_scores <- list(length(x_data))
+  weights <- list(length(x_data))
+  if(max_iter > 0){
+    for(k in 1:max_iter){
+      # E-Step ###################
+      for(i in 1:length(x_data)){
+        # error check to analyse `vmmin` is not finite 
+        optim_result <- tryCatch({
+          optim(rep(0, length = length(pca$sdev)), conditional_scores_log_ilr, gr = gradient_cslc_ilr,
+                              x_data_i = x_data[[i]], pca = pca, basis_matrix = basis_matrix,
+                              control = list(fnscale = -1), method = "BFGS")
+        }, error = function(e) {
+            cat("Fehler bei optim() in Iteration", k, "für Beobachtung", i, "\n")
+            cat("Fehlermeldung:", e$message, "\n")
+            print("pca$sdev:")
+            print(pca$sdev)
+            # print("scores_median:")
+            # print(scores_median)
+        })
+        scores_median <- as.vector(optim_result$par)
+        # importance sampling
+        proposal_scores[[i]] <- sapply(1:(r*k), function(t){
+          matrix(rnorm(length(scores_median), mean = scores_median, sd = lambda*pca$sdev))
+        })
+        log_weights <- apply(proposal_scores[[i]], 2, function(scores){
+          conditional_scores_log_ilr(scores, x_data[[i]], pca, basis_matrix) -
+            sum(dnorm(scores, mean = scores_median, sd = lambda*pca$sdev, log = TRUE))
+        })
+        # increase numerical stability
+        log_weights <- log_weights - mean(log_weights, na.rm = TRUE)
+        weights[[i]] <- exp(log_weights)/sum(exp(log_weights))
+        # if (any(!is.finite(exp(log_weights)/sum(exp(log_weights))))) {
+        #   print("non finite weights for observation: ", i)
+        #   # stop(paste("Infinite or NaN values found in weights at iteration", k, "for observation", i))
+        # }
+      }
+      # if (any(!is.finite(weights[[i]]))) {
+      #     print("non finite weights for observation: ", i)
+      #     # print(weights[[i]])
+      #    # stop(paste("Infinite or NaN values found in weights at iteration", k, "for observation", i))
+      # }
+      # M-Step ###################
+      mu_scores <- rowMeans(sapply(seq_along(weights), function(i){
+        proposal_scores[[i]]%*%weights[[i]]
+      }), na.rm = TRUE)
+      # update parameters
+      pca_old <- pca
+      pca$center <- pca$rotation%*%mu_scores
+      Sigma <- Reduce("+", lapply(seq_along(weights), function(i){
+        Reduce("+", lapply(1:(r*k), function(t){
+          C_it <- weights[[i]][t]*(proposal_scores[[i]][,t] - mu_scores)%*%
+            t((proposal_scores[[i]][,t] - mu_scores))
+        }))
+      }))/length(weights)
+      print(Sigma)
+      eigen_decomp <-  tryCatch({eigen(Sigma)}, error = function(e) {
+            cat("Fehler bei optim() in Iteration", k, "für Beobachtung", i, "\n")
+            cat("Fehlermeldung:", e$message, "\n")
+            print("pca$sdev:")
+            print(pca$sdev)
+            # print("scores_median:")
+            # print(scores_median)
+        })
+      # error check eigenvalues > 0
+      negative_eigenvalues <- eigen_decomp$values < 0
+        if (any(negative_eigenvalues)) {
+        warning(sprintf("Warning: %d eigenvalues are negative. They have been set to zero.", sum(negative_eigenvalues)))
+        }
+      pca$sdev <- sqrt(pmax(eigen_decomp$values, 0))
+      # if (any(!is.finite(pca$sdev)) || any(pca$sdev <= 0)) {
+      #   print("pca$sdev:")
+      #   print(pca$sdev)
+      #   stop(paste("Fehler in Iteration", k, ": pca$sdev enthält nicht-finite oder nicht-positive Werte."))
+      # }
+      pca$rotation <- pca$rotation%*%eigen_decomp$vectors
+      # pca$rotation <- apply(pca$rotation, 2, function(g) g - mean(g))
+      
+      # check convergence
+      critical_value_1 <- sqrt(sum((pca_old$center - pca$center)^2))
+      K_old <- Reduce("+", lapply(seq_along(pca_old$sdev), function(k){
+        pca_old$rotation[,k]%*%t(pca_old$rotation[,k])*(pca_old$sdev[k]^2)
+      }))
+      K_new <- Reduce("+", lapply(seq_along(pca$sdev), function(k){
+        pca$rotation[,k]%*%t(pca$rotation[,k])*(pca$sdev[k]^2)
+      }))
+      K_diff <- K_old - K_new
+      # Berechne die Frobenius-Norm der Differenzmatrix
+      critical_value_2 <- norm(K_diff, type = "F")
+
+      if(max(critical_value_1, critical_value_2) < eps){
+        constant <- apply(pca$rotation, 2, function(g) { sqrt(sum(g^2)) })
+        pca$rotation <- t(t(pca$rotation)/constant)
+        pca$sdev <- pca$sdev*constant
+        
+        end_time <- Sys.time()
+        elapsed_time <- end_time - start_time
+        print(paste("The algorithm converged after:", elapsed_time, "seconds"))
+        return(list("iteration" = k, "pca" = pca, "x_data" = x_data))
+      }
+    }
+  }
+  constant <- apply(pca$rotation, 2, function(g) { sqrt(sum(g^2)) })
+  pca$rotation <- t(t(pca$rotation)/constant)
+  pca$sdev <- pca$sdev*constant
+  return(list("iteration" = max_iter, "pca" = pca, "x_data" = x_data))
+}
+
+```
+
+equivalent with clr
+
+
+```{r clr implementation, eval=TRUE}
+
+fit_compositional_pca_clr <- function(x_data,
+                            max_iter = 50, r = 10, lambda = 1, dim_reduction = 0.001,
+                            eps = 0.01){
+  start_time <- Sys.time()
+  # TODO: error checks for structure of x_data
+  D <- length(x_data[[1]])  
+  # create orthonormal basis
+  basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+  basis_matrix <- do.call(rbind, basis_vectors)
+  
+  # initial estimates
+  mu <- rep(0, D)
+  K <- diag(D)
+  # compute initial pca
+  pca <- prcomp(K)
+  # restrict to D-1 dimensions
+  pca$rotation <- pca$rotation[,1:(D - 1)]
+  pca$sdev <- pca$sdev[1:(D - 1)]
+  pca$center <- mu
+
+  proposal_scores <- list(length(x_data))
+  weights <- list(length(x_data))
+  if(max_iter > 0){
+    for(k in 1:max_iter){
+      # E-Step ###################
+      for(i in 1:length(x_data)){
+        # error check to analyse `vmmin` is not finite 
+        optim_result <- tryCatch({
+          optim(rep(0, length = length(pca$sdev)), conditional_scores_log_clr_composition, gr = gradient_cslc,
+                              x_data_i = x_data[[i]], pca = pca,
+                              control = list(fnscale = -1), method = "BFGS")
+        }, error = function(e) {
+            cat("Fehler bei optim() in Iteration", k, "für Beobachtung", i, "\n")
+            cat("Fehlermeldung:", e$message, "\n")
+            print("pca$sdev:")
+            print(pca$sdev)
+            # print("scores_median:")
+            # print(scores_median)
+        })
+        scores_median <- as.vector(optim_result$par)
+        # importance sampling
+        proposal_scores[[i]] <- sapply(1:(r*k), function(t){
+          matrix(rnorm(length(scores_median), mean = scores_median, sd = lambda*pca$sdev))
+        })
+        log_weights <- apply(proposal_scores[[i]], 2, function(scores){
+          conditional_scores_log_clr_composition(scores, x_data[[i]], pca) -
+            sum(dnorm(scores, mean = scores_median, sd = lambda*pca$sdev, log = TRUE))
+        })
+        # increase numerical stability
+        log_weights <- log_weights - mean(log_weights, na.rm = TRUE)
+        weights[[i]] <- exp(log_weights)/sum(exp(log_weights))
+        if (any(!is.finite(exp(log_weights)/sum(exp(log_weights))))) {
+          print("non finite weights for observation: ", i)
+          stop(paste("Infinite or NaN values found in weights at iteration", k, "for observation", i))
+        }
+      }
+      if (any(!is.finite(weights[[i]]))) {
+          print("non finite weights for observation: ", i)
+          print(weights[[i]])
+         stop(paste("Infinite or NaN values found in weights at iteration", k, "for observation", i))
+      }
+      # M-Step ###################
+      mu_scores <- rowMeans(sapply(seq_along(weights), function(i){
+        proposal_scores[[i]]%*%weights[[i]]
+      }))
+      print(mu_scores)
+      print(weights)
+      # update parameters
+      pca_old <- pca
+      pca$center <- pca$rotation%*%mu_scores
+      Sigma <- Reduce("+", lapply(seq_along(weights), function(i){
+        Reduce("+", lapply(1:(r*k), function(t){
+          C_it <- weights[[i]][t]*(proposal_scores[[i]][,t] - mu_scores)%*%
+            t((proposal_scores[[i]][,t] - mu_scores))
+        }))
+      }))/length(weights)
+      print(Sigma)
+      eigen_decomp <- eigen(Sigma)
+      # error check eigenvalues > 0
+      negative_eigenvalues <- eigen_decomp$values < 0
+        if (any(negative_eigenvalues)) {
+        warning(sprintf("Warning: %d eigenvalues are negative. They have been set to zero.", sum(negative_eigenvalues)))
+        }
+      pca$sdev <- sqrt(pmax(eigen_decomp$values, 0))
+      # if (any(!is.finite(pca$sdev)) || any(pca$sdev <= 0)) {
+      #   print("pca$sdev:")
+      #   print(pca$sdev)
+      #   stop(paste("Fehler in Iteration", k, ": pca$sdev enthält nicht-finite oder nicht-positive Werte."))
+      # }
+      pca$rotation <- pca$rotation%*%eigen_decomp$vectors
+      # pca$rotation <- apply(pca$rotation, 2, function(g) g - mean(g))
+      
+      # check convergence
+      critical_value_1 <- sqrt(sum((pca_old$center - pca$center)^2))
+      K_old <- Reduce("+", lapply(seq_along(pca_old$sdev), function(k){
+        pca_old$rotation[,k]%*%t(pca_old$rotation[,k])*(pca_old$sdev[k]^2)
+      }))
+      K_new <- Reduce("+", lapply(seq_along(pca$sdev), function(k){
+        pca$rotation[,k]%*%t(pca$rotation[,k])*(pca$sdev[k]^2)
+      }))
+      K_diff <- K_old - K_new
+      # Berechne die Frobenius-Norm der Differenzmatrix
+      critical_value_2 <- norm(K_diff, type = "F")
+
+      if(max(critical_value_1, critical_value_2) < eps){
+        constant <- apply(pca$rotation, 2, function(g) { sqrt(sum(g^2)) })
+        pca$rotation <- t(t(pca$rotation)/constant)
+        pca$sdev <- pca$sdev*constant
+        
+        end_time <- Sys.time()
+        elapsed_time <- end_time - start_time
+        print(paste("The algorithm converged after:", elapsed_time, "seconds"))
+        return(list("iteration" = k, "pca" = pca, "x_data" = x_data))
+      }
+    }
+  }
+  constant <- apply(pca$rotation, 2, function(g) { sqrt(sum(g^2)) })
+  pca$rotation <- t(t(pca$rotation)/constant)
+  pca$sdev <- pca$sdev*constant
+  return(list("iteration" = max_iter, "pca" = pca, "x_data" = x_data))
+}
+
+```
+
+
+
 
 ## Test with simulated data
 
 
-```{r final test, eval=TRUE}
+1. get simulated data
+
+```{r get simulated data, eval=FALSE}
+sim_data <- tar_read(simulation_composition_1)
+count_data <- sim_data$x_data
+testrun <- fit_compositional_pca_ilr(count_data, max_iter = 50, r = 10, lambda = 1, eps = 0.01)
+
+```
+
+```{r test function, eval=TRUE}
 fit_compositional_pca_db <- function(x_data,
                             max_iter = 50, r = 10, lambda = 1, dim_reduction = 0.001,
                             eps = 0.01){
@@ -541,9 +986,13 @@ fit_compositional_pca_db <- function(x_data,
         # increase numerical stability
         log_weights <- log_weights - mean(log_weights, na.rm = TRUE)
         weights[[i]] <- exp(log_weights)/sum(exp(log_weights))
+        if (any(!is.finite(exp(log_weights)/sum(exp(log_weights))))) {
+          print("non finite weights for observation: ", i)
+          stop(paste("Infinite or NaN values found in weights at iteration", k, "for observation", i))
+        }
       }
       if (any(!is.finite(weights[[i]]))) {
-          print("non finite weights:")
+          print("non finite weights for observation: ", i)
           print(weights[[i]])
          stop(paste("Infinite or NaN values found in weights at iteration", k, "for observation", i))
       }
@@ -615,16 +1064,24 @@ biplot(sim_1_pca$pca)
 
 The algorithm correctly identifies the principal components.
 
+## Simple dataset
+
+```{r simple dataset, eval=TRUE}
+x <-matrix(c(20,50,30,10,40,50,40,30,30,30,50,20), nrow=4,ncol=3,byrow=TRUE)
+x_list <- apply(x, 1, function(x) x, simplify = FALSE)
+```
 
 # Debugging
 
 Here the comparison to standard PCA with our original data:
 
 ```{r comparison to standard PCA, eval=TRUE}
-x_acomp <- acomp(x_data_matrix)
+x <- tar_read(data_kl15_comp)
+x_acomp <- acomp(x)
 x_clr <- clr(x_acomp)
 pca <- prcomp(na.omit(x_clr))
 biplot(pca)
+plot(pca)
 ```
 
 Now lets run it with our adjusted algorithm in debbuging mode:
@@ -634,33 +1091,41 @@ data_comp <- tar_read(data_kl15_comp)
 colnames(data_comp)
 data_comp <- unname(data_comp)
 count_data <- apply(data_comp, 1, function(x) x, simplify = FALSE)
-count_data[[1]]
-count_data_small <- count_data[1:10]
+# count_data[[1]]
+# count_data_small <- count_data[1:10]
 testrun2 <- fit_compositional_pca_db(count_data, max_iter = 50, r = 10, lambda = 1, eps = 0.01)
 biplot(testrun2$pca)
 ```
 
-Error msg: 
-Error in `rnorm()`:
-! invalid arguments
-Backtrace:
- 1. global fit_compositional_pca_db(...)
- 2. base::sapply(...)
- 3. base::lapply(X = X, FUN = FUN, ...)
- 4. FUN(X[[i]], ...)
- 6. stats::rnorm(...)
+Original error when running with version 1: 
+Error in fit_compositional_pca(count_data, max_iter = 50, r = 10, lambda = 1,  : 
+  Infinite or NaN values found in weights at iteration 1 for observation 2119
+
+testrun2 <- fit_compositional_pca_db(count_data, max_iter = 50, r = 10, lambda = 1, eps = 0.01)
+[1] "non finite weights:"
+ [1]   0 NaN NaN   0 NaN   0   0 NaN   0 NaN
+Error in fit_compositional_pca_db(count_data, max_iter = 50, r = 10, lambda = 1,  : 
+  Infinite or NaN values found in weights at iteration 1 for observation 2119
 
 That obviously creates some problems, that we be summarised under error messages.
 
 As a control function, we want to check if the adjusted algorithm reproduces the results of the simulated data:
 
-```{r test simulation 2, eval=FALSE}
-testrun3 <- fit_compositional_pca(x_data, max_iter = 50, r = 10, lambda = 1, eps = 0.01)
+```{r test simulation ilr, eval=FALSE}
+sim_data <- tar_read(simulation_composition_1)
+sim_data <- sim_data$x_data
+x_data_reduced <- lapply(sim_data, function(x) x[-1])
+testrun3 <- fit_compositional_pca_ilr(x_data_reduced, max_iter = 50, r = 10, lambda = 1, eps = 0.01)
 biplot(testrun3$pca)
 ```
 
 
 ## Error message
+
+1. in optim:
+45: In x_data_i * clr_comp :
+  longer object length is not a multiple of shorter object length
+
 
 ### prcomp
 
@@ -716,153 +1181,109 @@ nu <- numeric
 nu <- rep(0, D)
 Sigma <- diag(D)
 # compute the pca
-eigen_decomp <- eigen(Sigma)
-pca <- list()
-pca$sdev <- sqrt(eigen_decomp$values)
+pca <- prcomp(Sigma)
 # do I need a transpose? -> every column is supposed to be one eigenvector: yes, check ?eigen
-pca$rotation <- eigen_decomp$vectors
-# center the eigenvectors to achieve the restriction of sum zero
-pca$rotation <- apply(pca$rotation, 2, function(g) g - mean(g))
-pca$center <- apply(pca$rotation, 2, function(g) mean(g))
+# pca$rotation <- eigen_decomp$vectors
+# # center the eigenvectors to achieve the restriction of sum zero
+# pca$rotation <- apply(pca$rotation, 2, function(g) g - mean(g))
+# pca$center <- apply(pca$rotation, 2, function(g) mean(g))
 ```
 
+What changes when we compute the D-1 dimensional pca?
 
+```{r test d-1, eval=FALSE}
+nu <- rep(0, D-1)
+Sigma <- diag(D-1)
+# compute the pca
+pca <- prcomp(Sigma)
+# the data looses one dimension: the question if that is done with just removing the pivot?
+x_data_i <- count_data[[1]][2:13]
+
+# center the eigenvectors to achieve the restriction of sum zero
+# pca$rotation <- apply(pca$rotation, 2, function(g) g - mean(g))
+# pca$center <- apply(pca$rotation, 2, function(g) mean(g))
+scores <- rep(0, length = length(pca$sdev))
+# construct clr values given the proposed scores and Sigma
+ilr_comp <- pca$center + pca$rotation%*%scores
+# TODO: they should be centered. i.e. sum up to zero (not necessary of we would use ilr coefficients)
+norm_constant <- sum(exp(clr_comp))
+# clr_comp_adj <- clr_comp - max(clr_comp)
+
+log_likelihood <- sum(x_data_i * clr_comp) - sum(x_data_i)*log(norm_constant)
+
+log_prior <- - sum(0.5 * scores^2 / (pca$sdev^2))
+(log_posterior <- log_likelihood + log_prior)
+
+
+```
 
 ### optim
 
-```{r check scores, eval=TRUE}
+```{r check scores, eval=FALSE}
 scores_list <- list()
-for(i in 1:length(x_data)){
-        # error check to analyse `vmmin` is not finite 
-        optim_result <- optim(rep(0, length = length(pca$sdev)), conditional_scores_log_clr_composition, gr = gradient_cslc,
-                              x_data_i = x_data[[i]], pca = pca,
-                              control = list(fnscale = -1), method = "BFGS")
-        scores_list[[i]] <- as.vector(optim_result$par)
-}
-```
-
-Lets test the optimization function
-
-```{r test optimization, eval=TRUE}
+x_data_i <- count_data[[1]]
 i <- 1
-r <- 11
-k <- 1
-optim_result <- optim(rep(0, length = length(pca$sdev)), conditional_scores_log_clr_composition, gr = gradient_cslc,
-                        x_data_i = x_data[[i]], pca = pca,
-                        control = list(fnscale = -1), method = "BFGS")
-optim_result
+# error check to analyse `vmmin` is not finite 
+optim_result <- optim(rep(0, length = length(pca$sdev)), conditional_scores_log_ilr, gr = gradient_cslc_ilr,
+                              x_data_i = x_data_i, pca = pca, basis_matrix = basis_matrix,
+                              control = list(fnscale = -1), method = "BFGS")
+scores_median <- as.vector(optim_result$par)
 ```
+
+### conditional scores
+
+What happens inside optim: The objective function is optimized given the gradient.
+
+```{r optimisation, eval=FALSE}
+scores <- rep(0, length = length(pca$sdev))
+# construct clr values given the proposed scores and Sigma
+clr_comp <- pca$center + pca$rotation%*%scores
+# TODO: they should be centered. i.e. sum up to zero (not necessary of we would use ilr coefficients)
+norm_constant <- sum(exp(clr_comp))
+# clr_comp_adj <- clr_comp - max(clr_comp)
+
+log_likelihood <- sum(x_data_i * clr_comp) - sum(x_data_i)*log(norm_constant)
+
+log_prior <- - sum(0.5 * scores^2 / (pca$sdev^2))
+(log_posterior <- log_likelihood + log_prior)
+```
+
+The problem lies in the fact that: 
+$$p\left(\mathbf{x}_{i} \mid \mathbf{z}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) $$
+is a value around -556132 for the first iteration. That is mainly due to the extreme value in 
+$\left(\sum_{j=1}^{D}  \exp \left(\mu^{(h)}(A_{j})+\sum_{k=1}^{D-1} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} e_{k}(A_j)\right)\right)^{m_{i}}$ which is alone around 10^6.
+
+By the way, the interpretation is that given the initial values the prior has almost no influence and the data dominates the likelihood.
+
+#### max likelihood 
+
+The conditional distribution is maximised when the scores are the clr-coordinates of x_i and the pca results close to the true parameters.
+
+```{r max likelihood, eval=FALSE}
+x_data_1 <- count_data[[1]]
+clr_data <- clr(x_data_1)
+scores <- clr_data
+clr_counts <- clr(data_comp)
+pca <- prcomp(na.omit(clr_counts))
+
+clr_comp <- pca$center + pca$rotation%*%scores
+norm_constant <- sum(exp(clr_comp))
+
+log_likelihood <- sum(x_data_1 * clr_comp) - sum(x_data_1)*log(norm_constant)
+
+log_prior <- - sum(0.5 * scores^2 / (pca$sdev^2))
+log_posterior <- log_likelihood + log_prior
+
+plot(pca$sdev)
+```
+
+The problem lies in the **singular** sigma.
+
 
 For the optim function, an integer 0 indicates successful completion.
 Also $counts gives the number of calls to the objective function and the gradient. 1 means that the iteration limit has been reached -> **increase max_iter**
 
 
-### Problems and dissection
-
-There are several problems:
-- singular covariance matrix
-- Effective sampling size of 1 in importance sampling
-- clr and clrInv implementation is not clear
-
-```{r short, eval=FALSE}
-Sigma <- diag(D)
-# pca <- princomp(Sigma)
-pca <- prcomp(Sigma)
-# pca$loadings
-pca$rotation
-```
-
-The last eigenvector is just `sqrt(1/D)`, i.e. the "Nullvector"
-
-#### Algorithm for k = 1
-
-```{r testrun 1, eval=TRUE}
-fit_compositional_pca_iteration_one <- function(x_data,
-                            max_iter = 50, r = 10, lambda = 1, dim_reduction = 0.001,
-                            eps = 0.01){
-  start_time <- Sys.time()
-  # TODO: error checks for structure of x_data
-  # initial estimates
-  D <- length(x_data[[1]])
-  nu <- rep(0, D)
-  Sigma <- diag(D)
-  # compute initial pca
-  pca <- prcomp(Sigma)
-    # center the eigenvectors to achieve the restriction of sum zero (implies D-1 space)
-    pca$rotation <- apply(pca$rotation, 2, function(g) g - mean(g))
-    pca$center <- nu
-    # apply(pca$rotation, 2, function(g) mean(g))
-  
-  proposal_scores <- list(length(x_data))
-  weights <- list(length(x_data))
-      # E-Step ###################
-      # draw densities conditional on observations and current pca
-      for(i in 1:length(x_data)){
-        # find median of the posterior score distribution
-        optim_result <- optim(rep(0, length = length(pca$sdev)), conditional_scores_log_clr_composition, gr = gradient_cslc,
-                              x_data_i = x_data[[i]], pca = pca,
-                              control = list(fnscale = -1), method = "BFGS")
-        scores_median <- as.vector(optim_result$par)
-        # importance sampling
-        proposal_scores[[i]] <- sapply(1:(r*1), function(t){
-          matrix(rnorm(length(scores_median), mean = scores_median, sd = lambda*pca$sdev))
-        })
-        log_weights_original <- apply(proposal_scores[[i]], 2, function(scores){
-          conditional_scores_log_clr_composition(scores, x_data[[i]], pca) -
-            sum(dnorm(scores, mean = scores_median, sd = lambda*pca$sdev, log = TRUE))
-        })
-        # increase numerical stability
-        log_weights <- log_weights_original - mean(log_weights_original, na.rm = TRUE)
-        weights[[i]] <- exp(log_weights)/sum(exp(log_weights))
-      }
-      # print(proposal_scores)
-      # print(weights)
-      # M-Step ###################
-      mu_scores <- rowMeans(sapply(seq_along(weights), function(i){
-        proposal_scores[[i]]%*%weights[[i]]
-      }))
-      # print(mu_scores)
-      # update pca
-      pca_old <- pca
-      pca$center <- pca$rotation%*%mu_scores
-      # epsilon <- 1e-6 # oder ein anderer kleiner Wert
-      # TODO: Regularisierung der Kovarianzmatrix prüfen: 
-      # Sigma_regularized <- Sigma + epsilon * diag(nrow(Sigma))
-      Sigma <- Reduce("+", lapply(seq_along(weights), function(i){
-        Reduce("+", lapply(1:(r*1), function(t){
-          C_it <- weights[[i]][t]*(proposal_scores[[i]][,t] - mu_scores)%*%
-            t((proposal_scores[[i]][,t] - mu_scores))
-        }))
-      }))/length(weights)
-
-      eigen_decomp <- eigen(Sigma)
-      # error check eigenvalues > 0
-      negative_eigenvalues <- eigen_decomp$values < 0
-        if (any(negative_eigenvalues)) {
-        warning(sprintf("Warning: %d eigenvalues are negative. They have been set to zero.", sum(negative_eigenvalues)))
-        }
-      pca$sdev <- sqrt(pmax(eigen_decomp$values, 0))
-      pca$rotation <- pca$rotation%*%eigen_decomp$vectors
-      pca$rotation <- apply(pca$rotation, 2, function(g) g - mean(g))
-    #   which_reduced <- rev(cumsum(rev(pca$sdev^2))/sum(pca$sdev^2) > dim_reduction)
-    #   which_reduced <- which_reduced|c(TRUE, TRUE, rep(FALSE, length(which_reduced) - 2))
-    #   pca$sdev <- pca$sdev[which_reduced]
-    #   pca$rotation <- pca$rotation[,which_reduced, drop = FALSE]
-    constant <- apply(pca$rotation, 2, function(g) { sqrt(sum(g^2)) })
-    pca$rotation <- t(t(pca$rotation)/constant)
-    pca$sdev <- pca$sdev*constant
-    return(list("iteration" = max_iter, "pca" = pca, "x_data" = x_data, "Sigma" = Sigma, "mu_scores" = mu_scores, "weights" = weights, 
-    "proposal_scores" = proposal_scores, "log_weights" = log_weights_original))
-    }
-  # normalize result
-  # constant <- apply(pca$rotation, 2,  function(g){
-  #   L_2_norm(cbind(x_grid, g))/(max(x_grid) - min(x_grid))
-  # })
-  # pca$rotation <- t(t(pca$rotation)/constant)
-  # pca$sdev <- pca$sdev*constant
-```
-
-#### conditional scores
 
 Lets have a look at the auxialiary distribution and the conditional distribution of scores:
 
@@ -942,6 +1363,233 @@ legend("topright",
 The last one is irrelevant and should be disgarded. Otherwise the algorithm seems to make pro
 
 
+
+
+### Problems and dissection
+
+There are several problems:
+- singular covariance matrix
+- Effective sampling size of 1 in importance sampling
+- clr and clrInv implementation is not clear
+
+```{r short, eval=FALSE}
+Sigma <- diag(D)
+# pca <- princomp(Sigma)
+pca <- prcomp(Sigma)
+# pca$loadings
+pca$rotation
+```
+
+The last eigenvector is just `sqrt(1/D)`, i.e. the "Nullvector"
+
+#### Algorithm for k = 1
+
+```{r testrun 1, eval=TRUE}
+fit_compositional_pca_iteration_one <- function(x_data,
+                            max_iter = 50, r = 10, lambda = 1, dim_reduction = 0.001,
+                            eps = 0.01){
+     # TODO: error checks for structure of x_data
+  D <- length(x_data[[1]])  
+  # create orthonormal basis
+  basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+  basis_matrix <- do.call(rbind, basis_vectors)
+  
+  # initial estimates
+  nu <- rep(0, D-1)
+  Sigma <- diag(D-1)
+  # compute initial pca
+  pca <- list()
+  eigen_decomp <- eigen(Sigma)
+  pca$rotation <- eigen_decomp$vectors
+  pca$sdev <- eigen_decomp$values
+  pca$center <- nu
+  
+  proposal_scores <- list(length(x_data))
+  weights <- list(length(x_data))
+  scores_median_list <- list(length(x_data))
+  log_weights_list <- list(length(x_data))
+
+      # E-Step ###################
+      for(i in 1:length(x_data)){
+        # error check to analyse `vmmin` is not finite 
+        optim_result <- tryCatch({
+          optim(rep(0, length = length(pca$sdev)), conditional_scores_log_ilr, gr = gradient_cslc_ilr,
+                              x_data_i = x_data[[i]], pca = pca, basis_matrix = basis_matrix,
+                              control = list(fnscale = -1), method = "BFGS")
+        }, error = function(e) {
+            cat("Fehler bei optim() in Iteration", k, "für Beobachtung", i, "\n")
+            cat("Fehlermeldung:", e$message, "\n")
+            print("pca$sdev:")
+            print(pca$sdev)
+            # print("scores_median:")
+            # print(scores_median)
+        })
+        scores_median <- as.vector(optim_result$par)
+        scores_median_list[[i]] <- scores_median
+        # importance sampling
+        proposal_scores[[i]] <- sapply(1:(r*1), function(t){
+          matrix(rnorm(length(scores_median), mean = scores_median, sd = lambda*pca$sdev))
+        })
+        log_weights <- apply(proposal_scores[[i]], 2, function(scores){
+          conditional_scores_log_ilr(scores, x_data[[i]], pca, basis_matrix) -
+            sum(dnorm(scores, mean = scores_median, sd = lambda*pca$sdev, log = TRUE))
+        })
+        log_weights_list[[i]] <- log_weights
+        # increase numerical stability
+        log_weights <- log_weights - mean(log_weights, na.rm = TRUE)
+
+        weights[[i]] <- exp(log_weights)/sum(exp(log_weights))
+        # if (any(!is.finite(exp(log_weights)/sum(exp(log_weights))))) {
+        #   print("non finite weights for observation: ", i)
+        #   # stop(paste("Infinite or NaN values found in weights at iteration", k, "for observation", i))
+        # }
+      }
+      # if (any(!is.finite(weights[[i]]))) {
+      #     print("non finite weights for observation: ", i)
+      #     # print(weights[[i]])
+      #    # stop(paste("Infinite or NaN values found in weights at iteration", k, "for observation", i))
+      # }
+      # M-Step ###################
+      mu_scores <- rowMeans(sapply(seq_along(weights), function(i){
+        proposal_scores[[i]]%*%weights[[i]]
+      }))
+      return(list("mu_scores" = mu_scores, "proposal_scores" = proposal_scores, "weights" = weights, "log_weights" = log_weights_list,
+      "scores_median" = scores_median_list, "pca" = pca, "x_data" = x_data))
+    }
+  # normalize result
+  # constant <- apply(pca$rotation, 2,  function(g){
+  #   L_2_norm(cbind(x_grid, g))/(max(x_grid) - min(x_grid))
+  # })
+  # pca$rotation <- t(t(pca$rotation)/constant)
+  # pca$sdev <- pca$sdev*constant
+test <- fit_compositional_pca_iteration_one(count_data)
+
+proposal_scores <- test$proposal_scores
+# check weights
+weights <- test$weights
+scores <- proposal_scores[[1]][,1]
+x_data_i <- count_data[[1]]
+pca <- test$pca
+conditional_scores_log_ilr(scores, x_data[[i]], pca, basis_matrix)
+log_weights <- test$log_weights
+
+
+      mu_scores_bb <- rowMeans(sapply(seq_along(weights), function(i){
+        proposal_scores[[i]]%*%weights[[i]]
+      }), na.rm = TRUE)
+
+i <- 1
+proposal_scores[[i]]%*%weights[[i]]
+
+test_matrix <- sapply(seq_along(weights), function(i){
+        proposal_scores[[i]]%*%weights[[i]]
+      })
+(test_row <- mean(test_matrix[,1]))
+alternative <- rowMeans(test_matrix, na.rm = TRUE)
+
+Sigma <- Reduce("+", lapply(seq_along(weights), function(i){
+  Reduce("+", lapply(1:(10*1), function(t){
+    C_it <- weights[[i]][t]*(proposal_scores[[i]][,t] - mu_scores_bb)%*%
+      t((proposal_scores[[i]][,t] - mu_scores_bb))
+  }))
+}))/length(weights)
+
+# identify NaN
+which(is.nan(weights), arr.ind = TRUE)
+Na_list <- which(sapply(weights, function(x) any(is.nan(x))))
+weights[[49]]
+# I could replace NaN with 1 
+sapply(Na_list, function(i) weights[[i]])
+# => direct replacement
+for(i in seq_along(weights)) {
+  weights[[i]][is.nan(weights[[i]])] <- 1
+}
+Sigma
+```
+
+
+```{r testrun vs 1, eval=FALSE}
+fit_compositional_pca_iteration_one_vs1 <- function(x_data,
+                            max_iter = 50, r = 10, lambda = 1, dim_reduction = 0.001,
+                            eps = 0.01){
+
+    D <- length(x_data[[1]])
+  nu <- rep(0, D)
+  Sigma <- diag(D)
+  # compute initial pca
+  pca <- prcomp(Sigma)
+  pca$rotation <- apply(pca$rotation, 2, function(g) g - mean(g))
+  pca$center <- nu
+  
+  proposal_scores <- list(length(x_data))
+  weights <- list(length(x_data))
+  scores_median_list <- list(length(x_data))
+  log_weights_list <- list(length(x_data))
+      # E-Step ###################
+      for(i in 1:length(x_data)){
+        # error check to analyse `vmmin` is not finite 
+        optim_result <- tryCatch({
+          optim(rep(0, length = length(pca$sdev)), conditional_scores_log_clr_composition, gr = gradient_cslc,
+                              x_data_i = x_data[[i]], pca = pca,
+                              control = list(fnscale = -1), method = "BFGS")
+        }, error = function(e) {
+            cat("Fehler bei optim() in Iteration", k, "für Beobachtung", i, "\n")
+            cat("Fehlermeldung:", e$message, "\n")
+            print("pca$sdev:")
+            print(pca$sdev)
+            # print("scores_median:")
+            # print(scores_median)
+        })
+        scores_median <- as.vector(optim_result$par)
+        scores_median_list[[i]] <- scores_median
+        # importance sampling
+        proposal_scores[[i]] <- sapply(1:(r*1), function(t){
+          matrix(rnorm(length(scores_median), mean = scores_median, sd = lambda*pca$sdev))
+        })
+        log_weights <- apply(proposal_scores[[i]], 2, function(scores){
+          conditional_scores_log_clr_composition(scores, x_data[[i]], pca) -
+            sum(dnorm(scores, mean = scores_median, sd = lambda*pca$sdev, log = TRUE))
+        })
+        log_weights_list[[i]] <- log_weights
+        # increase numerical stability
+        log_weights <- log_weights - mean(log_weights, na.rm = TRUE)
+        weights[[i]] <- exp(log_weights)/sum(exp(log_weights))
+        # if (any(!is.finite(exp(log_weights)/sum(exp(log_weights))))) {
+        #   print("non finite weights for observation: ", i)
+        #   # stop(paste("Infinite or NaN values found in weights at iteration", k, "for observation", i))
+        # }
+      }
+      # if (any(!is.finite(weights[[i]]))) {
+      #     print("non finite weights for observation: ", i)
+      #     # print(weights[[i]])
+      #    # stop(paste("Infinite or NaN values found in weights at iteration", k, "for observation", i))
+      # }
+      # M-Step ###################
+      mu_scores <- rowMeans(sapply(seq_along(weights), function(i){
+        proposal_scores[[i]]%*%weights[[i]]
+      }))
+      return(list("mu_scores" = mu_scores, "proposal_scores" = proposal_scores, "weights" = weights, "log_weights" = log_weights_list,
+      "scores_median" = scores_median_list, "pca" = pca, "x_data" = x_data))
+    }
+  # normalize result
+  # constant <- apply(pca$rotation, 2,  function(g){
+  #   L_2_norm(cbind(x_grid, g))/(max(x_grid) - min(x_grid))
+  # })
+  # pca$rotation <- t(t(pca$rotation)/constant)
+  # pca$sdev <- pca$sdev*constant
+test2 <- fit_compositional_pca_iteration_one_vs1(count_data)
+
+log_weights_2 <- test2$log_weights
+proposal_scores_2 <- test2$proposal_scores
+weights_2 <- test2$weights
+
+      mu_scores_bb_2 <- rowMeans(sapply(seq_along(weights), function(i){
+        proposal_scores_2[[i]]%*%weights_2[[i]]
+      }))
+```
+
+
+
 #### weights
 
 With the proposed scores, we calculate the weights:
@@ -976,7 +1624,23 @@ We can see that the scale of the original weights is much bigger than in the con
 When we compare the weights, then the difference in scale seems to be the biggest issue. Their distribution
 seems to be fine.
 
+#### Construction of Sigma
+
+$\boldsymbol{\Sigma}^{(h+1)} = \frac{1}{\sum_{i=1}^{n}} \sum_{i=1}^{n} \sum_{t=1}^{r} \omega_{i t}(\boldsymbol{\theta}{i}^{(t)}-\boldsymbol{\nu}^{(h+1)})(\boldsymbol{\theta}{i}^{(t)}-\boldsymbol{\nu}^{(h+1)})^{T}$
+
 ## Strategies
+
+### Normierung der Counts
+
+```{r norm counts, eval=FALSE}
+count_data_scaled <- lapply(count_data, function(x) x/sum(x) * mean(sapply(count_data, sum)))
+```
+
+That does not appear to be super helpful
+
+### Adjustment with a constant offset
+
+log_posterior <- log_likelihood + κ * log_prior
 
 ### Log-Sum_exp-Trick
 
