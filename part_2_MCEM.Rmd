@@ -558,6 +558,29 @@ TODO! Explain the differences for PCA on ilr-coefficients and clr-coordinates.
 ### orthonormal bases
 
 
+```{r orthonormal basis, eval=TRUE}
+generate_orthonormal_basis <- function(k, D) {
+  # i: index of the basis vector (1-based index)
+  # n: total number of elements in the vector
+  
+  # Calculate the scaling factor
+  scaling_factor <- sqrt(k / (k + 1))
+  
+  # Create the vector with i elements of 1/i, followed by -1, and then zeros
+  basis_vector <- c(rep(1 / k, k), -1, rep(0, D - k - 1))
+  
+  # Scale the vector
+  basis_vector <- scaling_factor * basis_vector
+  
+  return(basis_vector)
+}
+D <- 3
+
+basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+
+(basis_matrix <- do.call(rbind, basis_vectors))
+```
+
 
 We need the computation of the orthonormal bases $e_k$
 
@@ -586,8 +609,8 @@ Since our data has a very big sample size (~600.000 per observation), we need to
 ```{r adjusted ilr conditional scores density, eval=TRUE}
 # objective function
 conditional_scores_log_ilr <- function(scores, x_data_i, pca, basis_matrix){
-ilr_comp <- pca$center + scores%*%pca$rotation
-clr_comp <- ilr_comp%*%basis_matrix
+ilr_comp <- pca$center + pca$rotation%*%scores
+clr_comp <- t(ilr_comp)%*%basis_matrix
 norm_constant <- sum(exp(clr_comp))
 # if (!is.finite(norm_constant) || norm_constant <= 0) {
 #   print("norm constant for scores :")
@@ -663,6 +686,69 @@ return(grad)
 }
 ```
 
+## helper functions
+
+### stabilize weights
+
+```{r stabilize weights, eval=TRUE}
+stabilize_weights <- function(log_weights) {
+    # Find maximum log weight
+    max_log_weight <- max(log_weights)
+    
+    # Subtract maximum and exponentiate
+    stable_weights <- exp(log_weights - max_log_weight)
+    
+    # Normalize
+    stable_weights / sum(stable_weights)
+}
+
+```
+
+### monitor weights
+
+```{r monitor weights, eval=TRUE}
+monitor_weights <- function(weights, iteration) {
+    ess <- 1/sum(weights^2)
+    max_weight <- max(weights)
+    cat(sprintf("Iteration %d:\n ESS: %.2f\n Max weight: %.2e\n", 
+                iteration, ess, max_weight))
+}
+```
+
+
+### check optim inputs
+
+```{r optim input, eval=TRUE}
+check_optim_inputs <- function(pca, x_data_i, k) {
+    cat("PCA dimensions:", dim(pca$rotation), "\n")
+    cat("Data dimensions:", length(x_data_i), "\n")
+    cat("Number of components:", length(pca$sdev), "\n")
+    cat("Iteration:", k, "\n")
+}
+
+```
+
+### Plot results
+
+```{r plot rotation matrix, eval=TRUE}
+plot_pca_rotation <- function(rotation, scale = 1, main = "PCA - clr") {
+    # Create base plot
+    plot(rotation[, 1], rotation[, 2], 
+         xlab = "PC1", ylab = "PC2", 
+         main = main)
+    
+    # Add arrows from origin to loadings
+    arrows(0, 0, 
+           rotation[,1] * scale, 
+           rotation[,2] * scale, 
+           length = 0.1, col = "blue")
+    
+    # Add reference lines
+    abline(h = 0, v = 0, lty = 2, col = "gray")
+}
+```
+
+
 ## ilr implementation
 
 ```{r ilr implementation, eval=TRUE}
@@ -685,15 +771,20 @@ fit_compositional_pca_ilr <- function(x_data,
   eigen_decomp <- eigen(Sigma)
   pca$rotation <- eigen_decomp$vectors
   pca$sdev <- eigen_decomp$values
-  pca$center <- nu
+  # center needs to be a column vector
+  pca$center <- matrix(nu, ncol = 1)
   
   proposal_scores <- list(length(x_data))
   weights <- list(length(x_data))
+  sdev_list <- list(length(max_iter))
+  center_list <- list(length(max_iter))
   if(max_iter > 0){
     for(k in 1:max_iter){
+      cat("Iteration:", k, "\n")
       # E-Step ###################
       for(i in 1:length(x_data)){
-        # error check to analyse `vmmin` is not finite 
+        # error check 
+        # check_optim_inputs(pca, x_data[[i]])
         optim_result <- tryCatch({
           optim(rep(0, length = length(pca$sdev)), conditional_scores_log_ilr, gr = gradient_cslc_ilr,
                               x_data_i = x_data[[i]], pca = pca, basis_matrix = basis_matrix,
@@ -703,8 +794,10 @@ fit_compositional_pca_ilr <- function(x_data,
             cat("Fehlermeldung:", e$message, "\n")
             print("pca$sdev:")
             print(pca$sdev)
-            # print("scores_median:")
-            # print(scores_median)
+            print("optim result:")
+            print(optim_result)
+            print("pca center:")
+            print(pca$center)
         })
         scores_median <- as.vector(optim_result$par)
         # importance sampling
@@ -716,8 +809,7 @@ fit_compositional_pca_ilr <- function(x_data,
             sum(dnorm(scores, mean = scores_median, sd = lambda*pca$sdev, log = TRUE))
         })
         # increase numerical stability
-        log_weights <- log_weights - mean(log_weights, na.rm = TRUE)
-        weights[[i]] <- exp(log_weights)/sum(exp(log_weights))
+        weights[[i]] <- stabilize_weights(log_weights)
         # if (any(!is.finite(exp(log_weights)/sum(exp(log_weights))))) {
         #   print("non finite weights for observation: ", i)
         #   # stop(paste("Infinite or NaN values found in weights at iteration", k, "for observation", i))
@@ -735,6 +827,7 @@ fit_compositional_pca_ilr <- function(x_data,
       # update parameters
       pca_old <- pca
       pca$center <- pca$rotation%*%mu_scores
+      center_list[[k]] <- pca$center
       Sigma <- Reduce("+", lapply(seq_along(weights), function(i){
         Reduce("+", lapply(1:(r*k), function(t){
           C_it <- weights[[i]][t]*(proposal_scores[[i]][,t] - mu_scores)%*%
@@ -756,6 +849,8 @@ fit_compositional_pca_ilr <- function(x_data,
         warning(sprintf("Warning: %d eigenvalues are negative. They have been set to zero.", sum(negative_eigenvalues)))
         }
       pca$sdev <- sqrt(pmax(eigen_decomp$values, 0))
+      cat("Eigenvalues:", pca$sdev, "\n")
+      sdev_list[[k]] <- pca$sdev
       # if (any(!is.finite(pca$sdev)) || any(pca$sdev <= 0)) {
       #   print("pca$sdev:")
       #   print(pca$sdev)
@@ -1114,11 +1209,12 @@ As a control function, we want to check if the adjusted algorithm reproduces the
 ```{r test simulation ilr, eval=FALSE}
 sim_data <- tar_read(simulation_composition_1)
 sim_data <- sim_data$x_data
-x_data_reduced <- lapply(sim_data, function(x) x[-1])
-testrun3 <- fit_compositional_pca_ilr(x_data_reduced, max_iter = 50, r = 10, lambda = 1, eps = 0.01)
-biplot(testrun3$pca)
+# x_data_reduced <- lapply(sim_data, function(x) x[-1])
+testrun3 <- fit_compositional_pca_ilr(sim_data, max_iter = 20, r = 10, lambda = 1, eps = 0.01)
+plot_pca_rotation(testrun3$pca$rotation)
 ```
 
+That gives us the result as we expected them for ilr-coordinates.
 
 ## Error message
 
@@ -1371,6 +1467,7 @@ There are several problems:
 - singular covariance matrix
 - Effective sampling size of 1 in importance sampling
 - clr and clrInv implementation is not clear
+- Overflow in the log-likelihood: that is weight values that are to large to take an exponential
 
 ```{r short, eval=FALSE}
 Sigma <- diag(D)
@@ -1495,9 +1592,9 @@ Sigma <- Reduce("+", lapply(seq_along(weights), function(i){
 }))/length(weights)
 
 # identify NaN
-which(is.nan(weights), arr.ind = TRUE)
+# which(is.nan(weights), arr.ind = TRUE)
 Na_list <- which(sapply(weights, function(x) any(is.nan(x))))
-weights[[49]]
+length(Na_list)
 # I could replace NaN with 1 
 sapply(Na_list, function(i) weights[[i]])
 # => direct replacement
@@ -1505,6 +1602,18 @@ for(i in seq_along(weights)) {
   weights[[i]][is.nan(weights[[i]])] <- 1
 }
 Sigma
+
+stabilize_weights <- function(log_weights) {
+    # Find maximum log weight
+    max_log_weight <- max(log_weights)
+    
+    # Subtract maximum and exponentiate
+    stable_weights <- exp(log_weights - max_log_weight)
+    
+    # Normalize
+    stable_weights / sum(stable_weights)
+}
+
 ```
 
 
