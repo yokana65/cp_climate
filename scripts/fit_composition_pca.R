@@ -65,6 +65,7 @@ fit_compositional_pca_vs1_0 <- function(x_data,
       # check convergence
       critical_value_1 <- sqrt(sum((pca_old$center - pca$center)^2))
       K_old <- Reduce("+", lapply(seq_along(pca_old$sdev), function(k){
+        # standard decomposition VLV
         pca_old$rotation[,k]%*%t(pca_old$rotation[,k])*(pca_old$sdev[k]^2)
       }))
       K_new <- Reduce("+", lapply(seq_along(pca$sdev), function(k){
@@ -186,3 +187,5 @@ inverse_clr_trafo <- function(clr_density){
   f_integral <- sum(exp(clr_density[,2]))
   data.frame("x" = clr_density[,1], "y" = exp(clr_density[,2])/f_integral)
 }
+
+

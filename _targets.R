@@ -15,6 +15,7 @@ library(compositions)
 source("scripts/read_data_KL15_XRF.R")
 source("scripts/fit_density_pca.R")
 source("scripts/fit_composition_pca.R")
+source("scripts/fit_composition_pca_ilr.R")
 
 # Set target-specific options such as packages:
 # tar_option_set(packages = c("dplyr", "tidyr"))
@@ -74,10 +75,10 @@ list(
   tar_target(missings_depth, {
     missings_depth <- results$missings_depth
   }),
-    tar_target(data_kl15_comp, {
+  tar_target(data_kl15_comp, {
     data_comp <- results$data_comp
   }),
-    tar_target(data_kl15_comp_clr, {
+  tar_target(data_kl15_comp_clr, {
     data_clr <- results$data_clr
   }),
   tar_target(data_kl15_comp_ilr, {
@@ -126,6 +127,18 @@ list(
   }),
   tar_target(composition_pca_sim_1, {
     x_data <- simulation_composition_1$x_data
-    composition_pca_sim_1_results <- fit_compositional_pca_vs1_0(x_data, max_iter = 50)
+    composition_pca_sim_1_results <-
+      fit_compositional_pca_vs1_0(x_data, max_iter = 50)
+  }),
+  tar_target(pca_count_ilr_std, {
+    x_data <- data_kl15_comp
+    pca_results_ilr_std <-
+      fit_compositional_pca_ilr_sc(x_data,
+                                   max_iter = 50,
+                                   r = 10,
+                                   lambda = 1,
+                                   eps = 0.01,
+                                   sc_factor = 0.001,
+                                   sum_exp = TRUE)
   })
 )

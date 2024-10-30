@@ -1229,9 +1229,13 @@ testrun_k50 <- fit_compositional_pca_ilr(count_data, max_iter = 50, r = 15, lamb
 testrun_k10_r10_01_lambda <- fit_compositional_pca_ilr_bb(count_data, max_iter = 50, r = 10, lambda = 1, eps = 0.01)
 testrun_k10_r10_01 <- fit_compositional_pca_ilr(count_data, max_iter = 30, r = 15, lambda = 0.6, eps = 0.03)
 # run with scaling
-testrun_scaling <- fit_compositional_pca_ilr_sc(count_data, max_iter = 30, r = 15, lambda = 0.8, eps = 0.03)
+testrun_scaling <- fit_compositional_pca_ilr_sc(count_data, max_iter = 30, r = 15, lambda = 1, eps = 0.01)
+testrun_sc001 <- fit_compositional_pca_ilr_sc(count_data, max_iter = 30, r = 15, lambda = 1, eps = 0.01, sc_factor = 0.001)
+testrun_sc001 <- fit_compositional_pca_ilr_sc(count_data, max_iter = 30, r = 15, lambda = 0.8, eps = 0.01, sc_factor = 0.005)
+
 
 plot_pca_rotation(testrun_scaling$pca$rotation)
+plot(testrun_scaling$pca$sdev)
 ```
 
 we want to compare that to the results of a classical pca with ilr-coefficients:
@@ -1243,7 +1247,9 @@ x_ilr <- ilr(data_comp)
 x_clr <- clr(data_comp)
 pca_ilr <- princomp(x_ilr)
 pca_clr <- princomp(x_clr)
-biplot(pca_ilr)
+biplot(pca_clr)
+plot(pca_clr)
+plot_pca_rotation(pca_clr$loadings)
 ```
 
 A problem is, that we can not really interprete ilr-coefficents. So lets try to compute the clr-coordinates:
@@ -1256,6 +1262,7 @@ rownames(rotation_clr) <- colnames(data_comp)
 plot_pca_rotation(rotation_clr)
 png("MCEM_rotation_clr_plot_scaling.png", width = 800, height = 600)
 plot_pca_rotation(rotation_clr)
+dev.off()
 ```
 
 Compare that to the clr Biplot
@@ -1807,10 +1814,10 @@ This approach scales the likelihood part to reduce its influence. That helps the
 to the problem that now the prior dominates the posterior.
 
 ```{r updated functions scaling approach, eval=TRUE}
-conditional_scores_log_ilr_sc <- function(scores, x_data_i, pca, basis_matrix) {
+conditional_scores_log_ilr_sc <- function(scores, x_data_i, pca, basis_matrix, sc_factor) {
     # Scale the data to moderate sample size
     # scaling_factor <- 1/sum(x_data_i)
-    scaling_factor <- 0.0001
+    scaling_factor <- sc_factor
     
     ilr_comp <- pca$center + pca$rotation%*%scores
     clr_comp <- t(ilr_comp)%*%basis_matrix
@@ -1825,9 +1832,9 @@ conditional_scores_log_ilr_sc <- function(scores, x_data_i, pca, basis_matrix) {
     return(log_likelihood + log_prior)
 }
 
-gradient_cslc_ilr_sc <- function(scores, x_data_i, pca, basis_matrix) {
+gradient_cslc_ilr_sc <- function(scores, x_data_i, pca, basis_matrix, sc_factor) {
     # scaling_factor <- 1/log(sum(x_data_i))
-    scaling_factor <- 0.0001
+    scaling_factor <- sc_factor
     m_i <- sum(x_data_i)
 
     ilr_comp <- pca$center + pca$rotation%*%scores
@@ -1850,7 +1857,9 @@ fit_compositional_pca_ilr_sc <- function(x_data,
                                 max_iter = 50,
                                 r = 10,
                                 lambda = 1,
-                                eps = 0.01){
+                                eps = 0.01,
+                                sc_factor = 0.001,
+                                sum_exp = TRUE){
   start_time <- Sys.time()
   # TODO: error checks for structure of x_data
   D <- length(x_data[[1]])  
@@ -1884,6 +1893,7 @@ fit_compositional_pca_ilr_sc <- function(x_data,
         optim_result <- tryCatch({
           optim(rep(0, length = length(pca$sdev)), conditional_scores_log_ilr_sc, gr = gradient_cslc_ilr_sc,
                               x_data_i = x_data[[i]], pca = pca, basis_matrix = basis_matrix,
+                              sc_factor = sc_factor,
                               control = list(fnscale = -1), method = "BFGS")
         }, error = function(e) {
             cat("Fehler bei optim() in Iteration", k, "für Beobachtung", i, "\n")
@@ -1901,14 +1911,19 @@ fit_compositional_pca_ilr_sc <- function(x_data,
           matrix(rnorm(length(scores_median), mean = scores_median, sd = lambda*pca$sdev))
         })
         # check value of the conditional distribution
-        conditional_scores_list[[i]] <- conditional_scores_log_ilr_sc(scores, x_data[[i]], pca, basis_matrix) 
+        conditional_scores_list[[i]] <- conditional_scores_log_ilr_sc(scores, x_data[[i]], pca, basis_matrix, sc_factor) 
 
         log_weights <- apply(proposal_scores[[i]], 2, function(scores){
-          conditional_scores_log_ilr_sc(scores, x_data[[i]], pca, basis_matrix) -
+          conditional_scores_log_ilr_sc(scores, x_data[[i]], pca, basis_matrix, sc_factor) -
             sum(dnorm(scores, mean = scores_median, sd = lambda*pca$sdev, log = TRUE))
         })
         # increase numerical stability
-        weights[[i]] <- stabilize_weights(log_weights)
+        if (sum_exp) {
+          weights[[i]] <- stabilize_weights(log_weights)
+        } else {
+          log_weights <- log_weights - mean(log_weights, na.rm = TRUE)
+          weights[[i]] <- exp(log_weights)/sum(exp(log_weights))
+        }
       }
       monitor_global_ess(weights, k)
       mean_conditional <- mean(unlist(conditional_scores_list), na.rm = TRUE)
@@ -2125,7 +2140,7 @@ x_data <- unlist(lapply(1:n_samples, function(i) {
   lapply(1:nrow(samples), function(j) samples[j,])
 }), recursive = FALSE)
 
-pca_mcem <-fit_compositional_pca_ilr(x_data, max_iter = 40, r = 10, lambda = 1, eps = 0.01)
+pca_mcem <-fit_compositional_pca_ilr_sc(x_data, max_iter = 40, r = 10, lambda = 1, eps = 0.01)
 plot_pca_rotation(pca_mcem$pca$rotation)
 
 
