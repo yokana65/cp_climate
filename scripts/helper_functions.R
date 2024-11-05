@@ -27,7 +27,7 @@ monitor_global_ess <- function(all_weights, k) {
 }
 
 generate_orthonormal_basis <- function(k, D) {
-  scaling_factor <- sqrt(k / (k + 1))
+  scaling_factor <- -sqrt(k / (k + 1))
 
   basis_vector <- c(rep(1 / k, k), -1, rep(0, D - k - 1))
 
@@ -81,4 +81,15 @@ plot_marginal_scores <- function(proposal_scores, weights, iteration) {
     rug(all_scores)
   }
   par(mfrow = c(1,1))
+}
+
+clrInv_long <- function(clr_coords) {
+    # Exponentiate the clr coordinates
+    exp_coords <- exp(clr_coords)
+    
+    # Calculate the geometric mean normalization constant
+    norm_const <- sum(exp_coords)
+    
+    # Return normalized compositions
+    exp_coords / norm_const
 }
