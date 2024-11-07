@@ -1,4 +1,4 @@
-<!-- ---
+---
 title: "Theoretical Framework"
 date: "`r Sys.Date()`"
 output:
@@ -6,15 +6,43 @@ output:
     toc: true
     number_sections: true
     code_folding: hide
---- -->
+---
 
-# Theoretical Framework
+# Introduction Master thesis
 
-## The discrete measure
+## Compositional Data analysis
+
+This chapter introduces the formal aspects of compositional data analysis in the tradition of Aitchison (1986). In addition, following the work of Pawlowsky-Glahn und Egozcue (2001, 2015)
+the geoemtrical representation of compositions by orthonormal coordinates in a real Euclidean Space and the *principle of working in coordinates* (Mateu-Figueras et al. 2011) is explained.
+In this sense, it is necessary to define the vector space of compositional data, the Simplex, and its transformation to the real Euclidean Space.
+Furthermore, the practical application of the principle of working in coordinates is illustrated by a summary of well suited descriptive and multivariate methods.
+
+### count compositions
+
+For this master thesis, the focus is on a special type of compositional data, namely *count compositions*(Boogart et al. 2013, p. 34).
+In general count compositions can be treated as normal Aitchison compositions, but there are a few characteristics that need to be emphasized.
+The counts can be seen as proportional to the relative sizes of the parts of a whole. Therefore it makes sense to model the counts
+of each part as relative group sizes. 
+
+In the following section, the random variable $X_{i}$ is introduced to model the count composition of observation $i$ for $i=1, \ldots, n$.
+Typically, $X_{i}$ is modeled with a multinomial distribution, $\boldsymbol{X}_{i} \sim \text{Multinom}(m_i, \boldsymbol{\pi_i})$.
+The realizations of $\boldsymbol{X}_{i}$ are denoted by $\boldsymbol{x}_i$ and represent a sample of size $m_i$ from the "true" or *underlying composition* $\boldsymbol{\pi_i}$.
+
+Each observed count composition $\boldsymbol{x}_i$ is a D-dimensional vector of integers with $x_{ij}$ being the count of component $j$ in observation $i$, with $j=1, \ldots, D$: 
+$$\boldsymbol{}x_{i} = (x_{i1}, x_{i2}, ..., x_{iD})^T$$
+
+The sample size $m_i$ in every observation is the total of all counts in $\mathbf{x}_i$, i.e. $m_i = \sum_{j=1}^{D} x_{ij}$.
+
+### Principles of compositional data analysis
+
+# Principle Component Analysis and the MCEM algorithm
+
 
 The theoretical considerations of this master thesis follow directly the approach of Steyer and Greven (2023), who propose a latent density
 model to conduct a functional principal component analysis for "sparsely observed" densities. Their approach can be directly
-extended to the analysis of discrete (count) compositions.
+extended to the analysis of discrete (count) compositions. 
+
+## The discrete measure and the clr transformation
 
 As stated by Steyer and Greven (2023), a discrete measure is identified by the discrete probability mass function on the power set $\mathcal{P}\left(\left\{A_{1}, \ldots, A_{D}\right\}\right)$
 on the finite set of disjoint outcomes $A_1, \dots, A_D$ with $f:\left\{A_{1}, \ldots, A_{D}\right\} \rightarrow \mathbb{R}$. 
@@ -36,68 +64,57 @@ $$
 
 The clr-transformation allows for a one-to-one mapping between $\mathcal{B}$ and $\mathbb{R}_0^D$.
 
-## Count compositions
+In addition, the isometric logratio transformation (ilr) will be used to introduce coordinates on an orthonormal basis of $\mathbb{R}_0^D$. Orthonormal Bases can be obtained by the Gram-Schmidt procedure (Egozcue et al., 2003)
+and there are infinetely many that can be defined that way. Following, we will use the orthonormal basis vectors suggested by Egozcue et al. (2003, p. 291):
 
-The observed data is considered a *count composition*, which is a specific type of compositional data (Boogart et al. 2013, p. 34). 
-The counts can be seen as proportional to the relative sizes of the parts of a whole. Therefore it makes sense to model the counts
-of each part as relative group sizes. 
+$$
+e_{k}=\sqrt{\frac{k}{k+1}}(\overbrace{k^{-1}, \ldots, k^{-1}}^{k \text { times }},-1,0, \ldots, 0)^{T} \tag{1}
+$$
+with $e_k \in \mathbb{R}^D$ for $k=1, \ldots, D-1$. The vectors $e_k$ are orthogonal with respect to the ordinary Euclidean inner product in $\mathbb{R}^D and constitue a basis of 
+a (D-1) dimensional subspace of $\mathbb{R}^D$. The ilr-transformation of a composition is therefore an isometric linear mapping between the Aitchison simplex and $\mathbb{R}^{D-1}: 
+$$
+\operatorname{ilr}: \mathcal{B} \rightarrow \mathbb{R}_0^{D-1}\;, \boldsymbol{\xi}=\operatorname{ilr}(\boldsymbol{\pi})=\operatorname{clr}(\pi) \cdot \mathbf{E}^T = (\rho) \cdot \mathbf{E}^T  \tag{2}
+$$
+with $\mathbf{E}$ being the $D x (D-1)$ matrix with the orthonormal basis vectors $e_k$ as columns.
 
-In the following section, the random variable $X_{i}$ is introduced to model the count composition of observation $i$ for $i=1, \ldots, n$.
-Typically, $X_{i}$ is modeled with a multinomial distribution, $X_{i} \sim \text{Multinom}(m_i, \boldsymbol{\pi_i})$.
-The realizations of $X_{i}$ are denoted by $\mathbf{x}_i$ and represent a sample of size $m_i$ from the "true" or *underlying composition* $\boldsymbol{\pi_i}$.
-
-Each observed count composition $\mathbf{x}_i$ is a D-dimensional vector of integers with $x_{ij}$ being the count of component $j$ in observation $i$, with $j=1, \ldots, D$: 
-$$x_{i} = (x_{i1}, x_{i2}, ..., x_{iD})^T$$
-
-The sample size $m_i$ in every observation is the total of all counts in $\mathbf{x}_i$, i.e. $m_i = \sum_{j=1}^{D} x_{ij}$.
-Every draw from $\boldsymbol{\pi_i}$ can be formalized as the count $x_{ik}$ for $k=1, \ldots, m_{i}$. In this sense $x_{ik}$ is a D-dimensional vector of zeros with a single one at the
-position of the component $j$ that was drawn, which represents the observed event $A_j$.
-
-Therefore, with the discrete probability measure introduced before, the probability of an disjunct event $A_j$ can be identified by $P\left({A_{j}}\right)=\pi_{j}$. That means the probability 
-of a draw $x_{ik}$ can be described by $P\left({A_{j}}\right)=P\left({X_{i} = x_{ik}}\right)=\pi_{j}$.
-
-To summarise, every count composition $\mathbf{x}_i$ is the sum of $m_i$ draws from the *underlying composition* $\boldsymbol{\pi_i}$ with probability $\pi_j$ for $j=1, \ldots, D$.
-
-Based on these considerations, we can adapt the the latent process model of Steyer and Greven (2023) to the discrete case and specify the likelihood function.
+Based on these considerations, we can adapt the the latent process model of Steyer and Greven (2023) to the discrete case and specify the likelihood function with the probability mass function of the multinomial distribution.
 
 ## Latent model
 
 Following Steyer and Greven (2023), the goal is to conduct a principal component analysis for count compositions. 
-Therefore, we assume that the observed samples $x_{i 1}, \ldots, x_{i m_{i}}$, where $m_{i} \in \mathbb{N}$, are drawn
-from the underlying composition $\boldsymbol{\pi_i}$ with probability $\pi_j$ for $j=1, \ldots, D$ and where $i=1, \ldots, n$, with $n$
-being the number of observed count compositions in our data. Based on these samples, we want to use a Maximum-Likelihood 
-estimation for the parameters $\mu$ and $K$ of a underlying stochastic process $\mathcal{G}$ in $\mathbb{R}_{0}^{D}$.
+Therefore, it is assumed that the observations samples $\boldsymbol{x}_{i}$, for $i = 1, \ldots, n$ being the number of
+observed count compositions in the dataset. As stated in [chapter count compositions] each $\boldsymbol{x}_i$ is an 
+independent and identicaly distributed sample of size $\mathbf{m}_i$ from the underlying composition $\boldsymbol{\pi_i}$. 
 
-We assume that $\mu$ is the mean vector and $K$ the covariance matrix of the underlying process that we propose to be 
-a Gaussian process $GP$. Therefore, we assume the following data generating process:
+Based on the observations, we want to use a Maximum-Likelihood estimation for the parameters $\mu$ and $K$ of a 
+underlying latent variable $\boldsymbol{G}_i$ in $\mathbb{R}_{0}^{D}$.
 
-$$ X_{ik} \stackrel{i.i.d.}{\sim} \operatorname{clr}^{-1}(G_i) = \left(\frac{\exp(G_{i1})}{\sum_{j=1}^D \exp(G_{ij})}, ..., \frac{\exp(G_{iD})}{\sum_{j=1}^D \exp(G_{ij})}\right)^T $$
+We assume $\boldsymbol{G}$ to be a multivariate normal distributed variable with $\mu$ as the mean vector and $K$ as its covariance matrix. 
+Therefore, we assume the following data generating process for observation $i$ with sample size $m_i$:
 
-with $G_{i}$ being independent replicates of $G P(\mu, K)$ for all $i=1, \ldots, n, n \in \mathbb{N}, k=1, \ldots, m_{i}, j= 1, \ldots, D$.
+$$ (\boldsymbol{X}_{i})_{m_i} \stackrel{i.i.d.}{\sim} \operatorname{clr}^{-1}(\boldsymbol{G}_i) = \left(\frac{\exp(G_{i1})}{\sum_{j=1}^D \exp(G_{ij})}, ..., \frac{\exp(G_{iD})}{\sum_{j=1}^D \exp(G_{ij})}\right)^T $$
+
+with $G_{i}$ being $\boldsymbol{G}_{i} = (G_{i1}, \ldots, G_{iD}) \stackrel{i.i.d.}{\sim} \mathcal{N}(\mu, \mathcal{K}) for all $i=1, \ldots, n$.
 
 With the empirical estimates of $\mu$ and $K$ we can compute the eigenvalues and eigenvectors to obtain the principal component decomposition 
 of the underlying process.
 
-Given the orthonormal basis suggested by Egozcue et al. 2003:
+The marginal likelihood of $\mathbf{G}_i$ is that of a mixed model (cp. Steyer and Greven 2023, p.6).
 
-$$
-e_{l}=\sqrt{\frac{l}{l+1}}(\overbrace{l^{-1}, \ldots, l^{-1}}^{l \text { times }},-1,0, \ldots, 0)^{T}
-$$
-
-with $l=1, \ldots, D-1$, we get an orthonormal basis of $\mathbb{R}_0^D$. This allows us to apply maximum-likelihood
-theory, since the parameters $\mu$ and $K$ are identifiable by a finite set of real-valued parameters and the likelihood
-is similar to the marginal likelihood of a mixed model (cp. Steyer and Greven 2023, p.6).
-
-Equipped with the orthonormal bases, we can rewrite the latent Model as following:
+For the empirical evaluation of the latent process, we can treat the outcomes of $\mathbf{G}_i$ as the clr-coordinates of the count composition $\boldsymbol{x}_i$.
+With the orthonormal bases in $\mathbb{R}^{D-1}$, we can rewrite the latent process as:
 
 $$ 
-X_{ik} \stackrel{i.i.d.}{\sim} \operatorname{clr}^{-1}(G_i) \quad \text{with} \quad G_{i} = (G_{i1}, \ldots, G_{iD}) \stackrel{i.i.d.}{\sim} \mathcal{N}(\nu, \Sigma)
+(\boldsymbol{X}_{i})_{m_i} \stackrel{i.i.d.}{\sim} \operatorname{clr}^{-1}(\boldsymbol{G}_i) \quad \text{with} \quad \boldsymbol{G}_{i} = \sum_{k=1}^{D-1} \theta_{i k} e_{k} \text { and } \boldsymbol{\theta}_{i}=\left(\theta_{i 1}, \ldots, \theta_{i D-1}\right) \stackrel{i . i . d .}{\sim} \mathcal{N}(\boldsymbol{\nu}, \boldsymbol{\Sigma}) \tag{5}
 $$
 
 Since the clr-coordinates of the transformed count compositions are a linear combination of ilr-coordinates and the
-orthonormal bases $\operatorname{clr}(\mathbf{x})=\sum_{l=1}^{D-1} y_{l} \mathbf{e}_{l}$ with $\operatorname{ilr}(\mathbf{x})=\left[y_{1}, y_{2}, \ldots, y_{D-1}\right]$ 
-for $x$ being a vector on the simplex (Egozcue et al. 2003), we can apply the principle of working on coordinates and use 
-the clr-coordinates for maximum-likelihood estimation (Pawlowsky-Glahn et al. 2015).
+orthonormal bases in $\mathcal{E}, we can consider the observations $\boldsymbol{x}_i$ as back transformations from
+the ilr-coordinates $\boldsymbol{\theta}_i$. Therefore, the principle of working on coordinates is applied and 
+the ilr-coordinates can be used for maximum-likelihood estimation of the parameters of interest $\nu$ and  $\Sigma$ (Pawlowsky-Glahn et al. 2015).
+
+The following sections will derive the procedure for this estimation with the Monte-Carlo-Expectation-Maximization (MCEM) algorithm 
+proposed by Steyer and Greven (2023).
 
 <!-- Given the standard multivariate principal decomposition of the covariance matrix $\Sigma$, we can calculate scores, eigenvalues 
 and eigenvectors (Held et al. 2014). -->
@@ -105,50 +122,57 @@ and eigenvectors (Held et al. 2014). -->
 ## Likelihood function
 
 Given the latent process model with finite dimensional parameters $\nu$ and $\Sigma$, we can compute the maximum-likelihood estimators
-given the realizations $x_i = \sum_{k=1}^{m_i} x_{ik}$ with  $x_{ik} = (x_{ik1}, \ldots, x_{ikD})^T$ from the random sample 
-$\mathbf{X}_i = (X_{i1}, \ldots, X_{im_i})^T$. Knowing that the sample size $m_i$ is also the total number of counts
-for all compositional parts, i.e. $m_i = \sum_{j=1}^{D} x_{ij}$ and $x_{ij} = \sum_{k=1}^{m_i} x_{ikj}$, we can now derive 
-the marginal likelihood of $\nu$ and $\Sigma$ given the following derivation of the marginal likelihood of $\mu$ and $K$:
+given the realizations $\boldsymbol{x}_i$ from the random sample $(\boldsymbol{X}_i)_{m_i} = (X_{i1}, \ldots, X_{iD})_{m_i}^T$ of sample size $m_i$ 
+for $i = 1, \ldots, n$.  
+The marginal likelihood of $\nu$ and $\Sigma$ can be derived with the probability mass function of the multinomial distribution as:
+$$
+L\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right)=\prod_{i=1}^{n} \int_{\mathbb{R}^{N}} \frac{\exp \left(\sum_{j=1}^{m_{i}} \sum_{k=1}^{N} \theta_{i k} e_{k}\left(x_{i j}\right)\right) p\left(\boldsymbol{\theta}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\int_{I} \exp \left(\sum_{k=1}^{N} \theta_{i k} e_{k}(x)\right) d x\right)^{m_{i}}} d \boldsymbol{\theta}_{i} 
+$$
+
 
 $$
 \begin{aligned}
-L\left(\mu, K \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right) & =\prod_{i=1}^{n} P\left(\boldsymbol{x}_{i} \mid \mu, K\right)=\prod_{i=1}^{n} \int_{\mathbb{R}^{D}} P\left(\boldsymbol{x}_{i} \mid \boldsymbol{G}_{i}\right) P\left(\boldsymbol{G}_{i} \mid \mu, K\right) d \, \boldsymbol{G}_{i} \\
-& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D}}\left(\prod_{k=1}^{m_{i}} P\left(x_{i k} \mid \boldsymbol{G}_{i}\right)\right) P\left(\boldsymbol{G}_{i} \mid \mu, K\right) d \, \boldsymbol{G}_{i} \\
-& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D}}\left(\prod_{j=1}^{D} \, \prod_{p=1}^{x_{ij}} \left(\boldsymbol{\pi}_{ij} \mid \boldsymbol{G}_{ij}\right)\right) P\left(\boldsymbol{G}_{i} \mid \mu, K\right) d \, \boldsymbol{G}_{i} \\
-& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D}}\left(\prod_{j=1}^{D} \, \prod_{p=1}^{x_{ij}} \frac{\exp \left( \boldsymbol{G}_{ij}\right)}{\sum_{j=1}^{D} \exp \left(\boldsymbol{G}_{ij}\right)}\right) P\left(\boldsymbol{G}_{i} \mid \mu, K\right) d \, \boldsymbol{G}_{i} \\
-& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D}}\left(\prod_{j=1}^{D} \, \frac{\exp \left(x_{ij} \, \boldsymbol{G}_{ij}\right)}{\left(\sum_{j=1}^{D} \exp \left(\boldsymbol{G}_{ij}\right)\right)^{x_{ij}}}\right) P\left(\boldsymbol{G}_{i} \mid \mu, K\right) d \, \boldsymbol{G}_{i} \\
-& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D}} \, \frac{ \exp \left(\sum_{j=1}^{D} x_{ij} \, \boldsymbol{G}_{ij}\right) \quad P\left(\boldsymbol{G}_{i} \mid \mu, K\right)}{\left(\sum_{j=1}^{D} \exp \left(\boldsymbol{G}_{ij}\right)\right)^{m_{i}}}  d \, \boldsymbol{G}_{i} \\
+L\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right) & =\prod_{i=1}^{n} \mathcal{p}\left(\boldsymbol{x}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)=\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \mathcal{p}\left(\boldsymbol{x}_{i} \mid \boldsymbol{\theta}_{i}\right) \mathcal{p}\left(\boldsymbol{\theta}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right) d \boldsymbol{\theta_{i}} \\
+& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}}\left(\prod_{j=1}^{D} \, \left(\boldsymbol{\pi}_{ij}^{x_{i j}} \mid \boldsymbol{\theta}_{ij}\right)\right) \mathcal{p}\left(\boldsymbol{ \theta}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right) d \boldsymbol{\theta_{i}} \\
+& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}}\left(\prod_{j=1}^{D} \, \frac{\exp \left(x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} e_{k} \left(A_j\right)\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} e_{k} \left(A_j\right)\right)\right)^{x_{i j}}}\right) \mathcal{p}\left(\sum_{k=1}^{D-1} \theta_{i k} e_{k} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right) d \boldsymbol{\theta_{i}} \\
+& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \, \frac{ \exp \left(\sum_{j=1}^{D} x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} e_{k} \left(A_j\right)\right) \mathcal{p}\left(\sum_{k=1}^{D-1} \theta_{i k} e_{k} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} e_{k} \left(A_j\right)\right)\right)^{m_{i}}}  d \boldsymbol{\theta_{i}} \\
 \end{aligned}
 $$
 
-with $p$ depending on the number of counts for component $j\,$, i.e. $x_{ij}$.
+with $\mathcal{p}$ denoting a generic probability mass function, i.e. $\mathcal{p}_{m_i}\left(\boldsymbol{x}_i \mid \boldsymbol{\theta}_i\right)$ being the conditional probability mass function of the multinomial distribution
+and $\mathcal{p}\left(\boldsymbol{\theta}_i \mid \boldsymbol{x}_i\right)$ being the conditional probability mass function of the multinomial distribution.
 
-Therefore, we can write the marginal likelihood of our parameters of interest $\nu$ and $\Sigma$ as:
+To summarize, we can write the marginal likelihood of our parameters of interest $\nu$ and $\Sigma$ as:
 
 
 $$
-L\left(\nu, \Sigma \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right) =\prod_{i=1}^{n} \int_{\mathbb{R}^{D}} \, \frac{ \exp \left(\sum_{j=1}^{D} x_{ij} \, \boldsymbol{G}_{ij}\right) \quad P\left(\boldsymbol{G}_{i} \mid \nu, \Sigma\right)}{\left(\sum_{j=1}^{D} \exp \left(\boldsymbol{G}_{ij}\right)\right)^{m_{i}}}  d \, \boldsymbol{G}_{i} \\
+L\left(\nu, \Sigma \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right) =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \, \frac{ \exp \left(\sum_{j=1}^{D} x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} e_{k} \left(A_j\right)\right) \mathcal{p}\left(\sum_{k=1}^{D-1} \theta_{i k} e_{k} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} e_{k} \left(A_j\right)\right)\right)^{m_{i}}}  d \boldsymbol{\theta_{i}}
 $$
 
-## Stochastic process
+## Principal component representation
 
-$\mathcal{G}={G(A_j)}_{j=1,\ldots,D} \subset \mathbb{R}_0^D$
+Given the multivariate normally distributed variable $\boldsymbol{G}_i$, we can write the principal component representation of $\boldsymbol{G}_i$ with ilr-coordinates as:
+$$
+G(A_j)=\sum_{k=1}^{D-1}\nu_k \boldsymbol{e}_k(A_j)+\sum_{k=1}^{D-1} Z_{k} \boldsymbol{v}_{k} \boldsymbol{e}_k (A_j) \tag{9}
+$$
 
-with mean vector $\mu = (\mu(A_1), \mu(A_2), ..., \mu(A_D))^T$, wobei $\mu(A_j) = E[G(A_j)]$
-and covariance matrix $K = (K_{ij}){i,j=1,...,D}$, wobei $K_{ij} = \text{Cov}(G(A_i), G(A_j))$
+where the mean vector of $\boldsymbol{G}_i$ is equal to the first part of the equation, i.e. $\boldsymbol{\mu} = \sum_{k=1}^{D-1} v_k \boldsymbol{e}_k$ and the k-th eigenvector $\varphi_{k}(A_j)$
+of the Covariance matrix $K$ could be written as $\varphi_{k} = \sum_{k=1}^{D} \boldsymbol{v}_{k} \boldsymbol{e}_k(A_j)$.
 
-we can write the principal component representation:
+Alternatively, we can write the principal component representation of $\boldsymbol{\theta}_i$ and use transformation from ilr- to clr-coordinatesn to represent the variable $\boldsymbol{G}_i$.
 
-$$ \begin{equation*} G(A_j) = \mu(A_j) + \sum_{l=1}^{D-1} Z_l \varphi_l(A_j) \quad \text{für } j = 1, ..., D \end{equation*} $$
-
-with $Z_l$ being the uncorrelated component scores with $E[Z_l] = 0$ and $Var(Z_l) = \sigma_l^2$ and $\varphi_l(A_j)$ being the orthonormal eigenvectors of $K$.
+$Z_k$ are the uncorrelated component scores with $E[Z_k] = 0$ and $Var(Z_k) = \sigma_k^2$ and $\v_k$ being the orthonormal eigenvectors of $\boldsymbol{\Sigma}$.
 
 For a given sample of $\rho_i$ with $i = 1, ..., n$ the unknown parameters $\varphi_l$ and $Z_l$ can be estimated via the eigendecomposition of the
 sample covariance matrix  $\hat{K}_n (A_j, A_k) = \frac{1}{n} \sum_{i=1}^n (\rho_i(A_j) - \hat{\mu}(A_j))(\rho_i(A_k) - \hat{\mu}(A_k))$
 with $\hat{\mu}(A_j) = \frac{1}{n} \sum_{i=1}^n \rho_i(A_j)$
+For a given sample of $\xi_i$ with $i = 1, ..., n$ the unknown parameters $\v_k$ and $Z_k$ can be estimated via the eigendecomposition of the
+sample covariance matrix  $\hat{\Sigma}_n (A_j, A_k) = \frac{1}{n} \sum_{i=1}^n (\xi_i(A_j) - \hat{\nu}(A_j))(\xi_i(A_k) - \hat{\nu}(A_k))$
+with $\hat{\nu}(A_j) = \frac{1}{n} \sum_{i=1}^n \xi_i(A_j)$
 
-We calculate the eigendecomposition of the empirical covariance matrix as  $\Sigma = V \Lambda V^{-1}$
+We calculate the eigendecomposition of the empirical covariance matrix as  $\Sigma = V \Lambda V^{T}$ TODO: check Häckle
 
 The component scores are projections onto the eigenvectors:
-$\boldsymbol{z}_{i}=\boldsymbol{V}\left(\boldsymbol{G}_{i}-\boldsymbol{\nu}\right) \sim \mathcal{N}\left(\mathbf{0}, \operatorname{diag}\left(\sigma_{1}^{2}, \ldots, \sigma_{D-1}^{2}{ }\right)\right)$ 
-which is equivalent to the distribution of $G_i$.
+$\boldsymbol{z}_{i}=\boldsymbol{V}\left(\boldsymbol{\theta}_{i}-\boldsymbol{\nu}\right) \sim \mathcal{N}\left(\mathbf{0}, \operatorname{diag}\left(\sigma_{1}^{2}, \ldots, \sigma_{D-1}^{2}{ }\right)\right)$ 
+which is equivalent to the linear transformed distribution of $\boldsymbol{theta}_i$.
+
