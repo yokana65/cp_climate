@@ -68,7 +68,7 @@ In addition, the isometric logratio transformation (ilr) will be used to introdu
 and there are infinetely many that can be defined that way. Following, we will use the orthonormal basis vectors suggested by Egozcue et al. (2003, p. 291):
 
 $$
-e_{k}=\sqrt{\frac{k}{k+1}}(\overbrace{k^{-1}, \ldots, k^{-1}}^{k \text { times }},-1,0, \ldots, 0)^{T} \tag{1}
+\boldsymbol{e}_k=\sqrt{\frac{k}{k+1}}(\overbrace{k^{-1}, \ldots, k^{-1}}^{k \text { times }},-1,0, \ldots, 0)^{T} \tag{1}
 $$
 with $e_k \in \mathbb{R}^D$ for $k=1, \ldots, D-1$. The vectors $e_k$ are orthogonal with respect to the ordinary Euclidean inner product in $\mathbb{R}^D and constitue a basis of 
 a (D-1) dimensional subspace of $\mathbb{R}^D$. The ilr-transformation of a composition is therefore an isometric linear mapping between the Aitchison simplex and $\mathbb{R}^{D-1}: 
@@ -105,7 +105,7 @@ For the empirical evaluation of the latent process, we can treat the outcomes of
 With the orthonormal bases in $\mathbb{R}^{D-1}$, we can rewrite the latent process as:
 
 $$ 
-(\boldsymbol{X}_{i})_{m_i} \stackrel{i.i.d.}{\sim} \operatorname{clr}^{-1}(\boldsymbol{G}_i) \quad \text{with} \quad \boldsymbol{G}_{i} = \sum_{k=1}^{D-1} \theta_{i k} e_{k} \text { and } \boldsymbol{\theta}_{i}=\left(\theta_{i 1}, \ldots, \theta_{i D-1}\right) \stackrel{i . i . d .}{\sim} \mathcal{N}(\boldsymbol{\nu}, \boldsymbol{\Sigma}) \tag{5}
+(\boldsymbol{X}_{i})_{m_i} \stackrel{i.i.d.}{\sim} \operatorname{clr}^{-1}(\boldsymbol{G}_i) \quad \text{with} \quad \boldsymbol{G}_{i} = \sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \text { and } \boldsymbol{\theta}_{i}=\left(\theta_{i 1}, \ldots, \theta_{i D-1}\right) \stackrel{i . i . d .}{\sim} \mathcal{N}(\boldsymbol{\nu}, \boldsymbol{\Sigma}) \tag{5}
 $$
 
 Since the clr-coordinates of the transformed count compositions are a linear combination of ilr-coordinates and the
@@ -126,7 +126,7 @@ given the realizations $\boldsymbol{x}_i$ from the random sample $(\boldsymbol{X
 for $i = 1, \ldots, n$.  
 The marginal likelihood of $\nu$ and $\Sigma$ can be derived with the probability mass function of the multinomial distribution as:
 $$
-L\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right)=\prod_{i=1}^{n} \int_{\mathbb{R}^{N}} \frac{\exp \left(\sum_{j=1}^{m_{i}} \sum_{k=1}^{N} \theta_{i k} e_{k}\left(x_{i j}\right)\right) p\left(\boldsymbol{\theta}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\int_{I} \exp \left(\sum_{k=1}^{N} \theta_{i k} e_{k}(x)\right) d x\right)^{m_{i}}} d \boldsymbol{\theta}_{i} 
+L\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right)=\prod_{i=1}^{n} \int_{\mathbb{R}^{N}} \frac{\exp \left(\sum_{j=1}^{m_{i}} \sum_{k=1}^{N} \theta_{i k} \boldsymbol{e}_k\left(x_{i j}\right)\right) p\left(\boldsymbol{\theta}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\int_{I} \exp \left(\sum_{k=1}^{N} \theta_{i k} \boldsymbol{e}_k(x)\right) d x\right)^{m_{i}}} d \boldsymbol{\theta}_{i} 
 $$
 
 
@@ -134,8 +134,8 @@ $$
 \begin{aligned}
 L\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right) & =\prod_{i=1}^{n} \mathcal{p}\left(\boldsymbol{x}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)=\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \mathcal{p}\left(\boldsymbol{x}_{i} \mid \boldsymbol{\theta}_{i}\right) \mathcal{p}\left(\boldsymbol{\theta}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right) d \boldsymbol{\theta_{i}} \\
 & =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}}\left(\prod_{j=1}^{D} \, \left(\boldsymbol{\pi}_{ij}^{x_{i j}} \mid \boldsymbol{\theta}_{ij}\right)\right) \mathcal{p}\left(\boldsymbol{ \theta}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right) d \boldsymbol{\theta_{i}} \\
-& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}}\left(\prod_{j=1}^{D} \, \frac{\exp \left(x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} e_{k} \left(A_j\right)\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} e_{k} \left(A_j\right)\right)\right)^{x_{i j}}}\right) \mathcal{p}\left(\sum_{k=1}^{D-1} \theta_{i k} e_{k} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right) d \boldsymbol{\theta_{i}} \\
-& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \, \frac{ \exp \left(\sum_{j=1}^{D} x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} e_{k} \left(A_j\right)\right) \mathcal{p}\left(\sum_{k=1}^{D-1} \theta_{i k} e_{k} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} e_{k} \left(A_j\right)\right)\right)^{m_{i}}}  d \boldsymbol{\theta_{i}} \\
+& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}}\left(\prod_{j=1}^{D} \, \frac{\exp \left(x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right)\right)^{x_{i j}}}\right) \mathcal{p}\left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right) d \boldsymbol{\theta_{i}} \\
+& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \, \frac{ \exp \left(\sum_{j=1}^{D} x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right) \mathcal{p}\left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right)\right)^{m_{i}}}  d \boldsymbol{\theta_{i}} \\
 \end{aligned}
 $$
 
@@ -146,7 +146,7 @@ To summarize, we can write the marginal likelihood of our parameters of interest
 
 
 $$
-L\left(\nu, \Sigma \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right) =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \, \frac{ \exp \left(\sum_{j=1}^{D} x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} e_{k} \left(A_j\right)\right) \mathcal{p}\left(\sum_{k=1}^{D-1} \theta_{i k} e_{k} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} e_{k} \left(A_j\right)\right)\right)^{m_{i}}}  d \boldsymbol{\theta_{i}}
+L\left(\nu, \Sigma \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right) =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \, \frac{ \exp \left(\sum_{j=1}^{D} x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right) \mathcal{p}\left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right)\right)^{m_{i}}}  d \boldsymbol{\theta_{i}}
 $$
 
 ## Principal component representation
@@ -176,3 +176,59 @@ The component scores are projections onto the eigenvectors:
 $\boldsymbol{z}_{i}=\boldsymbol{V}\left(\boldsymbol{\theta}_{i}-\boldsymbol{\nu}\right) \sim \mathcal{N}\left(\mathbf{0}, \operatorname{diag}\left(\sigma_{1}^{2}, \ldots, \sigma_{D-1}^{2}{ }\right)\right)$ 
 which is equivalent to the linear transformed distribution of $\boldsymbol{theta}_i$.
 
+## Model estimation using the MCEM algorithm
+
+To evaluate the latent density model, we need to maximize the marginal likelihood
+function $L\left(\nu, \Sigma \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right)$. Since the numerical optimization of the likelihood
+function is computationally to expensive, the use of the MCEM algorithm is suggested (Steyer and Greven, 2023).
+
+Due to the parameters of interest $\nu$ and $\Sigma$ being not observable, an Expectation-Maximization (EM) algorithm is well suited to estimate them (TODO: Härdle).
+With the observed count comppositions $\boldsymbol{x}_1, \ldots, \boldsymbol{x}_n$ sampled from the latent compositions $\boldsymbol{\pi}_1, \ldots, \boldsymbol{\pi}_n$,
+we want to estimate the parameters of the latent model specified above. TODO: short description of EM
+
+The idea is to compute the expected complete-data
+log-likelihood function $Q\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)$ with respect to $\boldsymbol{\nu}$ 
+and $\boldsymbol{\Sigma}$ given the current parameter estimates $\boldsymbol{\nu}^(h)$ 
+and $\boldsymbol{\Sigma}^(h)$ to obtain updated parameters $\boldsymbol{\nu}^(h+1)$ 
+and $\boldsymbol{\Sigma}^(h+1)$ until the convergence criterion is reached (Held and Bové, 2014, p. 35ff).
+
+For the parameters of the latent process, the expected complete-data log-likelihood can be written as:
+
+$$
+Q\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) =\sum_{i=1}^{n} \mathbb{E}\left(\log \left(p\left(\boldsymbol{\theta}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)\right)\right)+\text { const. } \tag{7}
+$$
+
+The expactation is taken with respect to the conditional distribution of $\boldsymbol{\theta}_i$ given the observed data $\boldsymbol{x}_i$ and 
+the current parameter estimates $\boldsymbol{\nu}^{(h)}$ and $\boldsymbol{\Sigma}^{(h)}$, i.e. the probability distribution of the ilr-coordinates $\theta_i$
+given the observed data $\boldsymbol{x}_i$ and the current parameter estimates.  Since the vector $\boldsymbol{theta}_i$ is not observed, this distribution 
+is not directly available, but can be approximated using the MCEM algorithm (Steyer and Greven, 2023; Wei and Tanner, 1990).
+In particular, we need to generate samples of $\boldsymbol{\theta}_i \mid \boldsymbol{x}_i$, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}$ for all $i = 1, \ldots, n$.
+The following sections describe the steps necessary to generate the samples and implement the MCEM algorithm.
+
+## Expectation step
+
+This expectation is not directly available and a Monte Carlo Approach with the importance sampling method (Held and Bové, 2014, p.265ff) is chosen 
+to approximate the conditional expectation $\mathbb{E}\left(\log \left(p\left(\boldsymbol{\theta}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)\right)\right)$ 
+where the expectation is taken with respect to $\boldsymbol{\theta}_i \mid \boldsymbol{x}_i, \boldsymbol{\nu}^(h), \boldsymbol{\Sigma}^(h)$. 
+
+The Monte Carlo approach enables us to estimate the posterior expectation by drawing samples from the target distribution $p\left(\boldsymbol{\theta}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)$.
+Since these samples are not directly available, we use an auxiliary distribution with density $p_{i}^{*}\left(\boldsymbol{\theta}_{i}\right)$ to get a 
+weighted average of $\log \left(p\left(\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)\right)$ for r replicates with importance weights (cp. Steyer and Greven, 2023, p. 7):
+
+$$
+\omega_{i t}, t=1, \ldots, r \text { given as } \omega_{i t}=\frac{p\left(\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)}{p_{i}^{*}\left(\boldsymbol{\theta}_{i}^{(t)}\right)} \text { for all } i=1, \ldots, n
+$$
+
+The eigendecomposition of $\boldsymbol{\Sigma}^(h)$ can be used to linearly transform the ilr-coordinates in $\boldsymbol{\theta}_i$ into the scores projected onto the principal 
+components matrix $\boldsymbol{V}^{(h)}$, which is a $Dx(D-1)$ matrix which columns are the sorted eigenvectors $\boldsymbol{v}_{1}^{(h)}, \ldots, \boldsymbol{v}_{D-1}^{(h)}$ with
+corresponding eigenvalues $\sigma_{1}^{2(h)} \geq \cdots \geq \sigma_{D-1}^{2(h)}$. Using the principal component transformation, 
+$\boldsymbol{\theta}_{i} \sim \mathcal{N}\left(\boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)$ becomes $\boldsymbol{z}_{i}=\boldsymbol{V}^{(h)}\left(\boldsymbol{\theta}_{i}-\boldsymbol{\nu}^{(h)}\right) \sim \mathcal{N}\left(\mathbf{0}, \operatorname{diag}\left(\sigma_{1}^{2(h)}, \ldots, \sigma_{D-1}^{2}{ }^{(h)}\right)\right)$.
+Therefore sampling from the conditional distribution of latent ilr-coordinates $\boldsymbol{\theta}_i \mid \boldsymbol{x}_i, \boldsymbol{\nu}^(h), \boldsymbol{\Sigma}^(h)$ is 
+equivalent to sampling from the conditional distribution of the scores $\boldsymbol{z}_i$ gives as:
+$$
+\begin{align*}
+p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) & \propto p\left(\mathbf{x}_{i} \mid \mathbf{z}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) p\left(\mathbf{z}_{i} \mid \boldsymbol{\Sigma}^{(h)}\right)=p\left(\mathbf{x}_{i} \mid \boldsymbol{\theta}_{i}=\boldsymbol{V}^{(h)}{}^{T} \mathbf{z}_{i}+\boldsymbol{\nu}^{(h)}\right) \prod_{k=1}^{D-1} p\left(z_{i k} \mid \sigma_{k}^{2(h)}\right) \\
+& =\prod_{j=1}^{D} \operatorname{clr}^{-1}\left(\sum_{k=1}^{D-1} \nu_{k}^{(h)} \boldsymbol{e}_k+\boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} \boldsymbol{e}_k\right)\left(x_{i j}\right) \prod_{k=1}^{D-1} p\left(z_{i k} \mid \sigma_{k}^{2}{ }^{(h)}\right) \\
+& =\frac{\exp \left(\sum_{j=1}^{D} x_{i j} \left(\mu^{(h)}\left(A_{j}\right)+\sum_{k=1}^{D-1} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} \boldsymbol{e}_k\left(A_{j}\right)\right)\right)}{\left(\sum_{j=1}^{D} \exp \left(\mu^{(h)}(A_j)+\sum_{k=1}^{D-1} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} \boldsymbol{e}_k(A_j)\right)\right)^{m_{i}}} \prod_{k=1}^{D-1} p\left(z_{i k} \mid \sigma_{k}^{2}{ }^{(h)}\right) \tag{9}
+\end{align*}
+$$
