@@ -2,20 +2,17 @@ library(targets)
 library(dplyr)
 library(tidyr)
 library(compositions)
-# This is an example _targets.R file. Every
-# {targets} pipeline needs one.
-# Use tar_script() to create _targets.R and tar_edit()
-# to open it again for editing.
-# Then, run tar_make() to run the pipeline
-# and tar_read(data_summary) to view the results.
+library(mvtnorm)
+library(future.apply)
 
-# Define custom functions and other global objects.
-# This is where you write source(\"R/functions.R\")
-# if you keep your functions in external scripts.
 source("scripts/read_data_KL15_XRF.R")
 source("scripts/fit_density_pca.R")
 source("scripts/fit_composition_pca.R")
 source("scripts/fit_composition_pca_ilr.R")
+source("scripts/fit_pca_ilr.R")
+source("scripts/conditional_scores_function.R")
+source("scripts/gradient.R")
+source("scripts/simulations.R")
 
 # Set target-specific options such as packages:
 # tar_option_set(packages = c("dplyr", "tidyr"))
@@ -140,5 +137,36 @@ list(
                                    eps = 0.01,
                                    sc_factor = 0.001,
                                    sum_exp = TRUE)
+  }),
+  tar_target(sim_comp_1, {
+    n_observations <- 2000
+    eigenvalues <- c(0.6, 0.3, 0.05, 0.05)
+    mean <- c(0, 2, 0.5, -2, -0.5)
+    n_counts <- 300
+
+    sim_composition_1_results <-
+      build_setting_2comp_5parts(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+  }),
+  tar_target(pca_sim1_ilr_StdPara_list, {
+    x_data <- sim_comp_1$x_data
+    number_simulations <- 20
+    pca_results_list <- list(number_simulations)
+
+    max_iter <- 50
+    r <- 10
+    lambda <- 1
+    eps <- 0.01
+    sc_factor <- 1
+    sum_exp <- TRUE
+    workers <- 10
+
+    for (i in 1:number_simulations) {
+      pca_results_list[[i]] <- fit_pca_ilr_vs_2(
+        x_data
+      )
+    }
   })
 )

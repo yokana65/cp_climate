@@ -14,7 +14,7 @@ output:
 
 This chapter introduces the formal aspects of compositional data analysis in the tradition of Aitchison (1986). In addition, following the work of Pawlowsky-Glahn und Egozcue (2001, 2015)
 the geoemtrical representation of compositions by orthonormal coordinates in a real Euclidean Space and the *principle of working in coordinates* (Mateu-Figueras et al. 2011) is explained.
-In this sense, it is necessary to define the vector space of compositional data, the Simplex, and its transformation to the real Euclidean Space.
+Following this approach, it is necessary to define the vector space of compositional data, the Simplex, and its transformation to the real Euclidean Space.
 Furthermore, the practical application of the principle of working in coordinates is illustrated by a summary of well suited descriptive and multivariate methods.
 
 ### count compositions

@@ -28,10 +28,7 @@ fit_compositional_pca_ilr_sc <- function(x_data,
   # initial estimates
   nu <- rep(0, D - 1)
   Sigma <- diag(D - 1)
-  pca <- list()
-  eigen_decomp <- eigen(Sigma)
-  pca$rotation <- eigen_decomp$vectors
-  pca$sdev <- eigen_decomp$values
+  pca <- prcomp(Sigma, center = FALSE)
   pca$center <- nu
 
   proposal_scores <- list(length(x_data))
@@ -108,13 +105,9 @@ fit_compositional_pca_ilr_sc <- function(x_data,
       }
       monitor_global_ess(weights, k)
       mean_conditional <- mean(unlist(conditional_scores_list), na.rm = TRUE)
-      mean_scores_median <- rowMeans(sapply(seq_along(scores_median_list), function(i){
-        scores_median_list[[i]]
-      }), na.rm = TRUE)
+
       cat(sprintf("Conditional score mean value %.2f:\n",
                   mean_conditional))
-      cat(sprintf("Mode score mean value %.2f:\n",
-                  mean_scores_median))
 
       # M-Step ###################
       mu_scores <- rowMeans(sapply(seq_along(weights), function(i){
@@ -151,7 +144,7 @@ fit_compositional_pca_ilr_sc <- function(x_data,
 
       # check convergence
       critical_value_1 <- sqrt(sum((pca_old$center - pca$center)^2))
-      cat("critical value 1:", critical_value_1, "\n")
+      cat("critical value center_diff:", critical_value_1, "\n")
       Sigma_old <- Reduce("+", lapply(seq_along(pca_old$sdev), function(k) {
         pca_old$rotation[, k] %*% t(pca_old$rotation[, k]) * (pca_old$sdev[k]^2)
       }))
@@ -160,7 +153,7 @@ fit_compositional_pca_ilr_sc <- function(x_data,
       }))
       Sigma_diff <- Sigma_old - Sigma_new
       critical_value_2 <- norm(Sigma_diff, type = "F")
-      cat("critical value 2:", critical_value_2, "\n")
+      cat("critical value Sigma_diff:", critical_value_2, "\n")
 
       if (max(critical_value_1, critical_value_2) < eps) {
         constant <- apply(pca$rotation, 2, function(g) {
@@ -202,7 +195,7 @@ conditional_scores_log_ilr_sc <- function(scores,
                                           basis_matrix,
                                           sc_factor) {
   scaling_factor <- sc_factor
-  ilr_comp <- pca$center + pca$rotation %*% scores
+  ilr_comp <- as.vector(pca$center + pca$rotation %*% scores)
   clr_comp <- ilr2clr(ilr_comp)
   norm_constant <- sum(exp(clr_comp))
 
@@ -223,18 +216,30 @@ gradient_cslc_ilr_sc <- function(scores,
                                  sc_factor) {
   scaling_factor <- sc_factor
   m_i <- sum(x_data_i)
-  ilr_comp <- pca$center + pca$rotation %*% scores
-  clr_comp <- t(ilr_comp) %*% basis_matrix
-  composition <- clrInv(clr_comp)
+  ilr_comp <- as.vector(pca$center + pca$rotation %*% scores)
+  clr_comp <- ilr2clr(ilr_comp)
+  composition <- clrInv_long(clr_comp)
 
   grad <- sapply(seq_along(scores), function(k) {
-    e_k <- basis_matrix[k, ]
+    e_k <- basis_matrix[k, ] * (-1)
     term1 <- sum(x_data_i * e_k)
     term2 <- m_i * sum(composition * e_k)
+
     grad_k <- scaling_factor * (term1 - term2) - scores[k] / (pca$sdev[k]^2)
 
     return(grad_k)
   })
 
   return(grad)
+}
+
+clrInv_long <- function(clr_coords) {
+    # Exponentiate the clr coordinates
+    exp_coords <- exp(clr_coords)
+    
+    # Calculate the geometric mean normalization constant
+    norm_const <- sum(exp_coords)
+    
+    # Return normalized compositions
+    exp_coords / norm_const
 }

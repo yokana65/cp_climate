@@ -1,0 +1,358 @@
+---
+title: "Simulations"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    number_sections: true
+    code_folding: hide
+---
+
+# Implementierung
+
+```{r libraries, eval=TRUE}
+library(targets)
+library(compositions)
+library(mvtnorm)
+source("scripts/helper_functions.R")
+
+```
+
+
+## Objective Function
+
+```{r objective function, eval=TRUE}
+conditional_scores_log_ilr_db_2 <- function(scores,
+                                          x_data_i,
+                                          pca,
+                                          basis_matrix,
+                                          sc_factor) {
+  scaling_factor <- sc_factor
+  ilr_comp <- as.vector(pca$center + pca$rotation %*% scores)
+  clr_comp <- ilr2clr(ilr_comp)
+  norm_constant <- sum(exp(clr_comp))
+
+  # Compute scaled log likelihood
+  log_likelihood <- sum(x_data_i * clr_comp) - sum(x_data_i) * log(norm_constant)
+  # apply scaling when sc_factor ungleich 1
+  if (scaling_factor != 1) {
+    log_likelihood <- log_likelihood - scaling_factor
+  }
+
+  # Prior remains unchanged as it's already well-scaled
+  log_prior <- - sum(0.5 * scores^2 / (pca$sdev^2))
+
+  return(log_likelihood + log_prior)
+}
+```
+
+
+## Gradient
+
+```{r gradient, eval=TRUE}
+
+gradient_cslc_ilr_db_2 <- function(scores,
+                                 x_data_i,
+                                 pca,
+                                 basis_matrix,
+                                 sc_factor) {
+  scaling_factor <- sc_factor
+  m_i <- sum(x_data_i)
+  ilr_comp <- as.vector(pca$center + pca$rotation %*% scores)
+  clr_comp <- ilr2clr(ilr_comp)
+  composition <- clrInv_long(clr_comp)
+
+
+  grad_vecs <- sapply(seq_along(scores), function(k) {
+    e_k <- basis_matrix[k, ] 
+    v_k <- pca$rotation[, k]
+    term1 <- sum(x_data_i * e_k)
+    term2 <- m_i * sum(composition * e_k)
+
+    grad_k <- scaling_factor * v_k * (term1 - term2) 
+
+    return(grad_k)
+  })
+  grad <- rowSums(grad_vecs)
+
+  grad <- grad - scores / (pca$sdev^2)
+
+  return(grad)
+}
+
+```
+
+## Parallel processing
+
+
+Implement the MCEM-algorithm with parallel processing:
+
+```{r parallel processing, eval=TRUE}
+# use parallel processing 
+library(future.apply)
+
+# Parallel E-Step implementation
+parallel_estep <- function(x_data, pca, basis_matrix, r, k, lambda, sc_factor) {
+  future_lapply(seq_along(x_data), function(i) {
+    optim_result <- optim(rep(0, length = length(pca$sdev)),
+                          conditional_scores_log_ilr_db_2,
+                          gr = gradient_cslc_ilr_db_2,
+                          x_data_i = x_data[[i]],
+                          pca = pca,
+                          basis_matrix = basis_matrix,
+                          sc_factor = sc_factor,
+                          control = list(fnscale = -1),
+                          method = "BFGS")
+
+    scores_median <- as.vector(optim_result$par)
+    proposal_scores <- sapply(1:(r * k), function(t) {
+      matrix(rnorm(length(scores_median),
+                   mean = scores_median,
+                   sd = lambda * pca$sdev))
+    })
+
+    log_weights <- apply(proposal_scores, 2, function(scores) {
+      conditional_scores_log_ilr_db_2(scores,
+                                      x_data[[i]],
+                                      pca,
+                                      basis_matrix,
+                                      sc_factor) -
+        sum(dnorm(scores,
+                  mean = scores_median,
+                  sd = lambda * pca$sdev,
+                  log = TRUE))
+    })
+
+    weights <- stabilize_weights(log_weights)
+
+    list(proposal_scores = proposal_scores,
+         weights = weights)
+  }, future.seed = TRUE)
+}
+
+
+fit_compositional_pca_ilr_db_par <- function(x_data,
+                                         max_iter = 50,
+                                         r = 10,
+                                         lambda = 1,
+                                         eps = 0.01,
+                                         sc_factor = 0.001,
+                                         sum_exp = TRUE,
+                                         workers = 4) {
+  start_time <- Sys.time()
+  if (!is.list(x_data) && !is.matrix(x_data)) {
+    stop("Input x_data must be a list or a matrix")
+  }
+
+  if (is.data.frame(x_data) || is.matrix(x_data)) {
+    x_data <- apply(x_data, 1, function(x) x, simplify = FALSE)
+  }
+
+  lengths <- unique(sapply(x_data, length))
+  if (length(lengths) != 1) {
+    stop("All observations must have the same number of components")
+  }
+  D <- lengths
+
+  basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+  basis_matrix <- do.call(rbind, basis_vectors)
+
+  # initial estimates
+  nu <- rep(0, D - 1)
+  Sigma <- diag(D - 1)
+  pca <- prcomp(Sigma, center = FALSE)
+  pca$center <- nu
+
+  proposal_scores <- list(length(x_data))
+  weights <- list(length(x_data))
+  sdev_list <- list(length(max_iter))
+  center_list <- list(length(max_iter))
+  conditional_scores_list <- list(length(x_data))
+  scores_median_list <- list(length(x_data))
+
+  # Set up parallel workers
+  plan(multisession, workers = workers)
+
+  if (max_iter > 0) {
+    for (k in 1:max_iter) {
+      cat("Iteration:", k, "\n")
+
+      # Parallel E-Step
+      estep_results <- parallel_estep(x_data, pca, basis_matrix, r, k, lambda, sc_factor)
+
+      # Extract results
+      proposal_scores <- lapply(estep_results, `[[`, "proposal_scores")
+      weights <- lapply(estep_results, `[[`, "weights")
+
+      monitor_global_ess(weights, k)
+
+      # M-Step ###################
+      scores_matrix <- sapply(seq_along(weights), function(i){
+          proposal_scores[[i]] %*% weights[[i]]
+      })
+      na_count <- sum(is.na(scores_matrix))  
+      mu_scores <- rowMeans(scores_matrix, na.rm = TRUE)  
+      cat(sprintf("Removed %d NA values when calculating mu_scores\n", na_count))      
+      # update parameters
+      pca_old <- pca
+      pca$center <- pca$center + pca$rotation %*% mu_scores
+      cat("center:", pca$center, "\n")
+      center_list[[k]] <- pca$center
+      Sigma <- Reduce("+", lapply(seq_along(weights), function(i) {
+          Reduce("+", lapply(1:(r * k), function(t) {
+          C_it <- weights[[i]][t] * (proposal_scores[[i]][, t] - mu_scores) %*%
+              t((proposal_scores[[i]][, t] - mu_scores))
+          }))
+      })) / length(weights)
+      eigen_decomp <-  tryCatch({eigen(Sigma)}, error = function(e) {
+          cat("error eigen() in iteration", k, "for observation", i, "\n")
+          cat("error message:", e$message, "\n")
+          print("pca$sdev:")
+          print(pca$sdev)
+      })
+      negative_eigenvalues <- eigen_decomp$values < 0
+      if (any(negative_eigenvalues)) {
+          warning(sprintf("Warning: %d eigenvalues are negative.\n
+          They have been set to zero.",
+                          sum(negative_eigenvalues)))
+      }
+      pca$sdev <- sqrt(pmax(eigen_decomp$values, 0))
+      cat("Eigenvalues:", pca$sdev, "\n")
+      sdev_list[[k]] <- pca$sdev
+      pca$rotation <- pca$rotation %*% eigen_decomp$vectors
+      clr_rotation <- t(basis_matrix) %*% pca$rotation %*% basis_matrix
+      cat("PCA1:", clr_rotation[ , 1], "\n")
+      # check convergence
+      critical_value_1 <- sqrt(sum((pca_old$center - pca$center)^2))
+      cat("critical value center_diff:", critical_value_1, "\n")
+      Sigma_old <- Reduce("+", lapply(seq_along(pca_old$sdev), function(k) {
+          pca_old$rotation[, k] %*% t(pca_old$rotation[, k]) * (pca_old$sdev[k]^2)
+      }))
+      Sigma_new <- Reduce("+", lapply(seq_along(pca$sdev), function(k) {
+        pca$rotation[, k] %*% t(pca$rotation[, k]) * (pca$sdev[k]^2)
+      }))
+      Sigma_diff <- Sigma_old - Sigma_new
+      critical_value_2 <- norm(Sigma_diff, type = "F")
+      cat("critical value Sigma_diff:", critical_value_2, "\n")  
+      if (max(critical_value_1, critical_value_2) < eps) {
+        constant <- apply(pca$rotation, 2, function(g) {
+          sqrt(sum(g^2))
+        })
+        pca$rotation <- t(t(pca$rotation) / constant)
+        pca$sdev <- pca$sdev * constant  
+        end_time <- Sys.time()
+        elapsed_time <- end_time - start_time
+        print(paste("The algorithm converged after:", elapsed_time, "minutes"))
+        return(list("iteration" = k,
+                    "pca" = pca,
+                    "x_data" = x_data,
+                    "list_center" = center_list,
+                    "list_sdev" = sdev_list,
+                    "time" = elapsed_time))
+      }
+    }
+  }
+  constant <- apply(pca$rotation, 2, function(g) {
+    sqrt(sum(g^2))
+  })
+  pca$rotation <- t(t(pca$rotation) / constant)
+  pca$sdev <- pca$sdev * constant
+  end_time <- Sys.time()
+  elapsed_time <- end_time - start_time
+  return(list("iteration" = max_iter,
+              "pca" = pca,
+              "x_data" = x_data,
+              "list_center" = center_list,
+              "list_sdev" = sdev_list,
+              "time" = elapsed_time))
+}
+
+```
+
+# Simulation
+
+In general, we want to construct several sets of different context for the MCEM-algorithm:
+
+- Different number of observations N
+- Different number of compositional components D
+- Different number of samples m_i
+- equal share szenarios vs. unequal share szenarios
+- Different number of principal components
+
+## Simulation Setting 1
+
+```{r simulation_setting_1 function, eval=TRUE}
+build_setting_1 <- function(n_samples,
+                            eigenvalues = c(0.6, 0.3, 0.05, 0.05),
+                            mean = c(0, 2, 0.5, -2, -0.5),
+                            n_counts = 500) {
+  set.seed(123)
+  v1 <- c(0, 1/sqrt(2), -1/sqrt(2), 0, 0)  # Contrast between parts 2 and 3
+  v2 <- c(-1/3, -1/3, -1/3, 1, 0)  # Focus on part 4
+  v3 <- c(1/sqrt(2), 0, 0, -1/sqrt(2), 0)  # Additional contrast
+  v4 <- c(1/2, 1/2, 0, 0, -1)  # Additional contrast
+
+  V <- cbind(v1, v2, v3, v4)
+  Sigma <- V %*% diag(eigenvalues) %*% t(V)
+  
+  clr_coords <- rmvnorm(n_samples, mean = mean, sigma = Sigma)
+  ilr_coords <- clr2ilr(clr_coords)
+
+  compositions <- clrInv(clr_coords)
+  composition_list <- apply(compositions, 1, function(x) x, simplify = FALSE)
+
+  x_data <- lapply(1:n_samples, function(i) {
+    probs <- composition_list[[i]]
+    rmultinom(1, n_counts, probs)[, 1]
+  })
+  x_data_matrix <- do.call(rbind, x_data)
+
+  return(list("x_data" = x_data, "Sigma" = Sigma,"x_data_matrix" = x_data_matrix))
+}
+
+setting_1 <- build_setting_1(n_samples = 2000, n_counts = 300)
+x_data <- setting_1$x_data
+```
+
+Insights:
+
+- the smaller m_i the more difficult it is to estimate the center, but the ESS value appears to be better
+
+### Computation and pca_results
+
+Targets are used for computation to avoid an unneccessary amount of computation.
+
+```{r classic pca, eval=TRUE}
+x_data_matrix <- setting_1$x_data_matrix
+pca_ilr <- prcomp(ilr(x_data_matrix)) 
+pca_ilr$center
+plot_pca_rotation(pca_ilr$rotation)
+pca_ilr$rotation
+```
+> pca_ilr$center
+[1]  1.4395217 -0.4235406 -2.2104438 -0.6523904
+
+
+            PC1         PC2         PC3         PC4
+[1,]  0.1926516  0.43686024 -0.20391570 -0.85466769
+[2,] -0.3175480 -0.81793217 -0.05469878 -0.47661126
+[3,]  0.8993526 -0.37227342 -0.21991887  0.06490851
+[4,] -0.2306807  0.03940283 -0.95239809  0.19537587
+
+```{r computation, eval=FALSE}
+pca_results_1 <- fit_compositional_pca_ilr_db_par(x_data, eps = 0.02, workers = 10)
+
+```
+
+What we expect:
+
+```{r expected results, eval=TRUE}
+
+
+```
+
+What we get:
+
+```{r actual results, eval=TRUE}
+
+```
