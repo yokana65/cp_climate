@@ -232,3 +232,51 @@ p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymb
 & =\frac{\exp \left(\sum_{j=1}^{D} x_{i j} \left(\mu^{(h)}\left(A_{j}\right)+\sum_{k=1}^{D-1} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} \boldsymbol{e}_k\left(A_{j}\right)\right)\right)}{\left(\sum_{j=1}^{D} \exp \left(\mu^{(h)}(A_j)+\sum_{k=1}^{D-1} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} \boldsymbol{e}_k(A_j)\right)\right)^{m_{i}}} \prod_{k=1}^{D-1} p\left(z_{i k} \mid \sigma_{k}^{2}{ }^{(h)}\right) \tag{9}
 \end{align*}
 $$
+
+
+The transformation between clr- and ilr-coordinates is used several times in the formular above. The current estimate for the mean vector of the clr-coordinates in $\boldsymbol{G}_i$ is $\mu^{(h)}=\sum_{k=1}^{D-1} \nu_{k}^{(h)} \boldsymbol{e}_{k}$ 
+and $\boldsymbol{\rho}_{i}=\mu^{(h)}+\sum_{{k=1}}^{D-1} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} \boldsymbol{e}_{k}, i=1, \ldots, n$ are the current predictions for the latent clr transformed compositions. 
+The formular clearly follows Bayesian perspective, where the conditional distribution of the scores $p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)$ 
+is the posterior  distribution for the prior $\mathcal{N}\left(\boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)$.
+It is assumed that all eigenvalues of $\boldsymbol{\Sigma}^(h)$ are finite and therefore the prior distrinution is proper and the mode of the posterior distribution 
+ $\mathbf{z}_{i}^{*}=\operatorname{argmax}_{\mathbf{z}_{i} \in \mathbb{R}^{D-1}} p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)$ can be attained. Given this assumption,
+ a multivariate normal distribution centered around the mode $\mathcal{N}\left(\boldsymbol{z}_{i}^{*}, \lambda \operatorname{diag}\left(\sigma_{1}^{2(h)}, \ldots, \sigma_{D-1}^{2}{ }^{(h)}\right)\right)$
+ can be choosen as the auxiliary distribution $p_{i}^{*}\left(\boldsymbol{z}_{i}\right)$ (Steyer and Greven, 2023, p. 8).
+
+ Following Steyer and Greven (2023) the mode can be found with the objective function in (*number conditional scores) and it's gradient given as:
+ $$
+\nabla \log \left(p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)\right)=\sum_{k=1}^{D} \boldsymbol{v}_{k}^{(h)}\left(\sum_{j=1}^{D} x_{i j} \boldsymbol{e}_{k}\left(A_j\right)-m_{i}\left\langle \boldsymbol{\pi}_{\mathbf{z}_{i}}, \boldsymbol{e}_{k}\right\rangle \right)-\left(\frac{z_{i l}}{\sigma_{l}^{2}(h)}\right)_{l=1, \ldots, D-1}
+$$
+
+where $\boldsymbol{pi}_{\mathbf{z}_{i}}=\operatorname{clr}^{-1}\left(\mu^{(h)}+\sum_{k=1}^{D-1} \underline{\boldsymbol{z}_{i}^{T}} \boldsymbol{v}_{k}^{(h)} \boldsymbol{e}_{k}\right)$ for all $\mathbf{z}_{i}=\left(z_{i 1}, \ldots, z_{i D-1}\right)^{T} \in \mathbb{R}^{D-1}$.
+
+Since calculating the mode is now possible, i.i.d. samples for the scores $\boldsymbol{z}_{i t}$ can be drawn from a multivariate normal distribution with mean $\boldsymbol{z}_{i}^{*}$ and covariance $\lambda \operatorname{diag}\left(\sigma_{1}^{2(h)}, \ldots, \sigma_{D-1}^{2}{ }^{(h)}\right)$.
+The parameter $\lambda$ is a tuning parameter that controls the size of the paramter space that is explored. Usually, $\lambda$ is set to 1.
+With the scores $\boldsymbol{z}_{i t}$ the weights $\boldsymbol{w}_{i t}$ can be calculated (Number formular weights) for all $t=1, \ldots, r$ using the importance sampling formular (Number formular importance sampling).
+Since conditionally sampling from the ilr-coordinates $\boldsymbol{\theta}_i$ is equivalent to sampling from the scores $\boldsymbol{z}_{i t}$ 
+the procedure additionally provides the samples $\theta_{i}^(t)$ from $\boldsymbol{\theta}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}$ with the principal component decomposition 
+$\boldsymbol{\theta}_{i}^{(t)}=\boldsymbol{\nu}^{(h)}+\boldsymbol{V}^{(h) T} \mathbf{z}_{i t}$. Therefore, a Monte Carlo approximation can be used 
+to calculate the expected complete-data log-likelihood for each iteration of the MCEM algorithm:
+$$
+Q\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) \approx \sum_{i=1}^{n} \sum_{t=1}^{r} \frac{\omega_{i t}}{\sum_{t=1}^{r} \omega_{i t}} \log \left(p\left(\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)\right)+\text { const. } \tag{10}
+$$
+
+## Maximization step
+
+For every iteration of the MCEM algorithm, the parameters of interest $\boldsymbol{\nu}$ and $\boldsymbol{\Sigma}$ are updated by maximizing the Monte Carlo approximation (number Monte Carlo approximation):
+$$
+\left(\boldsymbol{\nu}^{(h+1)}, \boldsymbol{\Sigma}^{(h+1)}\right)=\operatorname{argmax}_{\boldsymbol{\nu}, \boldsymbol{\Sigma}} Q\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) \approx \operatorname{argmax}_{\boldsymbol{\nu}, \boldsymbol{\Sigma}} \sum_{i=1}^{n} \sum_{t=1}^{r} \frac{\omega_{i t}}{\sum_{t=1}^{r} \omega_{i t}} \log \left(p\left(\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)\right)
+$$
+
+As stated by Steyer and Greven (2023) this optimization problem corresponds to a weighted maximum likelihood estimation of the parameters of interest, given the assumption that 
+$\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}$ is multivariate normal with mean $\boldsymbol{\nu}$ and covariance $\boldsymbol{\Sigma}$. Based on the 
+provided solution for this problem (e.g. Bishop and Nasrabadi, 2006), the parameters can be updated as follows:
+$$
+\begin{aligned}
+\boldsymbol{\nu}^{(h+1)} & =\frac{1}{\sum_{i=1}^{n} \sum_{t=1}^{r} \omega_{i t}} \sum_{i=1}^{n} \sum_{t=1}^{r} \omega_{i t} \boldsymbol{\theta}_{i}^{(t)} \\
+\boldsymbol{\Sigma}^{(h+1)} & =\frac{1}{\sum_{i=1}^{n} \sum_{t=1}^{r} \omega_{i t}} \sum_{i=1}^{n} \sum_{t=1}^{r} \omega_{i t}\left(\boldsymbol{\theta}_{i}^{(t)}-\boldsymbol{\nu}^{(h+1)}\right)\left(\boldsymbol{\theta}_{i}^{(t)}-\boldsymbol{\nu}^{(h+1)}\right)^{T} .
+\end{aligned}
+$$
+
+These are the weighted mean and the weighted covariance matrix of the samples of the calculated ilr-coordinates $\boldsymbol{\theta}_{i}^{(t)}$ for all $i=1, \ldots, n$ 
+and $t=1, \ldots, r$ given the proposed scores $\boldsymbol{z}_{i t}$ and the corresponding weights $\omega_{i t}$ for each sample $t$ (cp. Steyer and Greven, 2023. p. 9).
