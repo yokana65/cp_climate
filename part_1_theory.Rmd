@@ -19,21 +19,21 @@ Furthermore, the practical application of the principle of working in coordinate
 
 ### count compositions
 
-For this master thesis, the focus is on a special type of compositional data, namely *count compositions*(Boogart et al. 2013, p. 34).
+For this master thesis, the focus is on a special type of compositional data, namely *count compositions* (Boogart et al. 2013, p. 34).
 In general count compositions can be treated as normal Aitchison compositions, but there are a few characteristics that need to be emphasized.
 The counts can be seen as proportional to the relative sizes of the parts of a whole. Therefore it makes sense to model the counts
 of each part as relative group sizes. 
 
-In the following section, the random variable $X_{i}$ is introduced to model the count composition of observation $i$ for $i=1, \ldots, n$.
-Typically, $X_{i}$ is modeled with a multinomial distribution, $\boldsymbol{X}_{i} \sim \text{Multinom}(m_i, \boldsymbol{\pi_i})$.
-The realizations of $\boldsymbol{X}_{i}$ are denoted by $\boldsymbol{x}_i$ and represent a sample of size $m_i$ from the "true" or *underlying composition* $\boldsymbol{\pi_i}$.
+In the following section, the random variable $\boldsymbol{X}_{i}$ is introduced to model the count composition of observation $i$ for $i=1, \ldots, n$.
+Typically, $\boldsymbol{X}_{i}$ is modeled with a multinomial distribution, $\boldsymbol{X}_{i} \sim \text{Multinom}(m_i, \boldsymbol{\pi_i})$.
+The realizations of $\boldsymbol{X}_{i}$ are count compsitions denoted by $\boldsymbol{x}_i$ and represent a sample of size $m_i$ from the "true" or *underlying composition* $\boldsymbol{\pi_i}$.
 
 Each observed count composition $\boldsymbol{x}_i$ is a D-dimensional vector of integers with $x_{ij}$ being the count of component $j$ in observation $i$, with $j=1, \ldots, D$: 
-$$\boldsymbol{}x_{i} = (x_{i1}, x_{i2}, ..., x_{iD})^T$$
+$$\boldsymbol{x}_{i} = (x_{i1}, x_{i2}, ..., x_{iD})^T$$
 
 The sample size $m_i$ in every observation is the total of all counts in $\mathbf{x}_i$, i.e. $m_i = \sum_{j=1}^{D} x_{ij}$.
 
-### Principles of compositional data analysis
+<!-- ### Principles of compositional data analysis -->
 
 # Principle Component Analysis and the MCEM algorithm
 
@@ -46,20 +46,20 @@ extended to the analysis of discrete (count) compositions.
 
 As stated by Steyer and Greven (2023), a discrete measure is identified by the discrete probability mass function on the power set $\mathcal{P}\left(\left\{A_{1}, \ldots, A_{D}\right\}\right)$
 on the finite set of disjoint outcomes $A_1, \dots, A_D$ with $f:\left\{A_{1}, \ldots, A_{D}\right\} \rightarrow \mathbb{R}$. 
-The discrete density function $f$ can be characterized by the values $\boldsymbol{\pi_{j}}=f\left(A_{j}\right)$ for all $j=1, \ldots, D$ and it must hold that 
+The discrete density function $f$ can be characterized by the values $\pi_{j}=f\left(A_{j}\right)$ for all $j=1, \ldots, D$ and it must hold that 
 $\sum_{j=1}^{D} \pi_{j}=1$. 
 
-In the tradition of Aitchison (1982),we can then identify the set of densities $\mathcal{B}$ with respect to the discrete measure on $\mathcal{P}\left(\left\{A_{1}, \ldots, A_{D}\right\}\right)$ 
-with the simplex $\left\{\boldsymbol{\pi} \in \mathbb{R}^{D} \mid \sum_{j=1}^{D} \pi_{j}=1\,, \pi_{j} \geq 0 \, \forall \, j=1, \ldots, D\right\}$.
+In the tradition of Aitchison (1982), we can identify the set of densities $\mathcal{B}$ with respect to the discrete measure on $\mathcal{P}\left(\left\{A_{1}, \ldots, A_{D}\right\}\right)$ 
+with the simplex $\mathcal{B} = \left\{\boldsymbol{\pi} \in \mathbb{R}^{D} \mid \sum_{j=1}^{D} \pi_{j}=1\,, \pi_{j} \geq 0 \, \forall \, j=1, \ldots, D\right\}$.
 Following Steyer and Greven a D-1 dimensional Hilbert Space $\mathcal{H}=\mathbb{R}_0^D=\left\{\boldsymbol{\rho} \in \mathbb{R}^D \mid \sum_{j=1}^D\rho_j=0\right\}$ can be identified via the simplex and the discrete centered log-ratio transformation:
 $$
-\operatorname{clr}: \mathcal{B} \rightarrow \mathbb{R}_0^D\;, \boldsymbol{\rho}=\operatorname{clr}(\boldsymbol{\pi})=\left(\log \left(\pi_1\right)-\frac{1}{D} \sum_{j=1}^D \log \left(\pi_j\right), \ldots, \log \left(\pi_D\right)-\frac{1}{D} \sum_{j=1}^D \log \left(\pi_j\right)\right) 
+\operatorname{clr}: \mathcal{B} \rightarrow \mathbb{R}_0^D\;, \boldsymbol{\rho}=\operatorname{clr}(\boldsymbol{\pi})=\left(\log \left(\pi_1\right)-\frac{1}{D} \sum_{j=1}^D \log \left(\pi_j\right), \ldots, \log \left(\pi_D\right)-\frac{1}{D} \sum_{j=1}^D \log \left(\pi_j\right)\right) \tag{1}
 $$
 
 The inverse clr-transformation is given by (Boogart et al. 2013):
 
 $$
-\operatorname{clr}^{-1}(\boldsymbol{\rho})=\left(\frac{\exp (\rho_{1})}{\sum_{j=1}^{D} \exp (\rho_{j}) }, \ldots ,\frac{\exp (\rho_{D})}{\sum_{j=1}^{D} \exp (\rho_{j}) }\right)
+\operatorname{clr}^{-1}(\boldsymbol{\rho})=\left(\frac{\exp (\rho_{1})}{\sum_{j=1}^{D} \exp (\rho_{j}) }, \ldots ,\frac{\exp (\rho_{D})}{\sum_{j=1}^{D} \exp (\rho_{j}) }\right) \tag{2}
 $$
 
 The clr-transformation allows for a one-to-one mapping between $\mathcal{B}$ and $\mathbb{R}_0^D$.
@@ -68,23 +68,23 @@ In addition, the isometric logratio transformation (ilr) will be used to introdu
 and there are infinetely many that can be defined that way. Following, we will use the orthonormal basis vectors suggested by Egozcue et al. (2003, p. 291):
 
 $$
-\boldsymbol{e}_k=\sqrt{\frac{k}{k+1}}(\overbrace{k^{-1}, \ldots, k^{-1}}^{k \text { times }},-1,0, \ldots, 0)^{T} \tag{1}
+\boldsymbol{e}_k=\sqrt{\frac{k}{k+1}}(\overbrace{k^{-1}, \ldots, k^{-1}}^{k \text { times }},-1,0, \ldots, 0)^{T} \tag{3}
 $$
-with $e_k \in \mathbb{R}^D$ for $k=1, \ldots, D-1$. The vectors $e_k$ are orthogonal with respect to the ordinary Euclidean inner product in $\mathbb{R}^D and constitue a basis of 
-a (D-1) dimensional subspace of $\mathbb{R}^D$. The ilr-transformation of a composition is therefore an isometric linear mapping between the Aitchison simplex and $\mathbb{R}^{D-1}: 
+with $\boldsymbol{e}_k \in \mathbb{R}^D$ for $k=1, \ldots, D-1$. The vectors $\boldsymbol{e}_k$ are orthogonal with respect to the ordinary Euclidean inner product in $\mathbb{R}^D$ and constitue a basis of 
+a (D-1) dimensional subspace of $\mathbb{R}^D$. The ilr-transformation of a composition is therefore an isometric linear mapping between the Aitchison simplex and $\mathbb{R}^{D-1}$: 
 $$
-\operatorname{ilr}: \mathcal{B} \rightarrow \mathbb{R}_0^{D-1}\;, \boldsymbol{\xi}=\operatorname{ilr}(\boldsymbol{\pi})=\operatorname{clr}(\pi) \cdot \mathbf{E}^T = (\rho) \cdot \mathbf{E}^T  \tag{2}
+\operatorname{ilr}: \mathcal{B} \rightarrow \mathbb{R}^{D-1}\;, \boldsymbol{\xi}=\operatorname{ilr}(\boldsymbol{\pi})=\operatorname{clr}(\boldsymbol{\pi}) \cdot \mathbf{E}^T = (\boldsymbol{\rho}) \cdot \mathbf{E}^T  \tag{2}
 $$
-with $\mathbf{E}$ being the $D x (D-1)$ matrix with the orthonormal basis vectors $e_k$ as columns.
+with $\mathbf{E}$ being the D x (D-1) matrix with the orthonormal basis vectors $e_k$ as columns and $\boldsymbol{\xi}$ being the vector of ilr-coordinates in $\mathbb{R}^{D-1}$.
 
-Based on these considerations, we can adapt the the latent process model of Steyer and Greven (2023) to the discrete case and specify the likelihood function with the probability mass function of the multinomial distribution.
+Based on these considerations, we can adapt the the latent process model of Steyer and Greven (2023) to the discrete case and specify the likelihood function. 
 
 ## Latent model
 
 Following Steyer and Greven (2023), the goal is to conduct a principal component analysis for count compositions. 
 Therefore, it is assumed that the observations samples $\boldsymbol{x}_{i}$, for $i = 1, \ldots, n$ being the number of
 observed count compositions in the dataset. As stated in [chapter count compositions] each $\boldsymbol{x}_i$ is an 
-independent and identicaly distributed sample of size $\mathbf{m}_i$ from the underlying composition $\boldsymbol{\pi_i}$. 
+independent and identicaly distributed sample of size $m_i$ from the underlying composition $\boldsymbol{\pi_i}$. 
 
 Based on the observations, we want to use a Maximum-Likelihood estimation for the parameters $\mu$ and $K$ of a 
 underlying latent variable $\boldsymbol{G}_i$ in $\mathbb{R}_{0}^{D}$.
@@ -94,14 +94,18 @@ Therefore, we assume the following data generating process for observation $i$ w
 
 $$ (\boldsymbol{X}_{i})_{m_i} \stackrel{i.i.d.}{\sim} \operatorname{clr}^{-1}(\boldsymbol{G}_i) = \left(\frac{\exp(G_{i1})}{\sum_{j=1}^D \exp(G_{ij})}, ..., \frac{\exp(G_{iD})}{\sum_{j=1}^D \exp(G_{ij})}\right)^T $$
 
-with $G_{i}$ being $\boldsymbol{G}_{i} = (G_{i1}, \ldots, G_{iD}) \stackrel{i.i.d.}{\sim} \mathcal{N}(\mu, \mathcal{K}) for all $i=1, \ldots, n$.
+with $G_{i}$ being $\boldsymbol{G}_{i} = (G_{i1}, \ldots, G_{iD}) \stackrel{i.i.d.}{\sim} \mathcal{N}(\mu, \mathcal{K})$ for all $i=1, \ldots, n$.
 
 With the empirical estimates of $\mu$ and $K$ we can compute the eigenvalues and eigenvectors to obtain the principal component decomposition 
 of the underlying process.
 
 The marginal likelihood of $\mathbf{G}_i$ is that of a mixed model (cp. Steyer and Greven 2023, p.6).
 
-For the empirical evaluation of the latent process, we can treat the outcomes of $\mathbf{G}_i$ as the clr-coordinates of the count composition $\boldsymbol{x}_i$.
+A problem in this setting is, the covariance matrix of $\mathbf{G}_i$ singular due to the restrictions imposed on the Hilbert space defined earlier. 
+To avoid the singularity in the covariance matrix, the ilr-transformation can be used to get coordinates in $\mathbb{R}^{D-1}$. 
+
+For the empirical evaluation of the latent process, the outcomes of $\mathbf{G}_i$ can be treated as the clr-coordinates of the count composition $\boldsymbol{x}_i$.
+In the same way, the ilr-coordinates are easily computable.
 With the orthonormal bases in $\mathbb{R}^{D-1}$, we can rewrite the latent process as:
 
 $$ 
@@ -109,7 +113,7 @@ $$
 $$
 
 Since the clr-coordinates of the transformed count compositions are a linear combination of ilr-coordinates and the
-orthonormal bases in $\mathcal{E}, we can consider the observations $\boldsymbol{x}_i$ as back transformations from
+orthonormal bases in the D x D-1 matrix $\mathcal{E}$, we can consider the observations $\boldsymbol{x}_i$ as back transformations from
 the ilr-coordinates $\boldsymbol{\theta}_i$. Therefore, the principle of working on coordinates is applied and 
 the ilr-coordinates can be used for maximum-likelihood estimation of the parameters of interest $\nu$ and  $\Sigma$ (Pawlowsky-Glahn et al. 2015).
 
@@ -121,14 +125,10 @@ and eigenvectors (Held et al. 2014). -->
 
 ## Likelihood function
 
-Given the latent process model with finite dimensional parameters $\nu$ and $\Sigma$, we can compute the maximum-likelihood estimators
+Given the latent process model with the finite dimensional parameters in $\mathbb{R}^{D-1}$ $\boldsymbol{\nu}$ and $\boldsymbol{\Sigma}$, we can compute the maximum-likelihood estimators
 given the realizations $\boldsymbol{x}_i$ from the random sample $(\boldsymbol{X}_i)_{m_i} = (X_{i1}, \ldots, X_{iD})_{m_i}^T$ of sample size $m_i$ 
 for $i = 1, \ldots, n$.  
-The marginal likelihood of $\nu$ and $\Sigma$ can be derived with the probability mass function of the multinomial distribution as:
-$$
-L\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right)=\prod_{i=1}^{n} \int_{\mathbb{R}^{N}} \frac{\exp \left(\sum_{j=1}^{m_{i}} \sum_{k=1}^{N} \theta_{i k} \boldsymbol{e}_k\left(x_{i j}\right)\right) p\left(\boldsymbol{\theta}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\int_{I} \exp \left(\sum_{k=1}^{N} \theta_{i k} \boldsymbol{e}_k(x)\right) d x\right)^{m_{i}}} d \boldsymbol{\theta}_{i} 
-$$
-
+The marginal likelihood of $\boldsymbol{\nu}$ and $\boldsymbol{\Sigma}$ can be derived with the probability mass function of the multinomial distribution as:
 
 $$
 \begin{aligned}
@@ -139,14 +139,14 @@ L\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{x}_{1}, \ldots, \b
 \end{aligned}
 $$
 
-with $\mathcal{p}$ denoting a generic probability mass function, i.e. $\mathcal{p}_{m_i}\left(\boldsymbol{x}_i \mid \boldsymbol{\theta}_i\right)$ being the conditional probability mass function of the multinomial distribution
-and $\mathcal{p}\left(\boldsymbol{\theta}_i \mid \boldsymbol{x}_i\right)$ being the conditional probability mass function of the multinomial distribution.
+with $\mathcal{p}$ denoting a generic probability mass function, i.e. $\mathcal{p}\left(\boldsymbol{x}_i \mid \boldsymbol{\theta}_i\right)$ being the conditional probability mass function of the multinomial distribution
+and $\mathcal{p}\left(\boldsymbol{\theta}_i \mid \boldsymbol{x}_i\right)$ being the conditional probability mass function of the multivariate normal distribution.
 
-To summarize, we can write the marginal likelihood of our parameters of interest $\nu$ and $\Sigma$ as:
+To summarize, we can write the marginal likelihood of our parameters of interest $\boldsymbol{\nu}$ and $\boldsymbol{\Sigma}$ as:
 
 
 $$
-L\left(\nu, \Sigma \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right) =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \, \frac{ \exp \left(\sum_{j=1}^{D} x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right) \mathcal{p}\left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right)\right)^{m_{i}}}  d \boldsymbol{\theta_{i}}
+L\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right) =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \, \frac{ \exp \left(\sum_{j=1}^{D} x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right) \mathcal{p}\left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right)\right)^{m_{i}}}  d \boldsymbol{\theta_{i}}
 $$
 
 ## Principal component representation
@@ -157,40 +157,45 @@ G(A_j)=\sum_{k=1}^{D-1}\nu_k \boldsymbol{e}_k(A_j)+\sum_{k=1}^{D-1} Z_{k} \bolds
 $$
 
 where the mean vector of $\boldsymbol{G}_i$ is equal to the first part of the equation, i.e. $\boldsymbol{\mu} = \sum_{k=1}^{D-1} v_k \boldsymbol{e}_k$ and the k-th eigenvector $\varphi_{k}(A_j)$
-of the Covariance matrix $K$ could be written as $\varphi_{k} = \sum_{k=1}^{D} \boldsymbol{v}_{k} \boldsymbol{e}_k(A_j)$.
+of the Covariance matrix $K$ could be written as $\varphi_{k} = \sum_{k=1}^{D-1} \boldsymbol{v}_{k} \boldsymbol{e}_k(A_j)$. Since $\boldsymbol{K}$ has a redundant dimensional,
+the last eigenvector $\varphi_{k}$ has an corresponding eigenvalue of zero and can retrieve all relevant information with the eigenvectors $\boldsymbol{v}_{k}$ of $\boldsymbol{\Sigma}$.
+The kth component of the mean vector of the ilr-coordinates $\boldsymbol{\theta}$ is $\nu_k$.
 
-Alternatively, we can write the principal component representation of $\boldsymbol{\theta}_i$ and use transformation from ilr- to clr-coordinatesn to represent the variable $\boldsymbol{G}_i$.
+<!-- Alternatively, we can write the principal component representation of $\boldsymbol{\theta}_i$ and use transformation from ilr- to clr-coordinatesn to represent the variable $\boldsymbol{G}_i$. -->
 
-$Z_k$ are the uncorrelated component scores with $E[Z_k] = 0$ and $Var(Z_k) = \sigma_k^2$ and $\v_k$ being the orthonormal eigenvectors of $\boldsymbol{\Sigma}$.
+<!-- $Z_k$ are the uncorrelated component scores with $E[Z_k] = 0$ and $Var(Z_k) = \sigma_k^2$ and $v_k$ being the orthonormal eigenvectors of $\boldsymbol{\Sigma}$. -->
 
-For a given sample of $\rho_i$ with $i = 1, ..., n$ the unknown parameters $\varphi_l$ and $Z_l$ can be estimated via the eigendecomposition of the
+<!-- For a given sample of $\boldsymbol{\rho_i}$ with $i = 1, ..., n$ the unknown parameters $\varphi_l$ and $Z_l$ can be estimated via the eigendecomposition of the
 sample covariance matrix  $\hat{K}_n (A_j, A_k) = \frac{1}{n} \sum_{i=1}^n (\rho_i(A_j) - \hat{\mu}(A_j))(\rho_i(A_k) - \hat{\mu}(A_k))$
-with $\hat{\mu}(A_j) = \frac{1}{n} \sum_{i=1}^n \rho_i(A_j)$
-For a given sample of $\xi_i$ with $i = 1, ..., n$ the unknown parameters $\v_k$ and $Z_k$ can be estimated via the eigendecomposition of the
+with $\hat{\mu}(A_j) = \frac{1}{n} \sum_{i=1}^n \rho_i(A_j)$ -->
+For a given sample of $\xi_i$ with $i = 1, ..., n$ the unknown parameters $v_k$ and $Z_k$ can be estimated via the eigendecomposition of the
 sample covariance matrix  $\hat{\Sigma}_n (A_j, A_k) = \frac{1}{n} \sum_{i=1}^n (\xi_i(A_j) - \hat{\nu}(A_j))(\xi_i(A_k) - \hat{\nu}(A_k))$
 with $\hat{\nu}(A_j) = \frac{1}{n} \sum_{i=1}^n \xi_i(A_j)$
 
-We calculate the eigendecomposition of the empirical covariance matrix as  $\Sigma = V \Lambda V^{T}$ TODO: check Häckle
+The eigendecomposition of the empirical covariance matrix is  $\Sigma = V \Lambda V^{T}$, with $V$ being the matrix of eigenvectors with $v_k$ columns
+and $\Lambda$ being the diagonal matrix with the eigenvalues $\sigma_{1}^{2}, \ldots, \sigma_{D-1}^{2}$ in its diagonal.
 
 The component scores are projections onto the eigenvectors:
 $\boldsymbol{z}_{i}=\boldsymbol{V}\left(\boldsymbol{\theta}_{i}-\boldsymbol{\nu}\right) \sim \mathcal{N}\left(\mathbf{0}, \operatorname{diag}\left(\sigma_{1}^{2}, \ldots, \sigma_{D-1}^{2}{ }\right)\right)$ 
-which is equivalent to the linear transformed distribution of $\boldsymbol{theta}_i$.
+which is equivalent to the linear transformed distribution of $\boldsymbol{\theta}_i$.
 
 ## Model estimation using the MCEM algorithm
 
 To evaluate the latent density model, we need to maximize the marginal likelihood
-function $L\left(\nu, \Sigma \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right)$. Since the numerical optimization of the likelihood
+function $L\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right)$. Since the numerical optimization of the likelihood
 function is computationally to expensive, the use of the MCEM algorithm is suggested (Steyer and Greven, 2023).
 
-Due to the parameters of interest $\nu$ and $\Sigma$ being not observable, an Expectation-Maximization (EM) algorithm is well suited to estimate them (TODO: Härdle).
+Due to the parameters of interest $\boldsymbol{\nu}$ and $\boldsymbol{\Sigma}$ being not directly observable, an Expectation-Maximization (EM) algorithm is well suited to estimate them.
+ <!-- (TODO: Härdle). -->
 With the observed count comppositions $\boldsymbol{x}_1, \ldots, \boldsymbol{x}_n$ sampled from the latent compositions $\boldsymbol{\pi}_1, \ldots, \boldsymbol{\pi}_n$,
-we want to estimate the parameters of the latent model specified above. TODO: short description of EM
+we want to estimate the parameters of the latent model specified above. 
+<!-- TODO: short description of EM -->
 
 The idea is to compute the expected complete-data
 log-likelihood function $Q\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)$ with respect to $\boldsymbol{\nu}$ 
-and $\boldsymbol{\Sigma}$ given the current parameter estimates $\boldsymbol{\nu}^(h)$ 
-and $\boldsymbol{\Sigma}^(h)$ to obtain updated parameters $\boldsymbol{\nu}^(h+1)$ 
-and $\boldsymbol{\Sigma}^(h+1)$ until the convergence criterion is reached (Held and Bové, 2014, p. 35ff).
+and $\boldsymbol{\Sigma}$ given the current parameter estimates $\boldsymbol{\nu}^{(h)}$ 
+and $\boldsymbol{\Sigma}^{(h)}$ to obtain updated parameters $\boldsymbol{\nu}^{(h+1)}$ 
+and $\boldsymbol{\Sigma}^{(h+1)}$ until the convergence criterion is reached (Held and Bové, 2014, p. 35ff).
 
 For the parameters of the latent process, the expected complete-data log-likelihood can be written as:
 
@@ -200,36 +205,36 @@ $$
 
 The expactation is taken with respect to the conditional distribution of $\boldsymbol{\theta}_i$ given the observed data $\boldsymbol{x}_i$ and 
 the current parameter estimates $\boldsymbol{\nu}^{(h)}$ and $\boldsymbol{\Sigma}^{(h)}$, i.e. the probability distribution of the ilr-coordinates $\theta_i$
-given the observed data $\boldsymbol{x}_i$ and the current parameter estimates.  Since the vector $\boldsymbol{theta}_i$ is not observed, this distribution 
+given the observed data $\boldsymbol{x}_i$ and the current parameter estimates.  Since the vector $\boldsymbol{\theta}_i$ is not observed, this distribution 
 is not directly available, but can be approximated using the MCEM algorithm (Steyer and Greven, 2023; Wei and Tanner, 1990).
-In particular, we need to generate samples of $\boldsymbol{\theta}_i \mid \boldsymbol{x}_i$, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}$ for all $i = 1, \ldots, n$.
+In particular, we need to generate samples of $\boldsymbol{\theta}_i \mid \boldsymbol{x}_i, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}$ for all $i = 1, \ldots, n$.
 The following sections describe the steps necessary to generate the samples and implement the MCEM algorithm.
 
 ## Expectation step
 
 This expectation is not directly available and a Monte Carlo Approach with the importance sampling method (Held and Bové, 2014, p.265ff) is chosen 
 to approximate the conditional expectation $\mathbb{E}\left(\log \left(p\left(\boldsymbol{\theta}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)\right)\right)$ 
-where the expectation is taken with respect to $\boldsymbol{\theta}_i \mid \boldsymbol{x}_i, \boldsymbol{\nu}^(h), \boldsymbol{\Sigma}^(h)$. 
+where the expectation is taken with respect to $\boldsymbol{\theta}_i \mid \boldsymbol{x}_i, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}$. 
 
-The Monte Carlo approach enables us to estimate the posterior expectation by drawing samples from the target distribution $p\left(\boldsymbol{\theta}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)$.
-Since these samples are not directly available, we use an auxiliary distribution with density $p_{i}^{*}\left(\boldsymbol{\theta}_{i}\right)$ to get a 
+The Monte Carlo approach makes it possible to estimate the posterior expectation by drawing samples from the target distribution $p\left(\boldsymbol{\theta}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)$.
+Since these samples are not directly available, an auxiliary distribution with density $p_{i}^{*}\left(\boldsymbol{\theta}_{i}\right)$ will be used to get a 
 weighted average of $\log \left(p\left(\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)\right)$ for r replicates with importance weights (cp. Steyer and Greven, 2023, p. 7):
 
 $$
-\omega_{i t}, t=1, \ldots, r \text { given as } \omega_{i t}=\frac{p\left(\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)}{p_{i}^{*}\left(\boldsymbol{\theta}_{i}^{(t)}\right)} \text { for all } i=1, \ldots, n
+\boldsymbol{\omega_{i t}}, t=1, \ldots, r \text { given as } \boldsymbol{\omega_{i t}}=\frac{p\left(\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)}{p_{i}^{*}\left(\boldsymbol{\theta}_{i}^{(t)}\right)} \text { for all } i=1, \ldots, n
 $$
 
-The eigendecomposition of $\boldsymbol{\Sigma}^(h)$ can be used to linearly transform the ilr-coordinates in $\boldsymbol{\theta}_i$ into the scores projected onto the principal 
-components matrix $\boldsymbol{V}^{(h)}$, which is a $Dx(D-1)$ matrix which columns are the sorted eigenvectors $\boldsymbol{v}_{1}^{(h)}, \ldots, \boldsymbol{v}_{D-1}^{(h)}$ with
+The eigendecomposition of $\boldsymbol{\Sigma}^{(h)}$ can be used to linearly transform the ilr-coordinates in $\boldsymbol{\theta}_i$ into the scores projected onto the principal 
+components matrix $\boldsymbol{V}^{(h)}$, which is a Dx(D-1) matrix which columns are the sorted eigenvectors $\boldsymbol{v}_{1}^{(h)}, \ldots, \boldsymbol{v}_{D-1}^{(h)}$ with
 corresponding eigenvalues $\sigma_{1}^{2(h)} \geq \cdots \geq \sigma_{D-1}^{2(h)}$. Using the principal component transformation, 
 $\boldsymbol{\theta}_{i} \sim \mathcal{N}\left(\boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)$ becomes $\boldsymbol{z}_{i}=\boldsymbol{V}^{(h)}\left(\boldsymbol{\theta}_{i}-\boldsymbol{\nu}^{(h)}\right) \sim \mathcal{N}\left(\mathbf{0}, \operatorname{diag}\left(\sigma_{1}^{2(h)}, \ldots, \sigma_{D-1}^{2}{ }^{(h)}\right)\right)$.
-Therefore sampling from the conditional distribution of latent ilr-coordinates $\boldsymbol{\theta}_i \mid \boldsymbol{x}_i, \boldsymbol{\nu}^(h), \boldsymbol{\Sigma}^(h)$ is 
+Therefore sampling from the conditional distribution of latent ilr-coordinates $\boldsymbol{\theta}_i \mid \boldsymbol{x}_i, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}$ is 
 equivalent to sampling from the conditional distribution of the scores $\boldsymbol{z}_i$ gives as:
 $$
 \begin{align*}
 p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) & \propto p\left(\mathbf{x}_{i} \mid \mathbf{z}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) p\left(\mathbf{z}_{i} \mid \boldsymbol{\Sigma}^{(h)}\right)=p\left(\mathbf{x}_{i} \mid \boldsymbol{\theta}_{i}=\boldsymbol{V}^{(h)}{}^{T} \mathbf{z}_{i}+\boldsymbol{\nu}^{(h)}\right) \prod_{k=1}^{D-1} p\left(z_{i k} \mid \sigma_{k}^{2(h)}\right) \\
 & =\prod_{j=1}^{D} \operatorname{clr}^{-1}\left(\sum_{k=1}^{D-1} \nu_{k}^{(h)} \boldsymbol{e}_k+\boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} \boldsymbol{e}_k\right)\left(x_{i j}\right) \prod_{k=1}^{D-1} p\left(z_{i k} \mid \sigma_{k}^{2}{ }^{(h)}\right) \\
-& =\frac{\exp \left(\sum_{j=1}^{D} x_{i j} \left(\mu^{(h)}\left(A_{j}\right)+\sum_{k=1}^{D-1} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} \boldsymbol{e}_k\left(A_{j}\right)\right)\right)}{\left(\sum_{j=1}^{D} \exp \left(\mu^{(h)}(A_j)+\sum_{k=1}^{D-1} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} \boldsymbol{e}_k(A_j)\right)\right)^{m_{i}}} \prod_{k=1}^{D-1} p\left(z_{i k} \mid \sigma_{k}^{2}{ }^{(h)}\right) \tag{9}
+& =\frac{\exp \left(\sum_{j=1}^{D} x_{i j} \left(\mu^{(h)}\left(A_{j}\right)+\sum_{k=1}^{D-1} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} {e}_k\left(A_{j}\right)\right)\right)}{\left(\sum_{j=1}^{D} \exp \left(\mu^{(h)}(A_j)+\sum_{k=1}^{D-1} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} {e}_k(A_j)\right)\right)^{m_{i}}} \prod_{k=1}^{D-1} p\left(z_{i k} \mid \sigma_{k}^{2}{ }^{(h)}\right) \tag{9}
 \end{align*}
 $$
 
@@ -238,27 +243,27 @@ The transformation between clr- and ilr-coordinates is used several times in the
 and $\boldsymbol{\rho}_{i}=\mu^{(h)}+\sum_{{k=1}}^{D-1} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} \boldsymbol{e}_{k}, i=1, \ldots, n$ are the current predictions for the latent clr transformed compositions. 
 The formular clearly follows Bayesian perspective, where the conditional distribution of the scores $p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)$ 
 is the posterior  distribution for the prior $\mathcal{N}\left(\boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)$.
-It is assumed that all eigenvalues of $\boldsymbol{\Sigma}^(h)$ are finite and therefore the prior distrinution is proper and the mode of the posterior distribution 
+It is assumed that all eigenvalues of $\boldsymbol{\Sigma}^{(h)}$ are finite and therefore the prior distrinution is proper and the mode of the posterior distribution 
  $\mathbf{z}_{i}^{*}=\operatorname{argmax}_{\mathbf{z}_{i} \in \mathbb{R}^{D-1}} p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)$ can be attained. Given this assumption,
- a multivariate normal distribution centered around the mode $\mathcal{N}\left(\boldsymbol{z}_{i}^{*}, \lambda \operatorname{diag}\left(\sigma_{1}^{2(h)}, \ldots, \sigma_{D-1}^{2}{ }^{(h)}\right)\right)$
+ a multivariate normal distribution centered around the mode $\mathcal{N}\left(\boldsymbol{z}_{i}^{*}, \lambda \operatorname{diag}\left(\sigma_{1}^{2(h)}, \ldots, \sigma_{D-1}^{2}{ }^{(h)}\right)\right)$ with a tuning parameter $\lambda$
  can be choosen as the auxiliary distribution $p_{i}^{*}\left(\boldsymbol{z}_{i}\right)$ (Steyer and Greven, 2023, p. 8).
 
  Following Steyer and Greven (2023) the mode can be found with the objective function in (*number conditional scores) and it's gradient given as:
  $$
-\nabla \log \left(p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)\right)=\sum_{k=1}^{D} \boldsymbol{v}_{k}^{(h)}\left(\sum_{j=1}^{D} x_{i j} \boldsymbol{e}_{k}\left(A_j\right)-m_{i}\left\langle \boldsymbol{\pi}_{\mathbf{z}_{i}}, \boldsymbol{e}_{k}\right\rangle \right)-\left(\frac{z_{i l}}{\sigma_{l}^{2}(h)}\right)_{l=1, \ldots, D-1}
+\nabla \log \left(p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)\right)=\sum_{k=1}^{D} \boldsymbol{v}_{k}^{(h)}\left(\sum_{j=1}^{D} x_{i j} {e}_{k}\left(A_j\right)-m_{i}\left\langle \boldsymbol{\pi}_{\mathbf{z}_{i}}, \boldsymbol{e}_{k}\right\rangle \right)-\left(\frac{z_{i l}}{\sigma_{l}^{2}(h)}\right)_{l=1, \ldots, D-1} \tag{99}
 $$
 
-where $\boldsymbol{pi}_{\mathbf{z}_{i}}=\operatorname{clr}^{-1}\left(\mu^{(h)}+\sum_{k=1}^{D-1} \underline{\boldsymbol{z}_{i}^{T}} \boldsymbol{v}_{k}^{(h)} \boldsymbol{e}_{k}\right)$ for all $\mathbf{z}_{i}=\left(z_{i 1}, \ldots, z_{i D-1}\right)^{T} \in \mathbb{R}^{D-1}$.
+where $\boldsymbol{\pi}_{\mathbf{z}_{i}}=\operatorname{clr}^{-1}\left(\mu^{(h)}+\sum_{k=1}^{D-1} \underline{\boldsymbol{z}_{i}^{T}} \boldsymbol{v}_{k}^{(h)} \boldsymbol{e}_{k}\right)$ for all $\mathbf{z}_{i}=\left(z_{i 1}, \ldots, z_{i D-1}\right)^{T} \in \mathbb{R}^{D-1}$.
 
 Since calculating the mode is now possible, i.i.d. samples for the scores $\boldsymbol{z}_{i t}$ can be drawn from a multivariate normal distribution with mean $\boldsymbol{z}_{i}^{*}$ and covariance $\lambda \operatorname{diag}\left(\sigma_{1}^{2(h)}, \ldots, \sigma_{D-1}^{2}{ }^{(h)}\right)$.
-The parameter $\lambda$ is a tuning parameter that controls the size of the paramter space that is explored. Usually, $\lambda$ is set to 1.
+The tuning parameter $\lambda$ controls the size of the paramter space that is explored. Usually, $\lambda$ is set to 1.
 With the scores $\boldsymbol{z}_{i t}$ the weights $\boldsymbol{w}_{i t}$ can be calculated (Number formular weights) for all $t=1, \ldots, r$ using the importance sampling formular (Number formular importance sampling).
 Since conditionally sampling from the ilr-coordinates $\boldsymbol{\theta}_i$ is equivalent to sampling from the scores $\boldsymbol{z}_{i t}$ 
-the procedure additionally provides the samples $\theta_{i}^(t)$ from $\boldsymbol{\theta}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}$ with the principal component decomposition 
+the procedure additionally provides the samples $\theta_{i}^{(t)}$ from $\boldsymbol{\theta}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}$ with the principal component decomposition 
 $\boldsymbol{\theta}_{i}^{(t)}=\boldsymbol{\nu}^{(h)}+\boldsymbol{V}^{(h) T} \mathbf{z}_{i t}$. Therefore, a Monte Carlo approximation can be used 
 to calculate the expected complete-data log-likelihood for each iteration of the MCEM algorithm:
 $$
-Q\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) \approx \sum_{i=1}^{n} \sum_{t=1}^{r} \frac{\omega_{i t}}{\sum_{t=1}^{r} \omega_{i t}} \log \left(p\left(\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)\right)+\text { const. } \tag{10}
+Q\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) \approx \sum_{i=1}^{n} \sum_{t=1}^{r} \frac{\boldsymbol{\omega}_{i t}}{\sum_{t=1}^{r} \boldsymbol{\omega}_{i t}} \log \left(p\left(\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)\right)+\text { const. } \tag{10}
 $$
 
 ## Maximization step
@@ -269,7 +274,7 @@ $$
 $$
 
 As stated by Steyer and Greven (2023) this optimization problem corresponds to a weighted maximum likelihood estimation of the parameters of interest, given the assumption that 
-$\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}$ is multivariate normal with mean $\boldsymbol{\nu}$ and covariance $\boldsymbol{\Sigma}$. Based on the 
+$\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}$ is a multivariate normal variable with mean $\boldsymbol{\nu}$ and covariance $\boldsymbol{\Sigma}$. Based on the 
 provided solution for this problem (e.g. Bishop and Nasrabadi, 2006), the parameters can be updated as follows:
 $$
 \begin{aligned}
@@ -279,4 +284,4 @@ $$
 $$
 
 These are the weighted mean and the weighted covariance matrix of the samples of the calculated ilr-coordinates $\boldsymbol{\theta}_{i}^{(t)}$ for all $i=1, \ldots, n$ 
-and $t=1, \ldots, r$ given the proposed scores $\boldsymbol{z}_{i t}$ and the corresponding weights $\omega_{i t}$ for each sample $t$ (cp. Steyer and Greven, 2023. p. 9).
+and $t=1, \ldots, r$ given the proposed scores $\boldsymbol{z}_{i t}$ and the corresponding weights $\boldsymbol{\omega}_{i t}$ for each sample $t$ (cp. Steyer and Greven, 2023. p. 9).
