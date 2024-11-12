@@ -129,13 +129,14 @@ list(
   }),
   tar_target(pca_count_ilr_std, {
     x_data <- data_kl15_comp
+    set.seed(10)
     pca_results_ilr_std <-
       fit_compositional_pca_ilr_sc(x_data,
                                    max_iter = 50,
                                    r = 10,
                                    lambda = 1,
                                    eps = 0.01,
-                                   sc_factor = 0.001,
+                                   sc_factor = 1,
                                    sum_exp = TRUE)
   }),
   tar_target(sim_comp_1, {
@@ -143,6 +144,7 @@ list(
     eigenvalues <- c(0.6, 0.3, 0.05, 0.05)
     mean <- c(0, 2, 0.5, -2, -0.5)
     n_counts <- 300
+    set.seed(13)
 
     sim_composition_1_results <-
       build_setting_2comp_5parts(n_observations,
@@ -150,8 +152,41 @@ list(
                                  mean,
                                  n_counts)
   }),
-  tar_target(pca_sim1_ilr_StdPara_list, {
-    x_data <- sim_comp_1$x_data
+  tar_target(sim_comp_1_smi, {
+    n_observations <- 2000
+    eigenvalues <- c(0.6, 0.3, 0.05, 0.05)
+    mean <- c(0, 2, 0.5, -2, -0.5) # the coordinates are too extreme -> or try less extreme
+    n_counts <- 30
+
+    set.seed(11)
+    sim_composition_1_results <-
+      build_setting_2comp_5parts(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+  }),
+  # tar_target(pca_sim1_ilr_StdPara_list, {
+  #   x_data <- sim_comp_1$x_data
+  #   number_simulations <- 20
+  #   pca_results_list <- list(number_simulations)
+
+  #   max_iter <- 50
+  #   r <- 10
+  #   lambda <- 1
+  #   eps <- 0.01
+  #   sc_factor <- 1
+  #   sum_exp <- TRUE
+  #   workers <- 10
+
+  #   for (i in 1:number_simulations) {
+  #     cat("Iteration pca_sim1_ilr_StdPara_list,", i, "\n")
+  #     pca_results_list[[i]] <- fit_pca_ilr_vs_2(
+  #       x_data
+  #     )
+  #   }
+  # }),
+  tar_target(pca_sim1_ilr_StdPara_smi_list, {
+    x_data <- sim_comp_1_smi$x_data
     number_simulations <- 20
     pca_results_list <- list(number_simulations)
 
@@ -162,11 +197,37 @@ list(
     sc_factor <- 1
     sum_exp <- TRUE
     workers <- 10
+    set.seed(11)
 
     for (i in 1:number_simulations) {
+      cat("Iteration pca_sim1_ilr_StdPara_smi_list", i, "\n")
       pca_results_list[[i]] <- fit_pca_ilr_vs_2(
         x_data
       )
     }
+  }),
+  tar_target(pca_count_ilr_vs1, {
+    x_data <- data_kl15_comp
+    set.seed(12)
+    pca_results_ilr_std <-
+      fit_pca_ilr_vs_2(x_data,
+                       max_iter = 50,
+                       r = 10,
+                       lambda = 1,
+                       eps = 0.01,
+                       sc_factor = 1, # try 900.000
+                       sum_exp = TRUE)
+  }),
+  tar_target(pca_count_ilr_vs1_sc, {
+    x_data <- data_kl15_comp
+    set.seed(12)
+    pca_results_ilr_std <-
+      fit_pca_ilr_vs_2(x_data,
+                       max_iter = 50,
+                       r = 10,
+                       lambda = 1,
+                       eps = 0.01,
+                       sc_factor = -800000, # try 900.000
+                       sum_exp = TRUE)
   })
 )

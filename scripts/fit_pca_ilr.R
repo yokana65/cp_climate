@@ -89,7 +89,7 @@ fit_pca_ilr_vs_2 <- function(x_data,
       sdev_list[[k]] <- pca$sdev
       pca$rotation <- pca$rotation %*% eigen_decomp$vectors
       clr_rotation <- t(basis_matrix) %*% pca$rotation %*% basis_matrix
-      cat("PCA1:", clr_rotation[ , 1], "\n")
+      cat("clr-coordinates PCA1:", clr_rotation[ , 1], "\n")
       # check convergence
       critical_value_1 <- sqrt(sum((pca_old$center - pca$center)^2))
       cat("critical value center_diff:", critical_value_1, "\n")
