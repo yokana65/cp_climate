@@ -177,6 +177,7 @@ list(
   #   sc_factor <- 1
   #   sum_exp <- TRUE
   #   workers <- 10
+  #   set.seed(14)
 
   #   for (i in 1:number_simulations) {
   #     cat("Iteration pca_sim1_ilr_StdPara_list,", i, "\n")
@@ -184,10 +185,11 @@ list(
   #       x_data
   #     )
   #   }
+  #   pca_results_list
   # }),
   tar_target(pca_sim1_ilr_StdPara_smi_list, {
     x_data <- sim_comp_1_smi$x_data
-    number_simulations <- 20
+    number_simulations <- 1
     pca_results_list <- list(number_simulations)
 
     max_iter <- 50
@@ -200,14 +202,19 @@ list(
     set.seed(11)
 
     for (i in 1:number_simulations) {
+      set.seed(12)
       cat("Iteration pca_sim1_ilr_StdPara_smi_list", i, "\n")
       pca_results_list[[i]] <- fit_pca_ilr_vs_2(
-        x_data
+        x_data, sc_factor = 1
       )
     }
+
+    pca_results_list
   }),
-  tar_target(pca_count_ilr_vs1, {
+  tar_target(pca_count_ilr_vs1_1perc, {
     x_data <- data_kl15_comp
+    # rescale the data to avoid overflow issues in the log likelihood
+    x_data <- x_data * 0.01
     set.seed(12)
     pca_results_ilr_std <-
       fit_pca_ilr_vs_2(x_data,
@@ -215,7 +222,7 @@ list(
                        r = 10,
                        lambda = 1,
                        eps = 0.01,
-                       sc_factor = 1, # try 900.000
+                       sc_factor = 1,
                        sum_exp = TRUE)
   }),
   tar_target(pca_count_ilr_vs1_sc, {
@@ -223,11 +230,11 @@ list(
     set.seed(12)
     pca_results_ilr_std <-
       fit_pca_ilr_vs_2(x_data,
-                       max_iter = 50,
+                       max_iter = 10,
                        r = 10,
                        lambda = 1,
                        eps = 0.01,
-                       sc_factor = -800000, # try 900.000
+                       sc_factor = - 390000, 
                        sum_exp = TRUE)
   })
 )

@@ -1,7 +1,8 @@
 gradient_cslc_vs1 <- function(scores,
                                  x_data_i,
                                  pca,
-                                 basis_matrix) {
+                                 basis_matrix,
+                                 sc_factor) {
   m_i <- sum(x_data_i)
   ilr_comp <- as.vector(pca$center + pca$rotation %*% scores)
   clr_comp <- ilr2clr(ilr_comp)
@@ -9,7 +10,7 @@ gradient_cslc_vs1 <- function(scores,
 
 
   grad_vecs <- sapply(seq_along(scores), function(k) {
-    e_k <- basis_matrix[k, ] 
+    e_k <- basis_matrix[k, ]
     v_k <- pca$rotation[, k]
     term1 <- sum(x_data_i * e_k)
     term2 <- m_i * sum(composition * e_k)
@@ -18,7 +19,7 @@ gradient_cslc_vs1 <- function(scores,
 
     return(grad_k)
   })
-  grad <- rowSums(grad_vecs)
+  grad <- rowSums(grad_vecs) # TODO: shouldnt be colSums?
 
   grad <- grad - scores / (pca$sdev^2)
 
