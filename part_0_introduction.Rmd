@@ -18,6 +18,34 @@ aus dem Bereich der Geowissenschaften angewandt.
 
 # Motivation
 
+Das Feld der Kompositionsdaten erstreckt sich über eine Vielzahl an Fachbereichen. Sie sind überall dort relevant, wo es um die Analyse von relativen Anteilen eines Ganzen geht. Dazu 
+gehören unter anderem auch die geowissenschaftliche Analyse von Sedimentdaten. Warum ist es in diesem Fall relevant und notwendig von Kompositionsdaten zu sprechen?
+Der Grund hierfür liegt darin, dass die intuitive Anwendung von standardmäßig etablierten Methoden der multivariaten Datenanalyse auf Kompositionsdaten zu Fehlinterpretationen und Paradoxien
+führen kann. Dafür sollen zwei kurze Beispiele angeführt werden, um die Problematik praktisch zu verdeutlichen (Vgl. Pawloswki et al., 2015, p. 1ff):
+
+**Example 1: The scale of proportions**
+
+Relative Daten verhalten sich anders als absolute Daten. Dies wird besonders deutlich, wenn prozentuale Veränderungen betrachtet werden. Stellen Sie sich vor Sie untersuchen zwei 
+marine Sedimentschichten, um Rückschlüsse auf die Prozesse Staubeintrag und marine Produktivität zu ziehen. Für den Staubeintrag wird **Illit** als Proxy genommen und für die 
+Produktivität Mineral **Kalzit**. Aufgrund der natürlichen Beschaffenheit des Sediments hat Illit einen Anteil von 0.1 % am Sediment und Kalzit einen Anteil von 20% in der 
+ersten untersuchten Sedimentschicht. Beim Vergleich mit der zweiten Schicht wird festgestellt, dass der Anteil beider Mineralien sich um 0.1% erhöht hat, der Anteil von Illit ist 
+0.2% und der von Kalzit ist 20.1%. Der Anstieg der relativen Veränderung ist also für beide Prozesse gleich. Genausogut ließe sich aber auch sagen, dass sich der Prozess des Staubeintrages
+um 100% verstärkt hat und der Prozess der marinen Produktivität lediglich um 5%. In diesem Fall erscheint die Veränderung für den Staubeintrag deutlich relevanter zu sein als für die 
+marine Produktivität. Beide Aussagen erscheinen zunächst einmal widersprüchlich und verdeutlichen, dass in einer sauberen Analyse die relative Bedeutung von Veränderungen erfasst werden 
+muss. 
+
+**Example 2: spurious correlation**
+
+Ähnlich verwirrende Konsequenzen kann das Auftreten von spurious correlation zeigen. Diese wurde bereits von Karl Pearson (1897) beschrieben und ist eine direkte Folge der Definition 
+von Kompositionsdaten als Teil eines Ganzen. Wenn zum Beispiel eine Komposition aus drei Anteilen besteht und zwei davon positiv miteinander korrelieren, dann muss die dritte Komponente 
+eine negative Korrelation aufweisen, auch wenn sie in Wirklichkeit unabhängig von den beiden anderen ist. Dies lässt sich auch am oben genannten Beispiel des Staubeintrages und der 
+marinen Produktivität verdeutlichen. Beide Prozesse sind eindeutig voneinander unabhängig. Staub der von der Sahara ins Meer geweht wird hat eindeutig nichts mit mariner Produktivität zu tun.
+Aber da beide Teile eines ganzen sind, kann es zu einem spurious correlation kommen, wenn der Staubeintrag so dominant wird, dass er den Prozess der marinen Produktivität verdrängt. 
+In diesem Fall würde man eine nicht vorhandene negative Korrelation zwischen beiden Prozessen messen. 
+
+Die Herausforderung von Kompositionsdaten sind seit über 100 Jahren bekannt. In den 1980er Jahren wurde von Aitchison eine Methodology eingeführt, die in der Lage war die oben 
+genannten Probleme zu lösen. 
+
 ## Sonstiges
 
 Interpretation des Konvergenzkriteriums: eps = 0.01 bedeutet, dass es pro Komponente im Durchschnitt nur noch eine Abweichung von 1% gibt. 
