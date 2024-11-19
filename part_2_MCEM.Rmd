@@ -1323,6 +1323,260 @@ To be consistend with the old implementation, we use `prcomp` for now
 
 ## Debugging functions
 
+### adjusted mcem
+
+```{r adjusted mcem, eval=TRUE}
+
+fit_compositional_pca_ilr_sc_db <- function(x_data,
+                                         max_iter = 50,
+                                         r = 10,
+                                         lambda = 1,
+                                         eps = 0.01,
+                                         sc_factor = 0.001,
+                                         sum_exp = TRUE) {
+  start_time <- Sys.time()
+  if (!is.list(x_data) && !is.matrix(x_data)) {
+    stop("Input x_data must be a list or a matrix")
+  }
+
+  if (is.data.frame(x_data) || is.matrix(x_data)) {
+    x_data <- apply(x_data, 1, function(x) x, simplify = FALSE)
+  }
+
+  lengths <- unique(sapply(x_data, length))
+  if (length(lengths) != 1) {
+    stop("All observations must have the same number of components")
+  }
+  D <- lengths
+
+  basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+  basis_matrix <- do.call(rbind, basis_vectors)
+
+  # initial estimates
+  nu <- rep(0, D - 1)
+  Sigma <- diag(D - 1)
+  pca <- prcomp(Sigma, center = FALSE)
+  pca$center <- nu
+
+  proposal_scores <- list(length(x_data))
+  weights <- list(length(x_data))
+  sdev_list <- list(length(max_iter))
+  center_list <- list(length(max_iter))
+  conditional_scores_list <- list(length(x_data))
+  scores_median_list <- list(length(x_data))
+  if (max_iter > 0) {
+    for (k in 1:max_iter) {
+      cat("Iteration:", k, "\n")
+      # E-Step ###################
+      for (i in seq_along(x_data)) {
+        optim_result <- tryCatch({
+          optim(rep(0, length = length(pca$sdev)),
+                conditional_scores_log_ilr_sc,
+                gr = gradient_cslc_ilr_sc,
+                x_data_i = x_data[[i]],
+                pca = pca,
+                basis_matrix = basis_matrix,
+                sc_factor = sc_factor,
+                control = list(fnscale = -1),
+                method = "BFGS")
+        }, error = function(e) {
+            cat("error optim() in iteration", k, "for observation", i, "\n")
+            cat("error message:", e$message, "\n")
+            print("pca$sdev:")
+            print(pca$sdev)
+            print("optim result:")
+            print(optim_result)
+            print("pca center:")
+            print(pca$center)
+        })
+        scores_median <- as.vector(optim_result$par)
+        scores_median_list[[i]] <- scores_median
+        # importance sampling
+        proposal_scores[[i]] <- sapply(1:(r * k), function(t) {
+          matrix(rnorm(length(scores_median),
+                       mean = scores_median,
+                       sd = lambda * pca$sdev))
+        })
+
+        conditional_scores_list[[i]] <-
+          apply(proposal_scores[[i]], 2, function(scores) {
+            conditional_scores_log_ilr_sc(
+                                          scores,
+                                          x_data[[i]],
+                                          pca,
+                                          basis_matrix,
+                                          sc_factor)
+          })
+
+        log_weights <- apply(proposal_scores[[i]], 2, function(scores) {
+          conditional_scores_log_ilr_sc(
+                                        scores,
+                                        x_data[[i]],
+                                        pca,
+                                        basis_matrix,
+                                        sc_factor) -
+            sum(dnorm(
+                      scores,
+                      mean = scores_median,
+                      sd = lambda * pca$sdev,
+                      log = TRUE))
+        })
+        # increase numerical stability
+        if (sum_exp) {
+          weights[[i]] <- stabilize_weights(log_weights)
+        } else {
+          log_weights <- log_weights - mean(log_weights, na.rm = TRUE)
+          weights[[i]] <- exp(log_weights)/sum(exp(log_weights))
+        }
+        # End of E-Step ###################
+      }
+      monitor_global_ess(weights, k)
+      mean_conditional <- mean(unlist(conditional_scores_list), na.rm = TRUE)
+
+      cat(sprintf("Conditional score mean value %.2f:\n",
+                  mean_conditional))
+
+      # M-Step ###################
+      mu_scores <- rowMeans(sapply(seq_along(weights), function(i){
+        proposal_scores[[i]] %*% weights[[i]]
+      }), na.rm = TRUE)
+      cat("Mean scores:", mu_scores, "\n")
+      # update parameters
+      pca_old <- pca
+      pca$center <- pca$rotation %*% mu_scores
+      cat("center:", pca$center, "\n")
+      center_list[[k]] <- pca$center
+      Sigma <- Reduce("+", lapply(seq_along(weights), function(i) {
+        Reduce("+", lapply(1:(r * k), function(t) {
+          C_it <- weights[[i]][t] * (proposal_scores[[i]][, t] - mu_scores) %*%
+            t((proposal_scores[[i]][, t] - mu_scores))
+        }))
+      })) / length(weights)
+      eigen_decomp <-  tryCatch({eigen(Sigma)}, error = function(e) {
+        cat("error eigen() in iteration", k, "for observation", i, "\n")
+        cat("error message:", e$message, "\n")
+        print("pca$sdev:")
+        print(pca$sdev)
+      })
+      negative_eigenvalues <- eigen_decomp$values < 0
+      if (any(negative_eigenvalues)) {
+        warning(sprintf("Warning: %d eigenvalues are negative.\n
+        They have been set to zero.",
+                        sum(negative_eigenvalues)))
+      }
+      pca$sdev <- sqrt(pmax(eigen_decomp$values, 0))
+      cat("Eigenvalues:", pca$sdev, "\n")
+      sdev_list[[k]] <- pca$sdev
+      pca$rotation <- pca$rotation %*% eigen_decomp$vectors
+
+      # check convergence
+      critical_value_1 <- sqrt(sum((pca_old$center - pca$center)^2))
+      cat("critical value center_diff:", critical_value_1, "\n")
+      Sigma_old <- Reduce("+", lapply(seq_along(pca_old$sdev), function(k) {
+        pca_old$rotation[, k] %*% t(pca_old$rotation[, k]) * (pca_old$sdev[k]^2)
+      }))
+      Sigma_new <- Reduce("+", lapply(seq_along(pca$sdev), function(k) {
+        pca$rotation[, k] %*% t(pca$rotation[, k]) * (pca$sdev[k]^2)
+      }))
+      Sigma_diff <- Sigma_old - Sigma_new
+      critical_value_2 <- norm(Sigma_diff, type = "F")
+      cat("critical value Sigma_diff:", critical_value_2, "\n")
+
+      if (max(critical_value_1, critical_value_2) < eps) {
+        constant <- apply(pca$rotation, 2, function(g) {
+          sqrt(sum(g^2))
+        })
+        pca$rotation <- t(t(pca$rotation) / constant)
+        pca$sdev <- pca$sdev * constant
+
+        end_time <- Sys.time()
+        elapsed_time <- end_time - start_time
+        print(paste("The algorithm converged after:", elapsed_time, "minutes"))
+        return(list("iteration" = k,
+                    "pca" = pca,
+                    "x_data" = x_data,
+                    "list_center" = center_list,
+                    "list_sdev" = sdev_list,
+                    "time" = elapsed_time))
+      }
+    }
+  }
+  constant <- apply(pca$rotation, 2, function(g) {
+    sqrt(sum(g^2))
+  })
+  pca$rotation <- t(t(pca$rotation)/constant)
+  pca$sdev <- pca$sdev * constant
+  end_time <- Sys.time()
+  elapsed_time <- end_time - start_time
+  return(list("iteration" = max_iter,
+              "pca" = pca,
+              "x_data" = x_data,
+              "list_center" = center_list,
+              "list_sdev" = sdev_list,
+              "time" = elapsed_time))
+}
+
+conditional_scores_log_ilr_sc <- function(scores,
+                                          x_data_i,
+                                          pca,
+                                          basis_matrix,
+                                          sc_factor) {
+  scaling_factor <- sc_factor
+  ilr_comp <- as.vector(pca$center + pca$rotation %*% scores)
+  clr_comp <- ilr2clr(ilr_comp)
+  norm_constant <- sum(exp(clr_comp))
+
+  # Compute scaled log likelihood
+  log_likelihood <- scaling_factor * (sum(x_data_i * clr_comp)
+                                      - sum(x_data_i) * log(norm_constant))
+
+  # Prior remains unchanged as it's already well-scaled
+  log_prior <- - sum(0.5 * scores^2 / (pca$sdev^2))
+
+  return(log_likelihood + log_prior)
+}
+
+gradient_cslc_ilr_sc <- function(scores,
+                                 x_data_i,
+                                 pca,
+                                 basis_matrix,
+                                 sc_factor) {
+  scaling_factor <- sc_factor
+  m_i <- sum(x_data_i)
+  ilr_comp <- as.vector(pca$center + pca$rotation %*% scores)
+  clr_comp <- ilr2clr(ilr_comp)
+  composition <- clrInv_long(clr_comp)
+
+  # transform the rotation matrix
+  rotation_matrix <- pca$rotation%*%basis_matrix*(-1)
+  # equivalent to
+  # rotation_matrix_2 <- ilr2clr(pca$rotation)
+
+  grad <- sapply(seq_along(scores), function(k) {
+    e_k <- rotation_matrix[, k]
+    term1 <- sum(x_data_i * e_k)
+    term2 <- m_i * sum(composition * e_k)
+    grad_k <- scaling_factor * (term1 - term2) - scores[k] / (pca$sdev[k]^2)
+
+    return(grad_k)
+  })
+
+  return(grad)
+}
+
+clrInv_long <- function(clr_coords) {
+    # Exponentiate the clr coordinates
+    exp_coords <- exp(clr_coords)
+    
+    # Calculate the geometric mean normalization constant
+    norm_const <- sum(exp_coords)
+    
+    # Return normalized compositions
+    exp_coords / norm_const
+}
+
+```
+
 ### unit tests
 
 we test general units of the algorithm
@@ -2106,10 +2360,127 @@ Sigma <- tryCatch({
 
 # Simulation settings
 
+part_2_MCEM.Rmd Stell dir vor du bist mein Statistikprofessor und wir arbeiten schon viele Jahre vertrauensvoll und professionell zusammen. Ich bin Student an deinem Lehrstuhl und möchte jetzt meine Masterarbeit in Statistik schreiben. Du bist besonders gut in der Lage komplexe Sachverhalte einfach zu erklären, weswegen du von Studenten und Kollegen sehr geschätzt wirst. Außerdem bist du eine sehr unterstützende Persönlichkeit. Dein Kerngebiet ist die Analyse von Kompositionsdaten. Ich möchte meine Masterarbeit gerne in Kooperation mit dem geowissenschaftlichen Institut der Uni Potsdam schreiben. Diese arbeiten mit einem Datensatz von einer Sedimentbohrung im Golf von Aden, mit dem die Mineralienzusammensetzung des Sedimentes bestimmt werden kann. Mit Hilfe eines Altersmodells lassen sich damit Rückschlüsse auf die letzten 500.000 Jahre von Klimaprozessen schließen. Es wurde bereits vielfältig zum Datensatz von der geowissenschaftlichen Arbeitsgruppe publiziert. Allerdings fehlt bisher eine statistisch fundierte Analyse des Datensatzes als Komposition. Dies möchte ich mit Hilfe einer umfassenden Analyse im framework der compositional data analysis umsetzen. Ich habe den MCEM algorithmus über die ilr-Koordinaten implementiert. Nun möchte ich den Algorithmus mit Hilfe von simulierten Daten validieren. Dabei habe ich aber noch ein Verständnisproblem. Meine beobachteten Daten sind als zurücktransformierte (i.e. clr-inverse-Transformierung) Ergebnisse eines latenten Prozesses modelliert, der als multivariate Normalverteilung strukturiert ist. Ich kann den Mittelwertvektor festsetzen und die Eigenwerte der Kovarianzmatrix festlegen, um einen solchen Prozess zu simulieren. Aber wie kann ich den Einfluss der Kompositionsteile auf die Hauptkomponenten bestimmen? Z.B. wenn ich eine Komposition aus fünf Teilen habe und simulieren möchte, dass der Kontrast zwischen dem zweiten und dem dritten Teil die erste Hauptkomponente bestimmt, während die zweite Hauptkomponente durch den dritten Teil bestimmt ist. Kannst du mir Schritt für Schritt erklären, wie ich das umsetzen kann und wie dafür der Programmiercode aussehen würde?
+
+1. construct latent compositions
+
+```{r simulate latent compositions, eval=TRUE}
+library(mvtnorm)
+# Define dimension
+D <- 5
+
+# Create custom basis vectors that represent our desired contrasts
+v1 <- c(0, 1/sqrt(2), -1/sqrt(2), 0, 0)  # Contrast between parts 2 and 3
+v2 <- c(-1/3, -1/3, -1/3, 1, 0)  # Focus on part 4
+v3 <- c(1/sqrt(2), 0, 0, -1/sqrt(2), 0)  # Additional contrast
+v4 <- c(1/2, 1/2, 0, 0, -1)  # Additional contrast
+
+# Combine into rotation matrix with each column representing a base
+V <- cbind(v1, v2, v3, v4)
+
+# Define eigenvalues to control strength of each pattern
+eigenvalues <- c(0.5, 0.3, 0.1, 0.1)
+
+# Construct covariance matrix
+K <- V %*% diag(eigenvalues) %*% t(V)
+dim(K)
+colSums(K) 
+# Generate samples
+n_samples <- 100
+mean <- c(0,2,0.5, -2, -0.5)
+clr_coords <- rmvnorm(n_samples, mean = mean, sigma = K)
+
+# Transform to compositions
+compositions <- clrInv(clr_coords)
+composition_list <- apply(compositions, 1, function(x) x, simplify = FALSE)
+```
+
+2. Simulate count compositions with fixed m_i
+
+```{r simulate count composition, eval=TRUE}
+# Number of counts per sample
+n_counts <- 2000
+
+# Generate multinomial samples
+x_data <- lapply(1:n_samples, function(i) {
+  probs <- composition_list[[i]]
+  rmultinom(1, n_counts, probs)[,1]
+})
+```
+
+```{r test simulation, eval=TRUE}
+# first of all test with standard pca
+# change list into matrix
+x_matrix <- do.call(rbind, x_data)
+clr_data <- clr(x_matrix)
+pca_1 <- prcomp(clr_data)
+plot_pca_rotation(pca_1$rotation)
+plot(pca_1$sdev)
+plot(pca_1$center)
+
+```
+
+Interestingly enough, PCA is not really good in identifying the correct principal components. 
+
+What do we get from our algorithm (n=100, m_1 = 2000)?
+
+```{r test simulation mcem, eval=TRUE}
+pca_mcem <- fit_compositional_pca_ilr_sc_db(x_data, sc_factor = 1) 
+plot_pca_rotation(pca_mcem$pca$rotation)
+sim_data <- tar_read(simulation_composition_1)
+sim_data <- sim_data$x_data
+pca_old <- fit_compositional_pca_vs1_0(sim_data) 
+
+max_iter = 50
+r = 10
+lambda = 1
+eps = 0.01
+sc_factor = 0.001
+sum_exp = TRUE
+
+for (i in seq_along(x_data)) {
+  result <-
+    optim(rep(0, length = length(pca$sdev)),
+          conditional_scores_log_ilr_sc,
+          gr = gradient_cslc_ilr_sc,
+          x_data_i = x_data[[i]],
+          pca = pca,
+          basis_matrix = basis_matrix,
+          sc_factor = sc_factor,
+          control = list(fnscale = -1),
+          method = "BFGS")
+  scores_median_list[[i]] <- result$par
+}
+scores_median_list
+scores_0 <- rep(0, length = length(pca$sdev))
+scores <- scores_median_list[[1]]
+scores_1 <- ilr(x_data[[1]]) 
+scores_clr <- clr(x_data[[1]]) 
+
+ilr_comp <- pca$center + pca$rotation %*% scores_0
+clr_comp <- ilr2clr(ilr_comp)
+```
+
+Check the gradient:
+
+```{r check gradient, eval=TRUE}
+
+  grad <- sapply(seq_along(scores), function(k) {
+    e_k <- basis_matrix[k, ]*(-1)
+    term1 <- sum(x_data_i * e_k)
+    term2 <- m_i * sum(composition * e_k)
+    grad_k <- scaling_factor * (term1 - term2) - scores[k] / (pca$sdev[k]^2)
+    return(grad_k)
+  })
+
+```
+
+
+
 We can construct our simulation settings by building the Covraiance matrix of the multivariate process:
 
 ```{r simulation settings, eval=FALSE}
-library(mvtnorm)
+
 D <- 13  # Dimension der Komposition
 basis_vectors <- lapply(1:(D-1), generate_orthonormal_basis, D)
 V <- do.call(rbind, basis_vectors)
@@ -2328,6 +2699,132 @@ plot_pca_rotation(pca_mcem_lambda$pca$rotation)
 
 ```
 
+# Likelihood estimation
 
+Given our objective function, what do we actually calulate for the conditional scores?
+
+```{r likelihood_estimation, eval=FALSE}
+# Be aware that a standard vektor in R is a column vektor
+# i.e. the row vektors are transposed vektors
+x <- c(1,2,3)
+dim(as.matrix(x)) 
+
+
+x_data <- tar_read(data_kl15_comp)
+count_data <- apply(x_data, 1, function(x) x, simplify = FALSE)
+x_data_i <- count_data[[1]]
+
+x_ilr <- ilr(x_data)
+pca <- prcomp(x_ilr, scale = FALSE)
+
+pca_1 <- tar_read(pca_count_ilr_std)
+pca <- pca_1$pca
+sc_factor <- 1
+scores_1 <- ilr(x_data_i)
+scores_2 <- pca$center 
+conditional_scores_log_ilr_sc <- function(scores,
+                                          x_data_i,
+                                          pca,
+                                          basis_matrix,
+                                          sc_factor) {
+  scaling_factor <- sc_factor
+  ilr_comp <- pca$center + pca$rotation %*% t(scores)
+  # clr_comp <- t(ilr_comp) %*% basis_matrix
+  clr_comp <- ilr2clr(ilr_comp)
+  norm_constant <- sum(exp(clr_comp))
+
+  # Compute scaled log likelihood
+  log_likelihood <- scaling_factor * (sum(x_data_i * clr_comp)
+                                      - sum(x_data_i) * log(norm_constant))
+
+  # Prior remains unchanged as it's already well-scaled
+  log_prior <- - sum(0.5 * scores^2 / (pca$sdev^2))
+
+  return(log_likelihood + log_prior)
+}
+
+# alternative pca input
+
+
+
+# Calculate max cond scores
+conditional_scores_log_ilr_sc(scores_1,
+                                          x_data_i,
+                                          pca,
+                                          basis_matrix,
+                                          sc_factor) 
+```
+
+The conditional scores is maximized at $z_i = ilr(x_i)$ and pca being the standard pca onto ilr(x).
+
+Does this hold true, when we apply the scaling factor?
+
+```{r test conditional, eval=FALSE}
+  lengths <- unique(sapply(count_data, length))
+  if (length(lengths) != 1) {
+    stop("All observations must have the same number of components")
+  }
+  D <- lengths
+
+  basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+  basis_matrix <- do.call(rbind, basis_vectors)
+
+  # initial estimates
+  nu <- rep(0, D - 1)
+  Sigma <- diag(D - 1)
+  pca_in <- list()
+  eigen_decomp <- eigen(Sigma)
+  pca_in$rotation <- eigen_decomp$vectors
+  pca_in$sdev <- eigen_decomp$values
+  pca_in$center <- nu
+
+sc_factor <- 0.001
+# Calculate max cond scores
+conditional_scores_log_ilr_sc(scores_1,
+                                          x_data_i,
+                                          pca,
+                                          basis_matrix,
+                                          sc_factor) 
+
+test <- fit_compositional_pca_ilr_sc(count_data, sc_factor = 1)
+```
 
 # Final Test
+
+Get results and make sense of them:
+
+1. Estimation with 
+                                   max_iter = 50,
+                                   r = 10,
+                                   lambda = 1,
+                                   eps = 0.01,
+                                   sc_factor = 0.001,
+                                   sum_exp = TRUE
+
+Be aware that we are estimating ilr-coefficients
+
+```{r results 1, eval=TRUE}
+pca_1 <- tar_read(pca_count_ilr_std)
+# Get rownames
+data_comp <- tar_read(data_kl15_comp)
+colnames(data_comp)
+pca_results <- pca_1$pca
+rotation_ilr <- pca_results$rotation
+rotation_clr <- t(rotation_ilr%*%basis_matrix)
+rownames(rotation_clr) <- colnames(data_comp)
+plot_pca_rotation(rotation_clr)
+```
+
+```{r results scree plot 1, eval=TRUE}
+plot(pca_results$sdev)
+```
+
+
+```{r results center plot 1, eval=TRUE}
+plot(pca_results$center)
+```
+
+
+```{r results evolution plot 1, eval=TRUE}
+pca_1$list_center
+```

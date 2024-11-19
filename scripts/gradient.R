@@ -1,8 +1,8 @@
 gradient_cslc_vs1 <- function(scores,
-                                 x_data_i,
-                                 pca,
-                                 basis_matrix,
-                                 sc_factor) {
+                              x_data_i,
+                              pca,
+                              basis_matrix,
+                              sc_factor) {
   m_i <- sum(x_data_i)
   ilr_comp <- as.vector(pca$center + pca$rotation %*% scores)
   clr_comp <- ilr2clr(ilr_comp)

@@ -1,8 +1,8 @@
 conditional_scores_log_ilr <- function(scores,
-                                          x_data_i,
-                                          pca,
-                                          basis_matrix,
-                                          sc_factor) {
+                                        x_data_i,
+                                        pca,
+                                        basis_matrix,
+                                        sc_factor) {
   scaling_factor <- sc_factor
   ilr_comp <- as.vector(pca$center + pca$rotation %*% scores)
   clr_comp <- ilr2clr(ilr_comp)

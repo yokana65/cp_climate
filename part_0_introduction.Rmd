@@ -1,0 +1,27 @@
+---
+title: "Introduction"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    number_sections: true
+    code_folding: hide
+---
+
+# Abstract
+
+Die mathematisch fundierte Analyse von Kompositionsdaten geht zurück auf die Arbeit von J. Aitchison (1982). Seitdem wurden die Grundlagen u.a. durch Pawlowsky und Egozcue (..) 
+kontinuierlich weiter entwickelt. Dank der Entdeckung eines metrischen Raumes für Kompositionsdaten, können die Daten mit fortgeschrittenen statistischen Methoden 
+analysiert werden. In dieser Arbeit wird neben der grundsätzlichen Einführung in das Feld der Analyse von Kompositionsdaten, die Anwendung eines Monte-Carlo Expectation-Maximization 
+Algorithmus (Steyer and Greven, 2023) für Kompositionsdaten umgesetzt. Die Wirksamkeit des Algorithmus wird anhand von Simulationsdaten evaluiert und anhand eines realen Beispiels 
+aus dem Bereich der Geowissenschaften angewandt.
+
+# Motivation
+
+## Sonstiges
+
+Interpretation des Konvergenzkriteriums: eps = 0.01 bedeutet, dass es pro Komponente im Durchschnitt nur noch eine Abweichung von 1% gibt. 
+Bei der Kovarianmatrix beträgt die durchschnittliche Abweichung epsilon/d. D.h. bei kleineren Dimensionalitäten sollte epsilon kleiner 
+gewählt werden. 
+
+

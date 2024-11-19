@@ -8,12 +8,49 @@ output:
     code_folding: hide
 ---
 
+# Simulation Study
+
+This chapter evaluates the performance of the MCEM algorithm introduced in the chapter [...]. For this purpose, the latent composition $\boldsymbol{\pi}$ is 
+simulated given the constructed parameters $\boldsymbol{\nu}$ and $\boldsymbol{\Sigma}$. Real world observations are then drawn with a fixed sample size $m$ 
+for all observations. That is, the observations $x_{i} \stackrel{i . i \cdot d}{\sim} \boldsymbol{\pi}_{i}$ are sampled with sample size $m$ for all compositions 
+$\boldsymbol{\pi}$ with $i=1, \ldots, n$. The sample for the latent compositions $\boldsymbol{\pi_i}$ with $i=1, \ldots, 100$ are obtained as back transformations 
+of the simulated data in the clr-space $ $\boldsymbol{\pi}_{i}=\operatorname{clr}^{-1}\left(\mu+z_{i 1} \varphi_{1}+z_{i 2} \varphi_{2}\right)$ where 
+$z_{i 1} \stackrel{i . i . d .}{\sim} Z_{1}$ and $z_{i 2} \stackrel{i . i . d .}{\sim} Z_{2}$. Where the factors associated with the two principal components are 
+$Z_{1} \stackrel{i . i . d .}{\sim} N(0,0.6)$ and $Z_{2} \stackrel{i . i . d .}{\sim} N(0,0.3)$. (TODO: integrate with the part related to the pca vectors)
+**this apporach varies from my approach: here the clr coordinates are only constructed with the principal components instead of generating the whole parameters of interest: But what are the true parameters in this case?)
+
+A principal component analysis is then performed on the simulated data to estimate the parameters of interest $\boldsymbol{\nu}$ and 
+$\boldsymbol{\Sigma}$. 
+Zum Vergleich mit dem Ergebnissen des MCEM Algorithmus, werden eine klassische PCA und eine robuste PCA (Vgl. Filzmoser et al. 2019) auf den transformierten 
+clr-Koordinaten der Beobachtungen durchgeführt und die Ergebnissen der drei Methoden miteinander verglichen. 
+Im ersten Schritt wird eine vergleichsweise einfache Simulation für eine Komposition mit fünf Komponenten und zwei relevanten Hauptkomponenten durchgeführt. 
+Die erste Hauptkoponente basiert auf dem Kontrast zwischen der ersten und der zweiten Komponente, während die zweite Hauptkomponente auf dem Kontrast der 
+vierten Komponente mit den ersten drei Komponenten aufbaut. Die latenten Eigenwerte der beiden ersten Hauptkomponenten summieren sich zu 0.9, d.h. (TODO: überprüfen)
+es werden 90% der Varianz der Daten durch die beiden Hauptkomponenten erklärt, wobei davon 2/3 auf die erste Hauptkomponente und 1/3 auf die zweite Hauptkomponente entfällt.
+Demenstprechend ist $\boldsymbol{\varphi}_1 = (0, 1/sqrt(2), -1/sqrt(2), 0, 0)$ der Vektor der ersten Hauptkomponente und $\boldsymbol{\varphi}_2 = (-1/3, -1/3, -1/3, 1, 0)$ 
+der Vektor der zweiten Hauptkomponente.
+Der qualitative Unterschied zwischen den Simulationen besteht in der Variation der Stichprobengröße $m$, die zunächst von einer sehr kleinen Stichprobengröße bis hin 
+zu einer moderaten Stichprobengröße variiert. Damit lässt sich die Wirkungsweise des MCEM Algorithmus für Datenmengen mit einer kleinen Stichprobengröße gut einschätzen.
+In einem nächsten Schritt wird eine Simulation durchgeführt, deren Parameter näher an den tatsächlichen Werten des angewandten Datensatzes liegen. 
+
+Zusammenfassen werden zunächst einmal die Ergebnisse für das erste Simulationsbeispiel zusammengetragen. Dafür wurden jeweils **50** Simulationen durchgeführt, 
+bei denen 100 Zähl Kompositionen mit den oben beschriebenen Parametern generiert wurden. Als Mittelwertvektor $\boldsymbol{\mu}$ der clr-transformierten Koordinaten 
+wurde der Vektor $\boldsymbol{\mu} = (0, 1.5, 0.5, -1.5, -0.5)$ gewählt, womit eine relativ starke Variation der relativen Kompositionsanteile abgebildet wird. D.h. 
+die zweite Komponente (TODO: Interpretation clr Koodinaten überprüfen) ist relative zu allen anderen Komponenten dominant, während die vierte Komponente stark unterrepräsentiert 
+ist. Dies führt für die vierte Komponente zu einer erheblichen Anzahl von Nullwerten in den beobachteten Zähl Kompositionen. Dies stellt ein erhebliches Problem für 
+die klassische Anwendung multivariater Methoden dar (TODO: ausführen). Da der MCEM Algorithmus jedoch direkt die Daten auf dem Simplex evaluiert, wird das Problem 
+vermieden (TODO: besser erklären oder raus).  
+
 # Implementierung
 
 ```{r libraries, eval=TRUE}
 library(targets)
 library(compositions)
 library(mvtnorm)
+library(ggplot2)
+library(future.apply)
+library(robCompositions)
+
 source("scripts/helper_functions.R")
 
 ```
@@ -21,7 +58,7 @@ source("scripts/helper_functions.R")
 
 ## Objective Function
 
-```{r objective function, eval=TRUE}
+```{r objective function, eval=FALSE}
 conditional_scores_log_ilr_db_2 <- function(scores,
                                           x_data_i,
                                           pca,
@@ -49,7 +86,7 @@ conditional_scores_log_ilr_db_2 <- function(scores,
 
 ## Gradient
 
-```{r gradient, eval=TRUE}
+```{r gradient, eval=FALSE}
 
 gradient_cslc_ilr_db_2 <- function(scores,
                                  x_data_i,
@@ -87,7 +124,7 @@ gradient_cslc_ilr_db_2 <- function(scores,
 
 Implement the MCEM-algorithm with parallel processing:
 
-```{r parallel processing, eval=TRUE}
+```{r parallel processing, eval=FALSE}
 # use parallel processing 
 library(future.apply)
 
@@ -279,9 +316,13 @@ In general, we want to construct several sets of different context for the MCEM-
 - equal share szenarios vs. unequal share szenarios
 - Different number of principal components
 
+We canstruct a matrix of Dx(D-1) principal component vectors and 
+set the (D-1) vector of eigenvalues.
+
+
 ## Simulation Setting 1
 
-```{r simulation_setting_1 function, eval=TRUE}
+```{r simulation_setting_1 function, eval=FALSE}
 build_setting_1 <- function(n_samples,
                             eigenvalues = c(0.6, 0.3, 0.05, 0.05),
                             mean = c(0, 2, 0.5, -2, -0.5),
@@ -311,7 +352,8 @@ build_setting_1 <- function(n_samples,
 }
 
 setting_1 <- build_setting_1(n_samples = 2000, n_counts = 300)
-x_data <- setting_1$x_data
+x_data_test <- setting_1$x_data
+(sigma <- setting_1$Sigma)
 ```
 
 Insights:
@@ -322,22 +364,37 @@ Insights:
 
 Targets are used for computation to avoid an unneccessary amount of computation.
 
-```{r classic pca, eval=TRUE}
+```{r classic pca, eval=FALSE}
 x_data_matrix <- setting_1$x_data_matrix
 pca_ilr <- prcomp(ilr(x_data_matrix)) 
+pca_clr <- prcomp(clr(x_data_matrix)) 
 pca_ilr$center
 plot_pca_rotation(pca_ilr$rotation)
+plot_pca_rotation(pca_clr$rotation)
 pca_ilr$rotation
+pca_clr$rotation
+
+# reconstruction Sigma
+sigma_hat <- pca_ilr$rotation %*% pca_ilr$sdev^2 %*% t(pca_ilr$rotation) 
+
 ```
 > pca_ilr$center
 [1]  1.4395217 -0.4235406 -2.2104438 -0.6523904
 
-
+> pca_ilr$rotation
             PC1         PC2         PC3         PC4
 [1,]  0.1926516  0.43686024 -0.20391570 -0.85466769
 [2,] -0.3175480 -0.81793217 -0.05469878 -0.47661126
 [3,]  0.8993526 -0.37227342 -0.21991887  0.06490851
 [4,] -0.2306807  0.03940283 -0.95239809  0.19537587
+
+> pca_clr$rotation
+             PC1         PC2         PC3         PC4        PC5
+[1,]  0.21462584 -0.12366791 -0.44296865 -0.73649221 -0.4472136
+[2,] -0.05782473 -0.74148159 -0.15458831  0.47219043 -0.4472136
+[3,]  0.46731579  0.56918348 -0.23178643  0.45157631 -0.4472136
+[4,] -0.83044395  0.33120898 -0.02250736 -0.01252504 -0.4472136
+[5,]  0.20632705 -0.03524296  0.85185075 -0.17474949 -0.4472136
 
 ```{r computation, eval=FALSE}
 pca_results_1 <- fit_compositional_pca_ilr_db_par(x_data, eps = 0.02, workers = 10)
@@ -346,13 +403,638 @@ pca_results_1 <- fit_compositional_pca_ilr_db_par(x_data, eps = 0.02, workers = 
 
 What we expect:
 
-```{r expected results, eval=TRUE}
+```{r expected results, eval=FALSE}
 
 
 ```
 
 What we get:
 
-```{r actual results, eval=TRUE}
+```{r actual results, eval=FALSE}
 
 ```
+
+## evaluation
+
+True parameters:
+
+```{r true parameters, eval=TRUE}
+sim1 <- tar_read(sim_comp_1_smi)
+sigma <- sim1$Sigma
+x_data <- sim1$x_data
+# change list into data matrix
+x_matrix <- do.call(rbind, x_data)
+
+D <- ncol(x_matrix)
+basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+basis_matrix <- do.call(rbind, basis_vectors)
+
+
+pca_sim1 <- prcomp(ilr(x_matrix))
+pca_sim1$center
+clr_pca <- prcomp(clr(x_matrix))
+clr_rotation <- t(basis_matrix) %*% pca_sim1$rotation %*% basis_matrix
+sigma_sampled <- pca_sim1$rotation %*% diag(pca_sim1$sdev^2) %*% t(pca_sim1$rotation)
+
+rotation_true <- eigen(sigma)
+rotation_true$vectors
+```
+
+> pca_sim1$center
+[1]  1.3578022 -0.3892208 -0.5917104 -0.7016805
+
+**that is not the true center, but the sampled center!**
+
+> mean <- c(0, 1.5, 0.5, -1.5, -0.5) %*% t(basis_matrix)
+> mean
+         [,1]       [,2]      [,3]      [,4]
+[1,] 1.414214 -0.4082483 -2.453739 -0.559017
+
+        [,1]       [,2]      [,3]      [,4]
+[1,] 1.06066 -0.2041241 -1.876388 -0.559017
+
+> rotation_true$vectors
+            [,1]        [,2]        [,3]         [,4]      [,5]
+[1,] -0.02532766 -0.34909098 -0.37546886  0.732473295 0.4472136
+[2,] -0.72116611 -0.24505649 -0.08896847 -0.460381772 0.4472136
+[3,]  0.69114282 -0.29732982 -0.14039828 -0.462822753 0.4472136
+[4,]  0.02185786  0.85336096 -0.26700427 -0.002454104 0.4472136
+[5,]  0.03349309  0.03811633  0.87183989  0.193185333 0.4472136
+
+> clr_rotation
+            [,1]        [,2]        [,3]         [,4]        [,5]
+[1,]  0.08571733  0.04002381  0.67511484 -0.315030596 -0.48582538
+[2,] -0.38985998  0.21730316 -0.01295807 -0.447341034  0.63285592
+[3,]  0.56223038 -0.63291841 -0.16132148 -0.007227651  0.23923716
+[4,] -0.51065499 -0.18640826  0.05991235  0.704524488 -0.06737359
+[5,]  0.25256725  0.56199971 -0.56074765  0.065074793 -0.31889411
+
+> clr_pca$rotation
+            PC1         PC2         PC3         PC4        PC5
+[1,] -0.0323102 -0.49989536  0.50401171  0.54316929 -0.4472136
+[2,]  0.4293292 -0.05986581  0.33385516 -0.70755443 -0.4472136
+[3,] -0.8450978  0.10286017 -0.06071605 -0.26747528 -0.4472136
+[4,]  0.2292771 -0.33349311 -0.79406573  0.07532597 -0.4472136
+[5,]  0.2188018  0.79039411  0.01691490  0.35653445 -0.4472136
+
+**Why are they so different?**
+
+
+For a simulation with `n_simulations` runs, we can campare the parameter of interest with their true value.
+
+
+
+## Simulation Setting 1
+
+This setting calculates a complex (known) laten covariance matrix 
+
+1. 20 Simulationen mit 
+  - mean vector: c(0, 1.5, 0.5, -1.5, -0.5)
+  - eigenvalues: c(0.6, 0.3, 0.05, 0.05)
+  - n_observations: c(100, 100, 100, 300)
+  - n_components: 5
+  - m_i: c(30, 60, 90, 90)
+
+TODO: check rob computation with princomp
+
+```{r evaluation mean vector, eval=TRUE}
+n_simulations <- 20
+
+simulation_data_list <- list(
+  tar_read(sim_comp_1_smi_nSim),
+  tar_read(sim_comp_1_smi_nSim_60),
+  tar_read(sim_comp_1_smi_nSim_90),
+  tar_read(sim_comp_1_smi_nSim_90_300)
+)
+
+pca_clr_rob_all <- lapply(1:4, function(x) list(n_simulations))
+pca_clr_std_all <- lapply(1:4, function(x) list(n_simulations))
+
+# calculate standard PCA for each simulation
+for(j in 1:4) {
+  simulation_data <- simulation_data_list[[j]]
+  for(i in 1:length(simulation_data)) {
+    sim <- simulation_data[[i]]
+    x_data_list <- sim$x_data
+    x_data <- do.call(rbind, x_data_list)
+    
+    pca_clr_std_all[[j]][[i]] <- prcomp(clr(x_data))
+    pca_clr_rob_all[[j]][[i]] <- pcaCoDa(x_data, method = "robust")
+  }
+}
+simulation_results_list <- list(
+  tar_read(pca_sim1_ilr_StdPara_smi_nSim_1),
+  tar_read(pca_sim1_ilr_StdPara_smi_nSim_1_60),
+  tar_read(pca_sim1_ilr_StdPara_smi_nSim_1_90),
+  tar_read(pca_sim1_ilr_StdPara_smi_nSim_1_90_300)
+)
+
+diff_mean_all <- lapply(1:4, function(x) list(n_simulations))
+diff_mean_std_clr_all <- lapply(1:4, function(x) list(n_simulations))
+diff_mean_rob_clr_all <- lapply(1:4, function(x) list(n_simulations))
+
+D <- 5
+basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+basis_matrix <- do.call(rbind, basis_vectors)
+
+true_v <- c(0, 1.5, 0.5, -1.5, -0.5)
+
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    diff_mean_all[[j]][[i]] <- sqrt(sum((true_v - t(basis_matrix) %*% simulation_results_list[[j]][[i]]$pca$center)^2))
+    diff_mean_std_clr_all[[j]][[i]] <- sqrt(sum((true_v - pca_clr_std_all[[j]][[i]]$center)^2))
+    diff_mean_rob_clr_all[[j]][[i]] <- sqrt(sum((true_v - pca_clr_rob_all[[j]][[i]]$center)^2))
+  }
+}
+diff_mean = diff_mean_all
+diff_mean_std_clr = diff_mean_std_clr_all
+diff_mean_rob_clr = diff_mean_rob_clr_all
+```
+
+So, we get much better results. Let's visualize the results with boxplots for each case.
+
+```{r boxplot simulation, eval=TRUE}
+# Daten in einen DataFrame zusammenführen
+diff_df <- data.frame(
+  differences = c(
+    unlist(diff_mean_all[[1]]), unlist(diff_mean_all[[2]]), 
+    unlist(diff_mean_all[[3]]), unlist(diff_mean_all[[4]]),
+    unlist(diff_mean_std_clr_all[[1]]), unlist(diff_mean_std_clr_all[[2]]),
+    unlist(diff_mean_std_clr_all[[3]]), unlist(diff_mean_std_clr_all[[4]]),
+    unlist(diff_mean_rob_clr[[1]]), unlist(diff_mean_rob_clr[[2]]),
+    unlist(diff_mean_rob_clr[[3]]), unlist(diff_mean_rob_clr[[4]])
+  ),
+  method = factor(rep(c("MCEM", "classic PCA", "robust PCA"), each = 4 * n_simulations)),
+  target = factor(rep(rep(c("30", "60", "90", "x3 observations"), 
+                         each = n_simulations), 3))
+)
+
+ggplot(diff_df, aes(x = target, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set2") +
+  labs(y = "Abweichung vom wahren Mittelwert",
+       x = "Target",
+       fill = "Methode",
+       title = "Blau: MCEM, Grün: Std PCA, Orange: robust PCA") +
+  theme(legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5, size = 10))
+```
+
+And for the Kovarianzmatrix:
+
+```{r evaluation covariance, eval=TRUE}
+sim1 <- tar_read(sim_comp_1_smi)
+sigma <- simulation_data_list[[1]][[1]]$Sigma
+true_sigma <- sigma
+
+sigma_distances_all <- lapply(1:4, function(x) list(n_simulations))
+sigma_distances_std_clr_all <- lapply(1:4, function(x) list(n_simulations))
+sigma_distances_rob_clr_all <- lapply(1:4, function(x) list(n_simulations))
+
+
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    # MCEM method
+    sigma_hat_mcem <- with(simulation_results_list[[j]][[i]]$pca,
+      t(basis_matrix) %*% rotation %*% diag(sdev^2) %*% t(rotation)) %*% basis_matrix
+    sigma_distances_all[[j]][[i]] <- norm(true_sigma - sigma_hat_mcem, type = "F")
+    
+    sigma_hat_clr <- with(pca_clr_std_all[[j]][[i]],
+      rotation %*% diag(sdev^2) %*% t(rotation))
+    sigma_distances_std_clr_all[[j]][[i]] <- norm(true_sigma - sigma_hat_clr, type = "F")
+    
+    sigma_hat_rob <- with(pca_clr_rob_all[[j]][[i]],
+      loadings %*% diag(eigenvalues) %*% t(loadings))
+    sigma_distances_rob_clr_all[[j]][[i]] <- norm(true_sigma - sigma_hat_rob, type = "F")
+  }
+}
+
+sigma_diff_df <- data.frame(
+  differences = c(
+    unlist(sigma_distances_all[[1]]), unlist(sigma_distances_all[[2]]), 
+    unlist(sigma_distances_all[[3]]), unlist(sigma_distances_all[[4]]),
+    unlist(sigma_distances_std_clr_all[[1]]), unlist(sigma_distances_std_clr_all[[2]]),
+    unlist(sigma_distances_std_clr_all[[3]]), unlist(sigma_distances_std_clr_all[[4]]),
+    unlist(sigma_distances_rob_clr_all[[1]]), unlist(sigma_distances_rob_clr_all[[2]]),
+    unlist(sigma_distances_rob_clr_all[[3]]), unlist(sigma_distances_rob_clr_all[[4]])
+  ),
+  method = factor(rep(c("MCEM", "classic", "robust"), each = 4 * n_simulations)),
+  target = factor(rep(rep(c("Target 1", "Target 2", "Target 3", "Target 4"), 
+                         each = n_simulations), 3))
+)
+
+
+ggplot(sigma_diff_df, aes(x = target, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set2") +
+  labs(y = "dist covariance",
+       x = "Target",
+       fill = "Methode",
+       title = "Blau: MCEM, Grün: Std PCA, Orange: rob PCA") +
+  theme(legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5, size = 10))
+```
+
+### Visualisation Principal components
+
+## Simulation Setting 2
+
+This setting calculates a simpler version, where the clr-coordinates are linear combinations of just two scores and 
+two principal components:
+
+  pc_1 <- c(0, 1, -1, 0, 0)  # Contrast between parts 2 and 3
+  pc_2 <- c(-1, 0, 0, 1, 0)  # Contrast between parts 1 and 4
+
+  lambda_1 <- eigenvalues[1]
+  lambda_2 <- eigenvalues[2]
+
+  
+  clr_coords <- lapply(1:n_observations, function(i){
+    mean + rnorm(1, 0, lambda_1)*pc_1 + rnorm(1, 0, lambda_2)*pc_2
+  })
+
+1. 20 Simulationen mit 
+  - mean vector: c(0, 1, 0.5, -1, -0.5)
+  - eigenvalues: c(0.6, 0.3)
+  - n_observations: c(100, 100, 100, 300)
+  - n_components: 5
+  - m_i: c(30, 60, 90, 90)
+
+```{r evaluation mean vector 2, eval=TRUE}
+n_simulations <- 20
+
+simulation_data_list <- list(
+  tar_read(sim_comp_2_smi_nSim),
+  tar_read(sim_comp_2_smi_nSim_60),
+  tar_read(sim_comp_2_smi_nSim_120),
+  tar_read(sim_comp_2_smi_nSim_120_300)
+)
+
+pca_ilr_std_all <- lapply(1:4, function(x) list(n_simulations))
+pca_clr_std_all <- lapply(1:4, function(x) list(n_simulations))
+
+# calculate standard PCA for each simulation
+for(j in 1:4) {
+  simulation_data <- simulation_data_list[[j]]
+  for(i in 1:length(simulation_data)) {
+    sim <- simulation_data[[i]]
+    x_data_list <- sim$x_data
+    x_data <- do.call(rbind, x_data_list)
+    
+    pca_clr_std_all[[j]][[i]] <- prcomp(clr(x_data))
+    pca_ilr_std_all[[j]][[i]] <- prcomp(ilr(x_data))
+  }
+}
+simulation_results_list <- list(
+  tar_read(pca_sim1_ilr_StdPara_smi_nSim_2),
+  tar_read(pca_sim1_ilr_StdPara_smi_nSim_2_60),
+  tar_read(pca_sim1_ilr_StdPara_smi_nSim_2_90),
+  tar_read(pca_sim1_ilr_StdPara_smi_nSim_2_90_300)
+)
+
+diff_mean_all <- lapply(1:4, function(x) list(n_simulations))
+diff_mean_std_clr_all <- lapply(1:4, function(x) list(n_simulations))
+diff_mean_std_ilr_all <- lapply(1:4, function(x) list(n_simulations))
+
+D <- 5
+basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+basis_matrix <- do.call(rbind, basis_vectors)
+
+true_v <- c(0, 1, 0.5, -1, -0.5)
+
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    diff_mean_all[[j]][[i]] <- sqrt(sum((true_v - t(basis_matrix) %*% simulation_results_list[[j]][[i]]$pca$center)^2))
+    diff_mean_std_clr_all[[j]][[i]] <- sqrt(sum((true_v - pca_clr_std_all[[j]][[i]]$center)^2))
+    diff_mean_std_ilr_all[[j]][[i]] <- sqrt(sum((true_v - t(basis_matrix) %*% pca_ilr_std_all[[j]][[i]]$center)^2))
+  }
+}
+diff_mean = diff_mean_all
+diff_mean_std_clr = diff_mean_std_clr_all
+diff_mean_std_ilr = diff_mean_std_ilr_all
+```
+
+Let's visualize the results with boxplots for each case.
+
+```{r boxplot simulation 2, eval=TRUE}
+# Daten in einen DataFrame zusammenführen
+diff_df <- data.frame(
+  differences = c(
+    unlist(diff_mean_all[[1]]), unlist(diff_mean_all[[2]]), 
+    unlist(diff_mean_all[[3]]), unlist(diff_mean_all[[4]]),
+    unlist(diff_mean_std_clr_all[[1]]), unlist(diff_mean_std_clr_all[[2]]),
+    unlist(diff_mean_std_clr_all[[3]]), unlist(diff_mean_std_clr_all[[4]]),
+    unlist(diff_mean_std_ilr_all[[1]]), unlist(diff_mean_std_ilr_all[[2]]),
+    unlist(diff_mean_std_ilr_all[[3]]), unlist(diff_mean_std_ilr_all[[4]])
+  ),
+  method = factor(rep(c("MCEM", "CLR", "ILR"), each = 4 * n_simulations)),
+  target = factor(rep(rep(c("30", "60", "90", "x3 observations"), 
+                         each = n_simulations), 3))
+)
+
+ggplot(diff_df, aes(x = target, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set2") +
+  labs(y = "dist mean",
+       x = "Target",
+       fill = "Methode",
+       title = "Blau: MCEM, Grün: Std PCA, Orange: ILR") +
+  theme(legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5, size = 10))
+```
+
+And for the Kovarianzmatrix:
+
+```{r evaluation covariance 2, eval=TRUE}
+# the structure of the covariance matrix is a bit degenerated but can be calculated as follows:
+eigenvalues <- c(0.6, 0.3, 0, 0, 0)
+V <- cbind(c(0, 1, -1, 0, 0), c(-1, 0, 0, 1, 0), c(0, 0, 0, 0, 0), c(0, 0, 0, 0, 0), c(0, 0, 0, 0, 0))
+true_sigma <- V %*% diag(eigenvalues) %*% t(V) 
+
+sigma_distances_all <- lapply(1:4, function(x) list(n_simulations))
+sigma_distances_std_clr_all <- lapply(1:4, function(x) list(n_simulations))
+sigma_distances_std_ilr_all <- lapply(1:4, function(x) list(n_simulations))
+
+
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    # MCEM method
+    sigma_hat_mcem <- with(simulation_results_list[[j]][[i]]$pca,
+      t(basis_matrix) %*% rotation %*% diag(sdev^2) %*% t(rotation)) %*% basis_matrix
+    sigma_distances_all[[j]][[i]] <- norm(true_sigma - sigma_hat_mcem, type = "F")
+    
+    # CLR method
+    sigma_hat_clr <- with(pca_clr_std_all[[j]][[i]],
+      rotation %*% diag(sdev^2) %*% t(rotation))
+    sigma_distances_std_clr_all[[j]][[i]] <- norm(true_sigma - sigma_hat_clr, type = "F")
+    
+    # ILR method
+    sigma_hat_ilr <- with(pca_ilr_std_all[[j]][[i]],
+      t(basis_matrix) %*% rotation %*% diag(sdev^2) %*% t(rotation)) %*% basis_matrix
+    sigma_distances_std_ilr_all[[j]][[i]] <- norm(true_sigma - sigma_hat_ilr, type = "F")
+  }
+}
+
+sigma_diff_df <- data.frame(
+  differences = c(
+    unlist(sigma_distances_all[[1]]), unlist(sigma_distances_all[[2]]), 
+    unlist(sigma_distances_all[[3]]), unlist(sigma_distances_all[[4]]),
+    unlist(sigma_distances_std_clr_all[[1]]), unlist(sigma_distances_std_clr_all[[2]]),
+    unlist(sigma_distances_std_clr_all[[3]]), unlist(sigma_distances_std_clr_all[[4]]),
+    unlist(sigma_distances_std_ilr_all[[1]]), unlist(sigma_distances_std_ilr_all[[2]]),
+    unlist(sigma_distances_std_ilr_all[[3]]), unlist(sigma_distances_std_ilr_all[[4]])
+  ),
+  method = factor(rep(c("MCEM", "CLR", "ILR"), each = 4 * n_simulations)),
+  target = factor(rep(rep(c("Target 1", "Target 2", "Target 3", "Target 4"), 
+                         each = n_simulations), 3))
+)
+
+
+ggplot(sigma_diff_df, aes(x = target, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_minimal() +
+  scale_fill_brewer(palette = "Set2") +
+  labs(y = "dist covariance",
+       x = "Target",
+       fill = "Methode",
+       title = "Blau: MCEM, Grün: Std PCA, Orange: ILR") +
+  theme(legend.position = "bottom",
+        plot.title = element_text(hjust = 0.5, size = 10))
+```
+
+```{r plot results simulation, eval=FALSE}
+plot_parameter_distances <- function(distances, parameter_type) {
+  
+  df <- data.frame(Distance = distances)
+  
+  ggplot(df, aes(y = Distance)) +
+    geom_boxplot(fill = "lightblue", alpha = 0.7) +
+    geom_jitter(width = 0.2, alpha = 0.4, color = "darkblue") +
+    theme_minimal() +
+    labs(
+      title = sprintf("Distance between True and Estimated %s", parameter_type),
+      y = "Distance",
+      x = ""
+    ) +
+    theme(
+      plot.title = element_text(hjust = 0.5, size = 14),
+      axis.text = element_text(size = 12),
+      axis.title = element_text(size = 12)
+    )
+}
+
+mean_plot <- plot_parameter_distances(results$mean_distances, "Mean Vector")
+sigma_plot <- plot_parameter_distances(results$sigma_distances, "Covariance Matrix")
+
+# Optional: Plots nebeneinander anzeigen
+library(gridExtra)
+grid.arrange(mean_plot, sigma_plot, ncol = 2)
+```
+
+
+
+
+
+# example
+
+```{r example, eval=TRUE}
+pca_cts <- tar_read(pca_count_ilr_vs1_1perc)
+
+```
+
+
+# test targets
+
+## time evaluation
+
+1. 100 observations, 5 Dimensions and m_i = 30
+ => erster Testlauf mit 60 min
+ => zweiter Testlauf ohne Konvergenz
+2. mit algorithm aus Debug => geht schon mal deutlich schneller! => aber konvergiert nicht
+Warum ist er schneller?
+3. Version 4 ohne Parallelism (Problem ist, dass die Reihenfolge der Schritte von Bedeutung ist)
+ => deutlich schneller, aber konvergiert erst nach 47 iterationen: 4 Minuten
+3. anderer Gradient? 
+
+```{r test targets 1, eval=FALSE}
+simulations <- tar_read(sim_comp_1_smi_nSim)
+sim_1 <- simulations[[1]]
+x_data <- sim_1$x_data
+
+n_observations <- 100
+eigenvalues <- c(0.6, 0.3, 0.05, 0.05)
+mean <- c(0, 1.5, 0.5, -1.5, -0.5) 
+n_counts <- 30
+    
+set.seed(11)
+sim_composition_1_result <-
+        build_setting_2comp_5parts(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+
+sim_composition_2_result <-
+        build_setting_2comp_5parts(n_observations = 500,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts = 120)
+
+sim_composition_3_result <-
+        build_setting_2comp_5parts(n_observations = 100,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts = 120)
+
+      eps <- 0.01
+      sc_factor <- 1
+      sum_exp <- TRUE
+      workers <- 10
+
+sim_list <- sim_composition_1_result$x_data
+
+# run mit 100 obsv und 30 mi
+result <- fit_pca_ilr_vs_4(
+          sim_list,
+          max_iter = 70,
+          sc_factor = 1,
+          lambda = 1.7
+      )
+
+# run mit numerischen gradienten
+result <- fit_compositional_pca_vs1_0(
+          sim_list,
+          max_iter = 70,
+      )
+
+result <- fit_pca_ilr_vs_5(
+          sim_list,
+          max_iter = 70,
+          sc_factor = 1,
+      )
+
+result <- fit_compositional_pca_vs1_0(
+          sim_list,
+          max_iter = 70,
+      )
+
+result <- fit_compositional_pca_ilr_sc(
+          sim_list,
+          max_iter = 70,
+      )
+
+```
+
+1. run mit 100 obsv und 30 mi: ESS around 40%, immer noch relativ viele Iterationen
+Iteration 58: Mean ESS = 199.42
+center: 1.092601 -0.2898866 -2.0432 -0.5537829 
+critical value center_diff: 0.004487818 
+critical value Sigma_diff: 0.00556544 
+[1] "The algorithm converged after: 5.64449197451274 minutes"
+1.1. run mit lambda = 1.7
+Iteration 49: Mean ESS = 48.45
+center: 1.094805 -0.2868017 -2.097223 -0.5397752 
+critical value center_diff: 0.008850101 
+critical value Sigma_diff: 0.008255015 
+[1] "The algorithm converged after: 4.31488004525503 minutes"
+
+2. same aber mit numerischem gradienten
+=> konvergiert auch nicht schneller. Konvergiert überhaupt nicht:
+Iteration: 70 
+Iteration 70: Mean ESS = 307.57
+center: 1.114362 -0.2883287 -2.232748 -0.5384367 
+critical value center_diff: 0.004038523 
+critical value Sigma_diff: 0.1014627 
+clr-coordinates PCA1: 0.4674783 0.4402556 -0.2143162 -0.5717572 -0.1216605 
+square root Eigenvalues: 1 0.7669431 0.4819049 0.3091026 
+
+3. Erhöhe die Anzahl der Beobachtungen und der Stichprobe (führt zu deutlich geringerer ESS)
+=> vor allem erhöht sich die Berechnungsdauer (Aufgrund der Beobachtungen)
+Iteration 60: Mean ESS = 54.80
+center: 1.056612 -0.2091303 -1.86429 -0.5650443 
+critical value center_diff: 0.001666562 
+critical value Sigma_diff: 0.00942241 
+[1] "The algorithm converged after: 31.6623538096746 minutes"
+
+4. Was ist eigentlich, wenn wir den alten Algorithmus verwenden?
+=> Problem mit infiniten Values
+
+5. Andere "alte" Variante: => Gradient ist falsch und es gibt zwar ein tolles Konvergenzverhalten, aber center is komplett neben der Spur
+Iteration 8: Mean ESS = 79.92
+Conditional score mean value -2.21:
+Mean scores: 0.002497081 -0.0086868 0.003129301 0.01488901 
+center: 0.01216824 -0.003429703 -0.01138274 -0.004876012 
+Eigenvalues: 0.5783652 0.5675998 0.5524144 0.5482507 
+critical value center_diff: 0.003508776 
+critical value Sigma_diff: 0.005202193 
+[1] "The algorithm converged after: 1.49322626193364 minutes"
+
+Das hat auch damit zu tun, dass Likelihood und Hilfsverteilung besser passen, wenn der Mittelwertvektor der Hilfsverteilung off ist -> kleiner Werte
+
+Das Problem im Konvergenzverhalten liegt an der sehr spitzen Verteilung der likelihood Funktion, d.h. die meisten Werte sind sehr klein und einige wenige
+nah bei Null. Lässt sich ein ähnlicher Effekt mit lambda erzeugen? -> ja, teilweise
+
+```{r test targets 3, eval=FALSE}  
+sim_list <- tar_read(sim_comp_1_smi_nSim)
+sim <- sim_list[[1]]
+x_data <- sim$x_data
+x_data[[1]]
+result <- fit_pca_ilr_vs_4(
+          x_data, 
+          sc_factor = 1,
+          max_iter = 80,
+      )
+```
+
+Iteration 47: Mean ESS = 197.29
+center: 1.095132 -0.2887021 -1.974885 -0.5978521 
+critical value center_diff: 0.002372343 
+critical value Sigma_diff: 0.009951388 
+[1] "The algorithm converged after: 4.03395715554555 minutes"
+
+Warum konvergiert der Algorithmus hier, aber nicht in targets? Wegen Standardisierung sdev?
+
+## simple example
+
+with a similar setting as in the paper
+
+## count data
+
+```{r count data, eval=FALSE}
+x_data <- tar_read(data_kl15_comp)
+
+x_data <- x_data * 0.01
+set.seed(12)
+pca_results_ilr_std_vs4 <-
+      fit_pca_ilr_vs_4(x_data,
+                       max_iter = 70,
+                       r = 10,
+                       lambda = 1,
+                       eps = 0.01,
+                       sc_factor = 1,
+                       sum_exp = TRUE)
+
+pca_results_ilr_std_vs1 <-
+      fit_pca_ilr_vs_2(x_data,
+                       max_iter = 70,
+                       r = 10,
+                       lambda = 1,
+                       eps = 0.01,
+                       sc_factor = 1,
+                       sum_exp = TRUE)
+```
+
+Standard MCEM without sdev standardisierung braucht 43 Iterationen (zeitangabe ist: 1.29 Stunden)
+ESS ist ca. bei 20 / 300 was auch ziemlich schlecht ist. 
+center: -0.3251475 2.580131 -0.1727546 1.346242 -2.450683 -0.587455 1.618599 -0.3713966 0.9664395 4.205408 -0.4582662 1.517096
+
+Version mit Parallelität zeigt so ziemlich das selbe Konvergenzverhalten. Ebenfalls 43 Iterationen, aber nur 36 Minuten
+center: -0.314049 2.577283 -0.1631479 1.341978 -2.451277 -0.5902604 1.614901 -0.3866673 0.9619091 4.203238 -0.4613224 1.51431 
+square root Eigenvalues: 0.3378715 0.2485879 0.1151774 0.07805561 0.0642686 0.05804606 0.04420633 0.03598033 0.03430581 0.02054505 0.01626922 0.01226602 
+clr-coordinates PCA1: 0.6108956 -0.2075434 0.08272231 0.08179075 0.2401847 0.2375228 -0.2514116 -0.4179767 0.08466202 -0.1002224 0.09402394 -0.3043087 -0.1503393 
+
+## Vergleich Greven Algorithmus
+
+Eine Frage ist, wie sehr sich die print statements auswirken.

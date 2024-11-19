@@ -49,11 +49,13 @@ on the finite set of disjoint outcomes $A_1, \dots, A_D$ with $f:\left\{A_{1}, \
 The discrete density function $f$ can be characterized by the values $\pi_{j}=f\left(A_{j}\right)$ for all $j=1, \ldots, D$ and it must hold that 
 $\sum_{j=1}^{D} \pi_{j}=1$. 
 
+The ilr transformation induces an isometric identification of $\mathbb{R}^{D-1}$ and . For
+
 In the tradition of Aitchison (1982), we can identify the set of densities $\mathcal{B}$ with respect to the discrete measure on $\mathcal{P}\left(\left\{A_{1}, \ldots, A_{D}\right\}\right)$ 
-with the simplex $\mathcal{B} = \left\{\boldsymbol{\pi} \in \mathbb{R}^{D} \mid \sum_{j=1}^{D} \pi_{j}=1\,, \pi_{j} \geq 0 \, \forall \, j=1, \ldots, D\right\}$.
+with the simplex $\mathcal{B} = \mathbb{S}^{D} = \left\{\boldsymbol{\pi} \in \mathbb{R}^{D} \mid \sum_{j=1}^{D} \pi_{j}=1\,, \pi_{j} \geq 0 \, \forall \, j=1, \ldots, D\right\}$.
 Following Steyer and Greven a D-1 dimensional Hilbert Space $\mathcal{H}=\mathbb{R}_0^D=\left\{\boldsymbol{\rho} \in \mathbb{R}^D \mid \sum_{j=1}^D\rho_j=0\right\}$ can be identified via the simplex and the discrete centered log-ratio transformation:
 $$
-\operatorname{clr}: \mathcal{B} \rightarrow \mathbb{R}_0^D\;, \boldsymbol{\rho}=\operatorname{clr}(\boldsymbol{\pi})=\left(\log \left(\pi_1\right)-\frac{1}{D} \sum_{j=1}^D \log \left(\pi_j\right), \ldots, \log \left(\pi_D\right)-\frac{1}{D} \sum_{j=1}^D \log \left(\pi_j\right)\right) \tag{1}
+\operatorname{clr}: \mathbb{S}^{D} \rightarrow \mathbb{R}_0^D\;, \boldsymbol{\rho}=\operatorname{clr}(\boldsymbol{\pi})=\left(\log \left(\pi_1\right)-\frac{1}{D} \sum_{j=1}^D \log \left(\pi_j\right), \ldots, \log \left(\pi_D\right)-\frac{1}{D} \sum_{j=1}^D \log \left(\pi_j\right)\right) \tag{1}
 $$
 
 The inverse clr-transformation is given by (Boogart et al. 2013):
@@ -73,7 +75,7 @@ $$
 with $\boldsymbol{e}_k \in \mathbb{R}^D$ for $k=1, \ldots, D-1$. The vectors $\boldsymbol{e}_k$ are orthogonal with respect to the ordinary Euclidean inner product in $\mathbb{R}^D$ and constitue a basis of 
 a (D-1) dimensional subspace of $\mathbb{R}^D$. The ilr-transformation of a composition is therefore an isometric linear mapping between the Aitchison simplex and $\mathbb{R}^{D-1}$: 
 $$
-\operatorname{ilr}: \mathcal{B} \rightarrow \mathbb{R}^{D-1}\;, \boldsymbol{\xi}=\operatorname{ilr}(\boldsymbol{\pi})=\operatorname{clr}(\boldsymbol{\pi}) \cdot \mathbf{E}^T = (\boldsymbol{\rho}) \cdot \mathbf{E}^T  \tag{2}
+\operatorname{ilr}: \mathbb{S}^{D} \rightarrow \mathbb{R}^{D-1}\;, \boldsymbol{\xi}=\operatorname{ilr}(\boldsymbol{\pi})=\operatorname{clr}(\boldsymbol{\pi}) \cdot \mathbf{E}^T = \boldsymbol{\rho} \cdot \mathbf{E}^T  \tag{2}
 $$
 with $\mathbf{E}$ being the D x (D-1) matrix with the orthonormal basis vectors $e_k$ as columns and $\boldsymbol{\xi}$ being the vector of ilr-coordinates in $\mathbb{R}^{D-1}$.
 
@@ -115,7 +117,7 @@ $$
 Since the clr-coordinates of the transformed count compositions are a linear combination of ilr-coordinates and the
 orthonormal bases in the D x D-1 matrix $\mathcal{E}$, we can consider the observations $\boldsymbol{x}_i$ as back transformations from
 the ilr-coordinates $\boldsymbol{\theta}_i$. Therefore, the principle of working on coordinates is applied and 
-the ilr-coordinates can be used for maximum-likelihood estimation of the parameters of interest $\nu$ and  $\Sigma$ (Pawlowsky-Glahn et al. 2015).
+the ilr-coordinates can be used for maximum-likelihood estimation of the parameters of interest $\boldsymbol{\nu}$ and  $\boldsymbol{\Sigma}$ (Pawlowsky-Glahn et al. 2015).
 
 The following sections will derive the procedure for this estimation with the Monte-Carlo-Expectation-Maximization (MCEM) algorithm 
 proposed by Steyer and Greven (2023).
@@ -130,14 +132,13 @@ given the realizations $\boldsymbol{x}_i$ from the random sample $(\boldsymbol{X
 for $i = 1, \ldots, n$.  
 The marginal likelihood of $\boldsymbol{\nu}$ and $\boldsymbol{\Sigma}$ can be derived with the probability mass function of the multinomial distribution as:
 
-$$
-\begin{aligned}
+
+\begin{align*}
 L\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right) & =\prod_{i=1}^{n} \mathcal{p}\left(\boldsymbol{x}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)=\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \mathcal{p}\left(\boldsymbol{x}_{i} \mid \boldsymbol{\theta}_{i}\right) \mathcal{p}\left(\boldsymbol{\theta}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right) d \boldsymbol{\theta_{i}} \\
-& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}}\left(\prod_{j=1}^{D} \, \left(\boldsymbol{\pi}_{ij}^{x_{i j}} \mid \boldsymbol{\theta}_{ij}\right)\right) \mathcal{p}\left(\boldsymbol{ \theta}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right) d \boldsymbol{\theta_{i}} \\
-& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}}\left(\prod_{j=1}^{D} \, \frac{\exp \left(x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right)\right)^{x_{i j}}}\right) \mathcal{p}\left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right) d \boldsymbol{\theta_{i}} \\
-& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \, \frac{ \exp \left(\sum_{j=1}^{D} x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right) \mathcal{p}\left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right)\right)^{m_{i}}}  d \boldsymbol{\theta_{i}} \\
-\end{aligned}
-$$
+& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}}\left(\prod_{j=1}^{D} \, \boldsymbol{\pi}_{ij}^{x_{i j}} \left(\boldsymbol{\theta}_{i}\right)\right) \mathcal{p}\left(\boldsymbol{ \theta}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right) d \boldsymbol{\theta_{i}} \\
+& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}}\left(\prod_{j=1}^{D} \, \frac{\exp \left(x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right)\right)^{x_{i j}}}\right) \mathcal{p}\left( \theta_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right) d \boldsymbol{\theta_{i}} \\
+& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \, \frac{ \exp \left(\sum_{j=1}^{D} x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right) \mathcal{p}\left(\theta_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right)\right)^{m_{i}}}  d \boldsymbol{\theta_{i}} \\
+\end{align*}
 
 with $\mathcal{p}$ denoting a generic probability mass function, i.e. $\mathcal{p}\left(\boldsymbol{x}_i \mid \boldsymbol{\theta}_i\right)$ being the conditional probability mass function of the multinomial distribution
 and $\mathcal{p}\left(\boldsymbol{\theta}_i \mid \boldsymbol{x}_i\right)$ being the conditional probability mass function of the multivariate normal distribution.
@@ -146,14 +147,14 @@ To summarize, we can write the marginal likelihood of our parameters of interest
 
 
 $$
-L\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right) =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \, \frac{ \exp \left(\sum_{j=1}^{D} x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right) \mathcal{p}\left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right)\right)^{m_{i}}}  d \boldsymbol{\theta_{i}}
+L\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right) =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \, \frac{ \exp \left(\sum_{j=1}^{D} x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right) \mathcal{p}\left( \theta_{i } \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right)\right)^{m_{i}}}  d \boldsymbol{\theta_{i}}
 $$
 
 ## Principal component representation
 
 Given the multivariate normally distributed variable $\boldsymbol{G}_i$, we can write the principal component representation of $\boldsymbol{G}_i$ with ilr-coordinates as:
 $$
-G(A_j)=\sum_{k=1}^{D-1}\nu_k \boldsymbol{e}_k(A_j)+\sum_{k=1}^{D-1} Z_{k} \boldsymbol{v}_{k} \boldsymbol{e}_k (A_j) \tag{9}
+G_j =\sum_{k=1}^{D-1}\nu_k \boldsymbol{e}_{k j}+\sum_{k=1}^{D-1} Z_{k} \boldsymbol{v}_{k} \boldsymbol{e}_{k j} \tag{9}
 $$
 
 where the mean vector of $\boldsymbol{G}_i$ is equal to the first part of the equation, i.e. $\boldsymbol{\mu} = \sum_{k=1}^{D-1} v_k \boldsymbol{e}_k$ and the k-th eigenvector $\varphi_{k}(A_j)$
@@ -230,13 +231,14 @@ corresponding eigenvalues $\sigma_{1}^{2(h)} \geq \cdots \geq \sigma_{D-1}^{2(h)
 $\boldsymbol{\theta}_{i} \sim \mathcal{N}\left(\boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)$ becomes $\boldsymbol{z}_{i}=\boldsymbol{V}^{(h)}\left(\boldsymbol{\theta}_{i}-\boldsymbol{\nu}^{(h)}\right) \sim \mathcal{N}\left(\mathbf{0}, \operatorname{diag}\left(\sigma_{1}^{2(h)}, \ldots, \sigma_{D-1}^{2}{ }^{(h)}\right)\right)$.
 Therefore sampling from the conditional distribution of latent ilr-coordinates $\boldsymbol{\theta}_i \mid \boldsymbol{x}_i, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}$ is 
 equivalent to sampling from the conditional distribution of the scores $\boldsymbol{z}_i$ gives as:
-$$
+
 \begin{align*}
-p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) & \propto p\left(\mathbf{x}_{i} \mid \mathbf{z}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) p\left(\mathbf{z}_{i} \mid \boldsymbol{\Sigma}^{(h)}\right)=p\left(\mathbf{x}_{i} \mid \boldsymbol{\theta}_{i}=\boldsymbol{V}^{(h)}{}^{T} \mathbf{z}_{i}+\boldsymbol{\nu}^{(h)}\right) \prod_{k=1}^{D-1} p\left(z_{i k} \mid \sigma_{k}^{2(h)}\right) \\
+p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) & \propto p\left(\mathbf{x}_{i} \mid \mathbf{z}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) p\left(\mathbf{z}_{i} \mid \boldsymbol{\Sigma}^{(h)}\right)
+& =p\left(\mathbf{x}_{i} \mid \boldsymbol{\theta}_{i}=\boldsymbol{V}^{(h)}{}^{T} \mathbf{z}_{i}+\boldsymbol{\nu}^{(h)}\right) \prod_{k=1}^{D-1} p\left(z_{i k} \mid \sigma_{k}^{2(h)}\right) \\
 & =\prod_{j=1}^{D} \operatorname{clr}^{-1}\left(\sum_{k=1}^{D-1} \nu_{k}^{(h)} \boldsymbol{e}_k+\boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} \boldsymbol{e}_k\right)\left(x_{i j}\right) \prod_{k=1}^{D-1} p\left(z_{i k} \mid \sigma_{k}^{2}{ }^{(h)}\right) \\
 & =\frac{\exp \left(\sum_{j=1}^{D} x_{i j} \left(\mu^{(h)}\left(A_{j}\right)+\sum_{k=1}^{D-1} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} {e}_k\left(A_{j}\right)\right)\right)}{\left(\sum_{j=1}^{D} \exp \left(\mu^{(h)}(A_j)+\sum_{k=1}^{D-1} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} {e}_k(A_j)\right)\right)^{m_{i}}} \prod_{k=1}^{D-1} p\left(z_{i k} \mid \sigma_{k}^{2}{ }^{(h)}\right) \tag{9}
 \end{align*}
-$$
+
 
 
 The transformation between clr- and ilr-coordinates is used several times in the formular above. The current estimate for the mean vector of the clr-coordinates in $\boldsymbol{G}_i$ is $\mu^{(h)}=\sum_{k=1}^{D-1} \nu_{k}^{(h)} \boldsymbol{e}_{k}$ 
@@ -276,12 +278,22 @@ $$
 As stated by Steyer and Greven (2023) this optimization problem corresponds to a weighted maximum likelihood estimation of the parameters of interest, given the assumption that 
 $\boldsymbol{\theta}_{i}^{(t)} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}$ is a multivariate normal variable with mean $\boldsymbol{\nu}$ and covariance $\boldsymbol{\Sigma}$. Based on the 
 provided solution for this problem (e.g. Bishop and Nasrabadi, 2006), the parameters can be updated as follows:
-$$
-\begin{aligned}
+
+\begin{align*}
 \boldsymbol{\nu}^{(h+1)} & =\frac{1}{\sum_{i=1}^{n} \sum_{t=1}^{r} \omega_{i t}} \sum_{i=1}^{n} \sum_{t=1}^{r} \omega_{i t} \boldsymbol{\theta}_{i}^{(t)} \\
 \boldsymbol{\Sigma}^{(h+1)} & =\frac{1}{\sum_{i=1}^{n} \sum_{t=1}^{r} \omega_{i t}} \sum_{i=1}^{n} \sum_{t=1}^{r} \omega_{i t}\left(\boldsymbol{\theta}_{i}^{(t)}-\boldsymbol{\nu}^{(h+1)}\right)\left(\boldsymbol{\theta}_{i}^{(t)}-\boldsymbol{\nu}^{(h+1)}\right)^{T} .
-\end{aligned}
-$$
+\end{align*}
 
 These are the weighted mean and the weighted covariance matrix of the samples of the calculated ilr-coordinates $\boldsymbol{\theta}_{i}^{(t)}$ for all $i=1, \ldots, n$ 
 and $t=1, \ldots, r$ given the proposed scores $\boldsymbol{z}_{i t}$ and the corresponding weights $\boldsymbol{\omega}_{i t}$ for each sample $t$ (cp. Steyer and Greven, 2023. p. 9).
+
+## Numerical optimization
+
+The likelhihood function must be calculated as log-likelihood since the power of $x_{ij} creates either extreme large or very close to zero values.
+
+
+## Deutsche Zusammenfassung
+
+Die Logik des Algorithmus besteht darin, dass x_i in mit Hilfe der clr-Transformation, der orthonormalen Basenzerlegung und der principal component decomposition
+in Abhängigkeit der scores dargestellt werden kann: 
+$\theta_i = \nu + V^T z_i$ und $x_i = \exp(\rho_i)$ und $\xi_i = \rho_i E$.

@@ -1,0 +1,29 @@
+---
+title: "Descriptive analysis"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    number_sections: true
+    code_folding: hide
+---
+
+
+```{r load packages, eval=TRUE}
+
+```
+
+```{r load data, eval=TRUE}
+x_data <- tar_read(data_kl15_comp)
+summary(x_data)
+
+```
+
+
+```{r results pca, eigenvalues}
+# get results for rescaled version with cts per min second
+results_mcem <- tar_read(pca_count_ilr_vs1_1perc)
+pca_mcem <- results_mcem$pca
+(time <- results_mcem$time)
+
+```
