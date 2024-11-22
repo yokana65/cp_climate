@@ -44,7 +44,67 @@ Aber da beide Teile eines ganzen sind, kann es zu einem spurious correlation kom
 In diesem Fall würde man eine nicht vorhandene negative Korrelation zwischen beiden Prozessen messen. 
 
 Die Herausforderung von Kompositionsdaten sind seit über 100 Jahren bekannt. In den 1980er Jahren wurde von Aitchison eine Methodology eingeführt, die in der Lage war die oben 
-genannten Probleme zu lösen. 
+genannten Probleme, die Folge der Beschränkungen im Stichprobenraum von Kompositionsdaten sind - dem Simplex, zu lösen. Entscheidend war die Einführung von logratios zur Erfassung der relativen Bezüge der Kompositionsanteile untereinander. Tatsächlich ermöglicht die 
+Anwendung von logration Transformationen die Benutzung einer unbeschränkten multivariaten Statistik für Kompositionsdaten. Dies ist möglich, da logration Transformationen eine eins-zu-eins 
+Beziehung zwischen den ursprünglichen Kompositionsdaten und ihren Logratios implizieren. Als die beiden bedeutsamsten Transformationen stellten sich die additative log ratio Transformation 
+und die zentrierte log ratio Transformation heraus. 
+Auf der Arbeit von Aitchison aufbauend, entwickelten mehrere Wissenschaftler (Egozcue, Pawloswki, Mateu-Figuras) in den 2000er Jahren eine algebraisch-geometrische Struktur auf 
+dem Grundraum von Kompositionsdaten. Mit diesem metrischen Vektorraum ist es möglich komplexere multivariate Methoden umzusetzen. Ein Beispiel dafür ist die Umsetzung von Maximum 
+Likelihood Verfahren zur Berechnung von latenten Parametern. Als Anwendungsbeispiel soll in dieser Arbeit die Methode von Steyer und Greven (2023) für die Durchführung einer Principal Component 
+Analyse mit Dichten mit Hilfe eines Monte-Carlo Expectation-Maximisation (MCEM) Algorithmus auf den Fall von Zähl Kompositionen angewendet werden.
+Dafür ist es zunächst einmal notwendig die Struktur des Grundraumes von Kompositionsdaten zu definieren. Darauf aufbauend wird die Übertragung des MCEM Algorithmus von Steyer und Greven 
+als ein Beispiel für die Anwendungsmöglichkeiten komplexer multivariater Methoden umgesetzt. Die Umsetzung wird einmal am Beispiel von simulierten Daten evaluiert und mit Hilfe eines 
+realen geowissenschaftlichen Datensatzes angewandt, um die Mächtigkeit des Ansatzes zu demonstrieren.    
+
+# Basic principles of Compositional Data analysis
+
+Dieses Kapitel führt in die auf Aitchison aufbauende Definition von Kompositionsdaten und ihre wichtigsten Merkmale bzw. Grundprinzipien ein. Darauf aufbauend wird der Vektorraum für 
+Kompositionsdaten, die sogenannte Aitchison Geometry, und seine Basisoperationen definiert. Um die Grundlage für die multivariate Datenanalyse zu schaffen, werden die beiden grundlegenden 
+Transformationsverfahren, die isometrische logratio Transformation und die zentrierte logratio Transformation erläutert und ihr Bezug zueinander herausgearbeitet. Diese Transformationen 
+ermöglichen die Analyse in einem reelen Euklidischen Raum, die für die spätere Umsetzung multivariater Methoden notwendig ist. Im Hinblick auf die Arbeit mit dem praktischen geowissenschaftlichen 
+Datensatz, werden außerdem die wichtigsten deskriptiven Methoden zur Darstellung von Kompositionsdaten vorgestellt. 
+
+## Introduction
+
+Wie bereits erwähnt definieren sich Kompositionsdaten dadurch, dass sie sich aus Teilen eines Ganzen zusammensetzen. Daraus folgt ihre Beschreibung als multivariater Datensatz mit 
+dessen Anteile relative anstatt absoluter Informationen enthalten, dessen Teile strikt positive sind und die sich zu einer Konstanten aufsummieren. In der Praxis trifft dies auf eine 
+Viezahl an Datensätzen zu, z.B. die Stimmenanteile von Parteien bei Wahlen, Anteile von bestimmten Beschäftigungsverhältnissen auf dem Arbeitsmarkt, Organismen in einem Ökosystem oder 
+die Anteile chemischer Mineralien in Sedimenten. 
+Die grundlegende Charakteristik von Kompositionsdaten als Zusammensetzung von relativen Anteilen eines Ganzen lässt sich wie folgt definieren (Pawloswky-Glahn et al. 2015, p. 8)
+
+**Definition 1: D-part composition**
+A (row) vector $\boldsymbol{x} = (x_1, x_2, ..., x_D)$ is a D-part composition when all its compositional parts are strictly positive and carry only relative information.
+
+Der beobachtete Vektor $\boldsymbol{x}$ enthält in der Regel die beobachteten Werte für die $D$ Komponenten, die im Kontext dieser Arbeit Kompositionsteile genannt werden. Die Summe der 
+beobachteten Werte wird als Ganzes oder Total bezeichnet. Dabei ist die Größe des Ganzen für die Definition als Kompositionsdaten nicht relevant und es ist auch nicht notwendig, dass diese 
+über mehrere Beobachtungen aus einer Grundgesamtheit konstant ist, wie dies bei einigen älteren und exklusiveren Definitionen der Fall ist. Dies kann dadurch verdeutlicht werden, dass die 
+Multiplikation des eingeführten Vektors $\boldsymbol{x}$ mit einem positiven Skalar $c > 0$ keine Auswirkungen auf die relativen Anteile der Komponenten hat. Aufgrund dieser Übereinstimmung 
+der relativen Informationen, können die in Definition 1 definierten Vektoren als Teil einer Equivalenzklasse von Kompositionsvektoren beschrieben werden, deren Ganzes voneinader abweicht, 
+aber deren relative Information identisch ist (Vgl. Pawlowsky-Glahn et al 2015,p.9).  
+
+Hinter den beobachteten Werten steht eine latente Komposition $\boldsymbol{\pi} = (\pi_1, \pi_2, ..., \pi_D)$, welche die zugrunde liegenden Anteile der Komposition enthält. Beobachtete 
+Kompositionsdaten sind Representationen einer Komposition, dass heißt einer Equivalenzklasse. 
+In diesem Sinne sind die beobachten Häufigkeiten der einzelnen Kompositionsteile Ziehungen aus der zugrunde liegenden Komposition $\boldsymbol{\pi}$. Die zugrunde liegende Komposition entspricht der Dichte einer 
+diskreten Verteilung mit $D$ Ausprägungen, es gilt also $\sum_{i=1}^D \pi_i = 1$.
+
+Neben den bereits erwähnten Besonderheiten oder Paradoxien bei der Arbeit mit Kompositionsdaten, gibt es auch eine Reihe von handfesten Problemen bei der Anwendung von multivariaten 
+Methooden (Boogart et al. 2013, p. 2):
+- Indepentent compositional parts can show spurious correlation
+- The covariance of two compositional parts depends on the other compositional parts included in the analysis
+- Variance matrixes of compositional data are singular
+- The values of compositional data can not follow a normal distribution due to its bounded range.
+
+
+
+
+## Principles of CoDa
+
+## Orthonormal coordinates 
+
+## Descriptive statistics 
+
+## Multivariate techniques 
+
 
 ## Sonstiges
 
