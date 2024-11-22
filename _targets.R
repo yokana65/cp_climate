@@ -14,6 +14,8 @@ source("scripts/conditional_scores_function.R")
 source("scripts/gradient.R")
 source("scripts/simulations.R")
 source("scripts/simulation_2.R")
+source("scripts/simulation_3.R")
+source("scripts/simulation_4.R")
 
 # Set target-specific options such as packages:
 # tar_option_set(packages = c("dplyr", "tidyr"))
@@ -166,6 +168,7 @@ list(
                                  mean,
                                  n_counts)
   }),
+  ##***** Sim Setting 1: build_setting_2comp_5parts***#
   tar_target(sim_comp_1_smi_nSim, {
     n_simulations <- 20
     n_observations <- 100
@@ -256,12 +259,85 @@ list(
     }
     sim_composition_1_results
   }),
+  ##***** Sim Setting 2: build_setting_2comp_5parts_vs2***#####################
   tar_target(sim_comp_2_smi_nSim, {
     n_simulations <- 20
     n_observations <- 100
     eigenvalues <- c(0.6, 0.3)
     mean <- c(0, 1, 0.5, -1, -0.5) 
     n_counts <- 30
+    sim_composition_2_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(1 * i)
+      sim_composition_2_results[[i]] <-
+        build_setting_2comp_5parts_vs2(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_2_results
+  }),
+  tar_target(sim_comp_2_smi_nSim_20, {
+    n_simulations <- 20
+    n_observations <- 100
+    eigenvalues <- c(0.6, 0.3)
+    mean <- c(0, 1, 0.5, -1, -0.5) 
+    n_counts <- 20
+    sim_composition_2_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(1 * i)
+      sim_composition_2_results[[i]] <-
+        build_setting_2comp_5parts_vs2(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_2_results
+  }),
+  tar_target(sim_comp_2_smi_nSim_40, {
+    n_simulations <- 20
+    n_observations <- 100
+    eigenvalues <- c(0.6, 0.3)
+    mean <- c(0, 1, 0.5, -1, -0.5) 
+    n_counts <- 40
+    sim_composition_2_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(1 * i)
+      sim_composition_2_results[[i]] <-
+        build_setting_2comp_5parts_vs2(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_2_results
+  }),
+  tar_target(sim_comp_2_smi_nSim_80, {
+    n_simulations <- 20
+    n_observations <- 100
+    eigenvalues <- c(0.6, 0.3)
+    mean <- c(0, 1, 0.5, -1, -0.5) 
+    n_counts <- 80
+    sim_composition_2_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(1 * i)
+      sim_composition_2_results[[i]] <-
+        build_setting_2comp_5parts_vs2(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_2_results
+  }),
+  tar_target(sim_comp_2_smi_nSim_160, {
+    n_simulations <- 20
+    n_observations <- 100
+    eigenvalues <- c(0.6, 0.3)
+    mean <- c(0, 1, 0.5, -1, -0.5) 
+    n_counts <- 160
     sim_composition_2_results <- list(length(n_simulations))
     
     for (i in 1:n_simulations) {
@@ -328,73 +404,314 @@ list(
     }
     sim_composition_2_results
   }),
-  # tar_target(pca_sim1_ilr_StdPara_list, {
-  #   x_data <- sim_comp_1$x_data
-  #   number_simulations <- 10
-  #   pca_results_list <- list(number_simulations)
-
-  #   max_iter <- 50
-  #   r <- 10
-  #   lambda <- 1
-  #   eps <- 0.01
-  #   sc_factor <- 1
-  #   sum_exp <- TRUE
-  #   workers <- 10
-
-
-  #   for (i in 1:number_simulations) {
-  #     set.seed(3 * i)
-  #     cat("Iteration pca_sim1_ilr_StdPara_list,", i, "\n")
-  #     pca_results_list[[i]] <- fit_pca_ilr_vs_2(
-  #       x_data, sc_factor = 1
-  #     )
-  #   }
-  #   pca_results_list
-  # }),
-  # tar_target(pca_sim1_ilr_StdPara_smi_list, {
-  #   x_data <- sim_comp_1_smi$x_data
-  #   number_simulations <- 2
-  #   pca_results_list <- list(number_simulations)
-
-  #   # max_iter <- 50
-  #   # r <- 10
-  #   # lambda <- 1
-  #   # eps <- 0.01
-  #   # sc_factor <- 1
-  #   # sum_exp <- TRUE
-  #   # workers <- 10
-  #   # set.seed(11)
-
-  #   for (i in 1:number_simulations) {
-  #     set.seed(i * 2)
-  #     cat("Iteration pca_sim1_ilr_StdPara_smi_list", i, "\n")
-  #     pca_results_list[[i]] <- fit_pca_ilr_vs_4(
-  #       x_data, 
-  #       sc_factor = 1
-  #     )
-  #   }
-
-  #   pca_results_list
-  # }),
-  tar_target(pca_sim1_ilr_StdPara_smi_nSim_1, {
-    number_simulations <- length(sim_comp_1_smi_nSim)
-    pca_results_list <- list(length(sim_comp_1_smi_nSim))
-    for  (l in 1:length(sim_comp_1_smi_nSim)) {
-      sim <-  sim_comp_1_smi_nSim[[l]]
+  ###********Setting 3*******************######################################
+  tar_target(sim_3_smi_nSim_30, {
+    n_simulations <- 20
+    n_observations <- 100
+    eigenvalues = c(0.5, 0.3, 0.1, 0.1)
+    # mean = c(0, 0.9, 0.3, -0.8, -0.2)
+    mean = c(0, 1.5, 0.5, -1.5, -0.5)
+    n_counts <- 30
+    sim_composition_3_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(1 * i)
+      sim_composition_3_results[[i]] <-
+        build_setting_4comp_5parts_vs2(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_3_results
+  }),
+  tar_target(sim_3_smi_nSim_60, {
+    n_simulations <- 20
+    n_observations <- 100
+    eigenvalues = c(0.5, 0.3, 0.1, 0.1)
+    # mean = c(0, 0.9, 0.3, -0.8, -0.2)
+    mean = c(0, 1.5, 0.5, -1.5, -0.5)
+    n_counts <- 60
+    sim_composition_3_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(1 * i)
+      sim_composition_3_results[[i]] <-
+        build_setting_4comp_5parts_vs2(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_3_results
+  }),
+  tar_target(sim_3_smi_nSim_120, {
+    n_simulations <- 20
+    n_observations <- 100
+    eigenvalues = c(0.5, 0.3, 0.1, 0.1)
+    # mean = c(0, 0.9, 0.3, -0.8, -0.2)
+    mean = c(0, 1.5, 0.5, -1.5, -0.5)
+    n_counts <- 120
+    sim_composition_3_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(1 * i)
+      sim_composition_3_results[[i]] <-
+        build_setting_4comp_5parts_vs2(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_3_results
+  }),
+  tar_target(sim_3_smi_nSim_400, {
+    n_simulations <- 20
+    n_observations <- 100
+    eigenvalues = c(0.5, 0.3, 0.1, 0.1)
+    # mean = c(0, 0.9, 0.3, -0.8, -0.2)
+    mean = c(0, 1.5, 0.5, -1.5, -0.5)
+    n_counts <- 400
+    sim_composition_3_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(1 * i)
+      sim_composition_3_results[[i]] <-
+        build_setting_4comp_5parts_vs2(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_3_results
+  }),
+  ##***** Sim Setting 4: build_setting_4comp_5parts_vs3***###############
+  tar_target(sim_4_smi_nSim_30, {
+    n_simulations <- 20
+    n_observations <- 100
+    eigenvalues = c(0.5, 0.3, 0.15, 0.05)
+    mean = c(0, 0.9, 0.3, -0.8, -0.2)
+    n_counts <- 30
+    sim_composition_4_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(1 * i)
+      sim_composition_4_results[[i]] <-
+        build_setting_4comp_5parts_vs3(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_4_results
+  }),
+  tar_target(sim_4_smi_nSim_60, {
+    n_simulations <- 20
+    n_observations <- 100
+    eigenvalues = c(0.5, 0.3, 0.15, 0.05)
+    mean = c(0, 0.9, 0.3, -0.8, -0.2)
+    n_counts <- 60
+    sim_composition_4_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(1 * i)
+      sim_composition_4_results[[i]] <-
+        build_setting_4comp_5parts_vs3(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_4_results
+  }),
+  tar_target(sim_4_smi_nSim_120, {
+    n_simulations <- 20
+    n_observations <- 100
+    eigenvalues = c(0.5, 0.3, 0.15, 0.05)
+    mean = c(0, 0.9, 0.3, -0.8, -0.2)
+    n_counts <- 120
+    sim_composition_4_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(1 * i)
+      sim_composition_4_results[[i]] <-
+        build_setting_4comp_5parts_vs3(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_4_results
+  }),
+  tar_target(sim_4_smi_nSim_400, {
+    n_simulations <- 20
+    n_observations <- 100
+    eigenvalues = c(0.5, 0.3, 0.15, 0.05)
+    mean = c(0, 0.9, 0.3, -0.8, -0.2)
+    n_counts <- 400
+    sim_composition_4_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(1 * i)
+      sim_composition_4_results[[i]] <-
+        build_setting_4comp_5parts_vs3(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_4_results
+  }),
+  ######################################################################
+  ##### Simulation runs ################################################
+  ##********* Setting 4**********#
+ tar_target(pca_smi_nSim_4_30, {
+    number_simulations <- length(sim_4_smi_nSim_30)
+    pca_results_list <- list(length(sim_4_smi_nSim_30))
+    for  (i in 1:length(sim_4_smi_nSim_30)) {
+      sim <-  sim_4_smi_nSim_30[[i]]
       x_data <- sim$x_data
-      cat("Iteration", l, "\n")
+      cat("Iteration smi_nSim_4_30", i, "\n")
 
-      set.seed(1 * l)
+      set.seed(1 * i)
       result <- fit_pca_ilr_vs_4(
           x_data, 
           sc_factor = 1,
           max_iter = 80,
           eps = 0.02
       )
-      pca_results_list[[l]] <- result
+      pca_results_list[[i]] <- result
     }
     pca_results_list
   }),
+  tar_target(pca_smi_nSim_4_60, {
+    number_simulations <- length(sim_4_smi_nSim_60)
+    pca_results_list <- list(length(sim_4_smi_nSim_60))
+    for  (i in 1:length(sim_4_smi_nSim_60)) {
+      sim <-  sim_4_smi_nSim_60[[i]]
+      x_data <- sim$x_data
+      cat("Iteration smi_nSim_4_60", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_4(
+          x_data, 
+          sc_factor = 1,
+          max_iter = 80,
+          eps = 0.02
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_smi_nSim_4_120, {
+    number_simulations <- length(sim_4_smi_nSim_120)
+    pca_results_list <- list(length(sim_4_smi_nSim_120))
+    for  (i in 1:length(sim_4_smi_nSim_120)) {
+      sim <-  sim_4_smi_nSim_120[[i]]
+      x_data <- sim$x_data
+      cat("Iteration smi_nSim_3_120", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_4(
+          x_data, 
+          sc_factor = 1,
+          max_iter = 80,
+          eps = 0.03
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_smi_nSim_4_400, {
+    number_simulations <- length(sim_4_smi_nSim_400)
+    pca_results_list <- list(length(sim_4_smi_nSim_400))
+    for  (i in 1:length(sim_4_smi_nSim_400)) {
+      sim <-  sim_4_smi_nSim_400[[i]]
+      x_data <- sim$x_data
+      cat("Iteration smi_nSim_4_400", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_4(
+          x_data, 
+          sc_factor = 1,
+          r = 50,
+          max_iter = 80,
+          eps = 0.04
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  ##********* Setting 3**********#########################################
+  tar_target(pca_smi_nSim_3_30, {
+    number_simulations <- length(sim_3_smi_nSim_30)
+    pca_results_list <- list(length(sim_3_smi_nSim_30))
+    for  (i in 1:length(sim_3_smi_nSim_30)) {
+      sim <-  sim_3_smi_nSim_30[[i]]
+      x_data <- sim$x_data
+      cat("Iteration smi_nSim_3_30", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_4(
+          x_data, 
+          sc_factor = 1,
+          max_iter = 80,
+          eps = 0.02
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_smi_nSim_3_60, {
+    number_simulations <- length(sim_3_smi_nSim_60)
+    pca_results_list <- list(length(sim_3_smi_nSim_60))
+    for  (i in 1:length(sim_3_smi_nSim_60)) {
+      sim <-  sim_3_smi_nSim_60[[i]]
+      x_data <- sim$x_data
+      cat("Iteration smi_nSim_3_60", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_4(
+          x_data, 
+          sc_factor = 1,
+          max_iter = 80,
+          eps = 0.02
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_smi_nSim_3_120, {
+    number_simulations <- length(sim_3_smi_nSim_120)
+    pca_results_list <- list(length(sim_3_smi_nSim_120))
+    for  (i in 1:length(sim_3_smi_nSim_120)) {
+      sim <-  sim_3_smi_nSim_120[[i]]
+      x_data <- sim$x_data
+      cat("Iteration smi_nSim_3_120", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_4(
+          x_data, 
+          sc_factor = 1,
+          max_iter = 80,
+          eps = 0.02
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_smi_nSim_3_400, {
+    number_simulations <- length(sim_3_smi_nSim_400)
+    pca_results_list <- list(length(sim_3_smi_nSim_400))
+    for  (i in 1:length(sim_3_smi_nSim_400)) {
+      sim <-  sim_3_smi_nSim_400[[i]]
+      x_data <- sim$x_data
+      cat("Iteration smi_nSim_3_400", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_4(
+          x_data, 
+          sc_factor = 1,
+          max_iter = 80,
+          eps = 0.04
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  ##********* Setting 2**********########################################
   tar_target(pca_sim1_ilr_StdPara_smi_nSim_2_60, {
     number_simulations <- length(sim_comp_2_smi_nSim_60)
     pca_results_list <- list(length(sim_comp_2_smi_nSim_60))
@@ -408,7 +725,84 @@ list(
           x_data, 
           sc_factor = 1,
           max_iter = 80,
-          eps = 0.01
+          eps = 0.02
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_sim1_ilr_StdPara_smi_nSim_2_20, {
+    number_simulations <- length(sim_comp_2_smi_nSim_20)
+    pca_results_list <- list(length(sim_comp_2_smi_nSim_20))
+    for  (i in 1:length(sim_comp_2_smi_nSim_20)) {
+      sim <-  sim_comp_2_smi_nSim_20[[i]]
+      x_data <- sim$x_data
+      cat("Iteration smi_nSim_2_20", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_4(
+          x_data, 
+          sc_factor = 1,
+          max_iter = 80,
+          eps = 0.03
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_sim1_ilr_StdPara_smi_nSim_2_40, {
+    number_simulations <- length(sim_comp_2_smi_nSim_40)
+    pca_results_list <- list(length(sim_comp_2_smi_nSim_40))
+    for  (i in 1:length(sim_comp_2_smi_nSim_40)) {
+      sim <-  sim_comp_2_smi_nSim_40[[i]]
+      x_data <- sim$x_data
+      cat("Iteration smi_nSim_2_40", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_4(
+          x_data, 
+          sc_factor = 1,
+          max_iter = 80,
+          eps = 0.02
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_sim1_ilr_StdPara_smi_nSim_2_80, {
+    number_simulations <- length(sim_comp_2_smi_nSim_80)
+    pca_results_list <- list(length(sim_comp_2_smi_nSim_80))
+    for  (i in 1:length(sim_comp_2_smi_nSim_80)) {
+      sim <-  sim_comp_2_smi_nSim_80[[i]]
+      x_data <- sim$x_data
+      cat("Iteration smi_nSim_2_80", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_4(
+          x_data, 
+          sc_factor = 1,
+          max_iter = 80,
+          eps = 0.02
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_sim1_ilr_StdPara_smi_nSim_2_160, {
+    number_simulations <- length(sim_comp_2_smi_nSim_160)
+    pca_results_list <- list(length(sim_comp_2_smi_nSim_160))
+    for  (i in 1:length(sim_comp_2_smi_nSim_160)) {
+      sim <-  sim_comp_2_smi_nSim_160[[i]]
+      x_data <- sim$x_data
+      cat("Iteration smi_nSim_2_160", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_4(
+          x_data, 
+          sc_factor = 1,
+          r = 20,
+          max_iter = 80,
+          eps = 0.035
       )
       pca_results_list[[i]] <- result
     }
@@ -427,7 +821,7 @@ list(
           x_data, 
           sc_factor = 1,
           max_iter = 80,
-          eps = 0.01
+          eps = 0.02
       )
       pca_results_list[[i]] <- result
     }
@@ -468,6 +862,102 @@ list(
           eps = 0.01
       )
       pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_sim1_ilr_StdPara_smi_nSim_2_60_e003, {
+    number_simulations <- length(sim_comp_2_smi_nSim_60)
+    pca_results_list <- list(length(sim_comp_2_smi_nSim_60))
+    for  (i in 1:length(sim_comp_2_smi_nSim_60)) {
+      sim <-  sim_comp_2_smi_nSim_60[[i]]
+      x_data <- sim$x_data
+      cat("Iteration smi_nSim_2_60", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_4(
+          x_data, 
+          sc_factor = 1,
+          max_iter = 80,
+          eps = 0.03
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_sim1_ilr_StdPara_smi_nSim_2_120_e003, {
+    number_simulations <- length(sim_comp_2_smi_nSim_120)
+    pca_results_list <- list(length(sim_comp_2_smi_nSim_120))
+    for  (i in 1:length(sim_comp_2_smi_nSim_120)) {
+      sim <-  sim_comp_2_smi_nSim_120[[i]]
+      x_data <- sim$x_data
+      cat("Iteration smi_nSim_2_120", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_4(
+          x_data, 
+          sc_factor = 1,
+          max_iter = 80,
+          eps = 0.03
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_sim1_ilr_StdPara_smi_nSim_2_120_300_e003, {
+    number_simulations <- length(sim_comp_2_smi_nSim_120_300)
+    pca_results_list <- list(length(sim_comp_2_smi_nSim_120_300))
+    for  (i in 1:length(sim_comp_2_smi_nSim_120_300)) {
+      sim <-  sim_comp_2_smi_nSim_120_300[[i]]
+      x_data <- sim$x_data
+      cat("Iteration smi_nSim_2_120_300", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_4(
+        x_data, 
+        sc_factor = 1,
+        max_iter = 80,
+        eps = 0.03
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_sim1_ilr_StdPara_smi_nSim_2_e003, {
+    number_simulations <- length(sim_comp_2_smi_nSim)
+    pca_results_list <- list(length(sim_comp_2_smi_nSim))
+    for  (i in 1:length(sim_comp_2_smi_nSim)) {
+      sim <-  sim_comp_2_smi_nSim[[i]]
+      x_data <- sim$x_data
+      cat("Iteration smi_nSim_2", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_4(
+          x_data, 
+          sc_factor = 1,
+          max_iter = 80,
+          eps = 0.03
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  ##********* Setting 1**********#
+  tar_target(pca_sim1_ilr_StdPara_smi_nSim_1, {
+    number_simulations <- length(sim_comp_1_smi_nSim)
+    pca_results_list <- list(length(sim_comp_1_smi_nSim))
+    for  (l in 1:length(sim_comp_1_smi_nSim)) {
+      sim <-  sim_comp_1_smi_nSim[[l]]
+      x_data <- sim$x_data
+      cat("Iteration", l, "\n")
+
+      set.seed(1 * l)
+      result <- fit_pca_ilr_vs_4(
+          x_data, 
+          sc_factor = 1,
+          max_iter = 80,
+          eps = 0.02
+      )
+      pca_results_list[[l]] <- result
     }
     pca_results_list
   }),
