@@ -82,10 +82,35 @@ Multiplikation des eingeführten Vektors $\boldsymbol{x}$ mit einem positiven Sk
 der relativen Informationen, können die in Definition 1 definierten Vektoren als Teil einer Equivalenzklasse von Kompositionsvektoren beschrieben werden, deren Ganzes voneinader abweicht, 
 aber deren relative Information identisch ist (Vgl. Pawlowsky-Glahn et al 2015,p.9).  
 
-Hinter den beobachteten Werten steht eine latente Komposition $\boldsymbol{\pi} = (\pi_1, \pi_2, ..., \pi_D)$, welche die zugrunde liegenden Anteile der Komposition enthält. Beobachtete 
-Kompositionsdaten sind Representationen einer Komposition, dass heißt einer Equivalenzklasse. 
-In diesem Sinne sind die beobachten Häufigkeiten der einzelnen Kompositionsteile Ziehungen aus der zugrunde liegenden Komposition $\boldsymbol{\pi}$. Die zugrunde liegende Komposition entspricht der Dichte einer 
-diskreten Verteilung mit $D$ Ausprägungen, es gilt also $\sum_{i=1}^D \pi_i = 1$.
+In der Praxis ist es üblich beobachteten Kompositionen eine konstante Summe zuzuordnen, um sie als Teil eines festen Ganzen zu betrachten, z.B. als prozentuale Anteile mit einer konstanten Summe 
+von eins oder als ppm (parts per Million). Derartige Vektoren werden in der Literatur auch als *closed data* bezeichnet und die Operation einer Komposition eine konstante Summe zuzuordnen 
+als *closure*: 
+**Definition 2: closure**
+For any compositional vector $\boldsymbol{x} = (x_1, x_2, ..., x_D)$ with positive components, the closure of $\boldsymbol{x}$ to a constant is defined as
+$$
+\mathcal{C}(\mathbf{x})=\left[\frac{\kappa \cdot x_{1}}{\sum_{i=1}^{D} x_{i}}, \frac{\kappa \cdot x_{2}}{\sum_{i=1}^{D} x_{i}}, \ldots, \frac{\kappa \cdot x_{D}}{\sum_{i=1}^{D} x_{i}}\right]
+$$
+
+[TODO: is change between x and pi necessary?]
+
+In der Regel können beobachtete Kompositionen als zufällige Ziehungen aus einer latenten Komposition $\boldsymbol{\pi} = (\pi_1, \pi_2, ..., \pi_D)$ modelliert werden, welche die zugrunde 
+liegenden Anteile der Komposition enthält.  
+In diesem Sinne sind die beobachten Häufigkeiten der einzelnen Kompositionsteile Ziehungen aus der zugrunde liegenden Komposition $\boldsymbol{\pi}$. Im Kapitel [...] werden wir die beobachteten 
+Kompositionsdaten als als count composititions definieren, die einer multinomalialen Zufallsverteilung folgen. Zur Einführung von Kompositionsdaten im Allgemeinen ist es jedoch lediglich 
+notwendig darauf zu verweisen, dass im Folgenden für beobachtete Kompositionen eine Notation mit fettgedruckten, kleingeschriebenen Buchstaben (z.B. $\boldsymbol{x}) und für latente Kompositionen 
+$\boldsymbol{\pi}$ verwendet wird.
+Die zugrunde liegende latente Komposition kann auch als Dichte einer diskreten Verteilung mit $D$ Ausprägungen angesehen werden, es gilt also $\sum_{i=1}^D \pi_i = 1$. An dieser Stelle 
+ist es offensichtlich, dass latente Kompositionen ein Beispiel für Kompositionsdaten mit einer konstanten Summe von eins sind.
+
+Anhand dieses Beispiels aus dem Feld der Zufallsvariablen wird deutlich, dass beobachtete Kompositionen sich zwar auf den ersten Blick stark unterscheiden können, z.B. weil sie in unterschiedlichen 
+Häufigkeiten oder Einheiten gemessen wurden. Trotzdem können sie dieselben relativen Informationen enthalten.In diesem Sinne sind beobachtete Kompositionsdaten Representationen einer Komposition, 
+dass heißt einer Equivalenzklasse. [TODO: Definition einfügen?]
+
+Auf dieser Argumentation aufbauend, kann der Grundraum für Kompositionsdaten definiert werden:
+
+**Definition 3: sample space**
+The sample space of compositional data is the simplex,
+$\mathcal{S}^{D}=\left\{\boldsymbol{\pi} \in \mathbb{R}^{D} \mid \sum_{j=1}^{D} \pi_{j}=1, \pi_{j} \geq 0 \forall j=1, \ldots, D\right\}$.
 
 Neben den bereits erwähnten Besonderheiten oder Paradoxien bei der Arbeit mit Kompositionsdaten, gibt es auch eine Reihe von handfesten Problemen bei der Anwendung von multivariaten 
 Methooden (Boogart et al. 2013, p. 2):
@@ -94,14 +119,78 @@ Methooden (Boogart et al. 2013, p. 2):
 - Variance matrixes of compositional data are singular
 - The values of compositional data can not follow a normal distribution due to its bounded range.
 
-
+Um diese Probleme zu vermeiden, wurden von WissenschaftlerInnen wie Aitchison (1982) und Pawlowsky-Glahn (2015) Grundsätze entwickelt, die eine mathematisch fundierte Arbeit mit relativen 
+Daten ermöglichen. Diese Grundsätze und die von Aitchison entwickelten Operationen eines Euklidischen Vektorraumes auf dem Simplex werden im Folgenden vorgestellt.
 
 
 ## Principles of CoDa
 
+Die Daten auf dem Simplex müssen folgenden drei Prinzipien gerecht werden, um eine robuste und widerspruchsfreie statistische Analyse zu ermöglichen (Aitchison ??, Pawlowsky-Glahn et al. 2015, p. 12):
+
+1. Scale invariance:
+Das Prinzip der Scale invariance folgt aus der Definition der Equivalenzklasse von Kompositionen. Es bedeutet, dass die relavtiven Informationen in den Kompositionsteilen unabhängig von 
+der Einheit sind, in der diese erfasst werden, solange alle in derselben Einheit gemessen werden. In diesem Sinne muss jede Komposition invariant gegenüber jeder Veränderung der Skalierung 
+sein. Mathematisch kann dies für eine beliebige Funktion $f( )$ in $\mathbb{R}^{D}$ wie folgt definiert werden (Pawloswky-Glahn et al. 2015, p.14): The function $f$ is scale invariant if it 
+satisfies $f(\lambda \boldsymbol{\pi}) = f(\boldsymbol{\pi})$ for all $\lambda > 0$ and any compistion $\boldsymbol{\pi} \in \mathcal{S}^{D}$.
+
+2. Permutation invariance:
+It is required that any change in the order of compositional parts does not influence the analyses, i.e. any function $f$ is permutation invariant if it results in equivalent results when 
+the order of the compositional parts is changed.
+
+A typical choice for for $f$ are log ratios for the compositional parts. It is obvious that ratios are scale invariant since $f(\boldsymbol{\pi}) = \pi_1 / \pi_2 = (\lambda * \pi_1) / (\lambda * \pi_2)$.
+But ratios depend on the order of the compositional parts. Therefore, the logratio is choosen $f(\boldsymbol{\pi}) = \log(\pi_1 / \pi_2)$. Since $\log(\pi_1 / \pi_2) = - \log(\pi_2 / \pi_1)$ 
+it is clear that a change in the order only results in a change of sign and the logratio provides a symmetry with respect to the ordering of parts.
+
+3. Subcompositional coherence:
+A subcompisition is a subset of a composition. The last principle of subcompositional coherence states that any the choice a subcomposition does not affect the statistical properties of the 
+composition. This principle can be illustrated in two dimensions. The first is that of *subcompositional dominance* and states that the distance between two full compositions must be greater 
+or equal to the distance between any two subcomposition. Again, it is useful to mention that the standard Euclidean distance does not fullfill this principle when applied to compositional data.
+The second dimension of this principle is that of *ratio preserving*, which means that the choice of a subcomposition does not affect the ratio between the remaining parts.
+
+## Operations of the vector space
+
+Als erstes müssen wir feststellen, dass der im Umgang mit absoluten Werten gewohnte Euklidische Raum als linearer Vektorraum mit seiner metrischen Struktur nicht geeignet ist für Kompositionsdaten. 
+Mathematische Operationen auf dem Simplex erscheinen auf den ersten Blick nicht so einfach, wie im gewohnten reelen Raum. Aber auch auf dem Simplex ist es möglich einen Euklidischen Vektorraum 
+zu definieren. Dafür benötigen wir zwei Operationen, die Addition und Multiplikation im reelen Raum entsprechen und die angepassten Definitionen vom Skalarprodukt der Norm und der Distanz.
+
+**Definition 4: Perturbation**
+For two compositional vectors $\boldsymbol{x}$ and $\boldsymbol{y}$ in \mathcal{S}^{D} their perturbation is defined as:
+$$
+\mathbf{x} \oplus \mathbf{y}=\mathcal{C}\left[x_{1} y_{1}, x_{2} y_{2}, \ldots, x_{D} y_{D}\right] \in S^{D}
+$$
+
+**Definition 5: Powering**
+The powering of a compositional vector $\boldsymbol{x}$ in \mathcal{S}^{D} by a constant $a \in \mathbb{R}$ is defined as:
+$$
+\alpha \odot \mathbf{x}=\mathcal{C}\left[x_{1}^{\alpha}, x_{2}^{\alpha}, \ldots, x_{D}^{\alpha}\right] \in \mathcal{S}^{D}
+$$
+
+To complete vector space, the so called the Aitchison geomtry, we need to define a scalar product with its associated norm and distance (Pawloswky-Glahn et al. 2015, p. 26):
+**Definition 6: Aitchison inner product**
+Inner product of $\mathbf{x}, \mathbf{y} \in S^{D}$,
+$$
+\langle\mathbf{x}, \mathbf{y}\rangle_{a}=\frac{1}{2 D} \sum_{i=1}^{D} \sum_{j=1}^{D} \ln \frac{x_{i}}{x_{j}} \ln \frac{y_{i}}{y_{j}}
+$$
+**Definition 7: Aitchison norm**
+Norm of $\mathbf{x} \in \mathcal{S}^{D}$,
+$$
+\|\mathbf{x}\|_{a}=\sqrt{\frac{1}{2 D} \sum_{i=1}^{D} \sum_{j=1}^{D}\left(\ln \frac{x_{i}}{x_{j}}\right)^{2}}
+$$
+**Definition 8: Aitchison distance**
+Distance between $\mathbf{x}$ and $\mathbf{y} \in S^{D}$,
+$$
+\mathrm{d}_{a}(\mathbf{x}, \mathbf{y})=\|\mathbf{x} \ominus \mathbf{y}\|_{a}=\sqrt{\frac{1}{2 D} \sum_{i=1}^{D} \sum_{j=1}^{D}\left(\ln \frac{x_{i}}{x_{j}}-\ln \frac{y_{i}}{y_{j}}\right)^{2}}
+$$
+
+Those operations define a whole vector space on the simplex (TODO: definition of a vector space). For historical reasons it is called the Aitchison geometry. But in mathematical terms it 
+is also a real Euclidean space or a finite dimensional real Hilbert space.
+This allows now for the use of all statistical methods that are available for the standard Euclidean space. (TODO: umformulieren)
+
 ## Orthonormal coordinates 
 
 ## Descriptive statistics 
+
+
 
 ## Multivariate techniques 
 
