@@ -11,6 +11,8 @@ output:
 ```{r setup, include=FALSE}
 library(targets)
 library(compositions)
+library(dplyr)
+library(ggplot2)
 ```
 
 
@@ -18,7 +20,7 @@ library(compositions)
 
 The dataset contains 2157 observations of counts for 13 elements. Each observation covers a depth of 1 cm and is dated by an age model. Age control was provided by AMS 14C dating for the upper 3 m of the core and stable oxygen isotopes 
 for the lower 19 m of the core. The oldest observation is dated 546,000 years BP (before present). The count data for each element are derived from XRF scans of the marine sediment resulting in a compositional representation of elements for each 
-observation. Each observation can be formalized as a compositional vector: 
+observation. **The data is rescaled to counts per centisecond** (TODO: explain) Each observation can be formalized as a compositional vector: 
 
 $\boldsymbol{x}_i = [x_{i 1}, x_{i 2}, ..., x_{i D}]$ for $i = 1, \ldots, n$ and $D=13$.
 
@@ -45,6 +47,8 @@ Im Folgenden werden für den kompositionalen Datensatz die deskriptiven Statisti
 
 ```{r load data, eval=TRUE}
 data <- tar_read(data_kl15)
+data <- data*0.01
+
 data_qf <- tar_read(missings_depth)
 data_comp <- tar_read(data_kl15_comp)
 data_acomp <- acomp(data_comp)
@@ -64,7 +68,26 @@ ggplot(data, aes(x = age, y = aggregate)) +
   theme_minimal()
 ```
 
-TODO: Do I want to inlcude that? We can see that the transformed coordinates are much less diverged than the original count values.
+```{r aggreagte summary, eval=TRUE}
+summary(data$aggregate)
+boxplot(data$aggregate)
+hist(data$aggregate)
+```
+
+The idea is to draw samples from the empirical distribution of the density of all samples sizes to simulate the specific context.
+
+```{r density estimation, eval=TRUE}
+density_estimate <- density(data$aggregate)
+plot(density_estimate)
+
+# Create sampling function from density estimate
+sample_from_density <- function(n) {
+    sample(density_estimate$x, size = n, prob = density_estimate$y, replace = TRUE)
+}
+
+# Draw 1000 samples
+new_samples <- sample_from_density(1000)
+```
 
 ```{r boxplot for transformed coordinates, eval=TRUE,  fig.width=10, fig.height=30}
 
@@ -79,6 +102,7 @@ boxplot(data_alr,
 par(mfrow = c(1,1))
 ```
 
+TODO: Do I want to inlcude that? We can see that the transformed coordinates are much less diverged than the original count values.
 
 ```{r center of composition, eval=TRUE}
 row <- mean(data_acomp)
@@ -94,21 +118,23 @@ ggplot(df_row, aes(x = name, y = value)) +
 # Sample Variance
 mvar(data_acomp) 
 
-mean(x)
-mean(x, robust=TRUE)
+mean(clr(data_acomp))
+mean(clr(data_acomp), robust=TRUE)
 ```
 
 As we can see the mean composition is clearly dominated by the element counts of Calcium. If we would do our analysis in absolute counts the variation of this element would overshadow all
 other releationships.But since we work in a compositional framework, we can use methods to put emphasis on the relative differences between the elements instead.
 
-
+The ilr-mean (true) is 
+ [1] -0.3422397  2.6225870 -0.1486677  1.3785359 -3.1594463 -0.4760258
+ [7]  1.7429442 -0.3013453  1.0633686  4.2942048 -0.3787930  1.5942359
 
 #### Centering, scaling and standardization
 
 As in any other multivariate analysis, we can center the data by subtracting the center of composition from each row. This also gives us the neutral element of the simplex: $\mathbf{X}^{*}=\mathbf{X} \ominus \overline{\mathbf{x}}$
 
 ```{r centering, eval=TRUE}
-mean(x-mean (x))
+mean(data_acomp-mean (data_acomp))
 ```
 
 Usually we want to scale the data to have a variance of 1 and to be able to compare different variables.
@@ -118,9 +144,9 @@ $$
 $$
 
 ```{r standardization, eval=TRUE}
-mn = mean(x)
-mvr = mvar(x)
-x_std = (x-mn)/sqrt(mvr)
+mn = mean(data_acomp)
+mvr = mvar(data_acomp)
+x_std = (data_acomp-mn)/sqrt(mvr)
 mvar(x_std)
 ```
 
@@ -139,8 +165,8 @@ $$
 $$
 
 ```{r metric variance, eval=TRUE}
-mvar(x)
-msd(x)
+mvar(data_acomp)
+msd(data_acomp)
 ```
 
 These parameters can be used to compare subcompositions with the full composition.
@@ -155,8 +181,8 @@ $$
 $$
 
 ```{r variation matrix, eval=TRUE}
-variation(x)
-summary(x)$mean.ratio
+variation(data_acomp)
+summary(data_acomp)$mean.ratio
 ```
 
 This matrix is symmetric and a small variance implies good "proportionality". Boogart etl al. 2013 provide a very good visualisation for the interpretation of the mean and variation parameters
@@ -165,7 +191,8 @@ given a additive-logistic-normal distribution.
 The mean ratio gives the center each pairwise ratio. We can also calculate the distribution of pairwise ratios for all observations. These statistics are shown in the following boxplot:
 
 ```{r boxplot of pairwise variations, eval=TRUE,  fig.width=10, fig.height=30}
-boxplot(x, )
+boxplot(data_acomp)
+abline(h = 0, col = "red", lty = 2)
 ```
 
 ### Projections and Balances
@@ -186,11 +213,18 @@ $$
 The original count data is centered before applying the PCA. 
 
 ```{r PCA exploratory 1, eval=TRUE}
-pcx <- princomp(x)
+pcx <- princomp(data_acomp)
 plot(pcx, type="screeplot")
+# normalized eigenvalues
+pcx$sdev^2/sum(pcx$sdev^2)
 ```
 
 interestingly, the screeplot revails at least four singular values of importance.
+
+```{r PCA results, eval=TRUE}
+pcx$loadings[,1:4]
+```
+
 
 We can calculate the proportion of variance explained by the first two and the first four components:
 

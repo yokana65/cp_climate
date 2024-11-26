@@ -10,50 +10,238 @@ output:
 
 # Simulation Study
 
-This chapter evaluates the performance of the MCEM algorithm introduced in the chapter [...]. For this purpose, the latent composition $\boldsymbol{\pi}$ is 
-simulated given the constructed parameters $\boldsymbol{\nu}$ and $\boldsymbol{\Sigma}$. Real world observations are then drawn with a fixed sample size $m$ 
-for all observations. That is, the observations $x_{i} \stackrel{i . i \cdot d}{\sim} \boldsymbol{\pi}_{i}$ are sampled with sample size $m$ for all compositions 
-$\boldsymbol{\pi}$ with $i=1, \ldots, n$. The sample for the latent compositions $\boldsymbol{\pi_i}$ with $i=1, \ldots, 100$ are obtained as back transformations 
-of the simulated data in the clr-space $ $\boldsymbol{\pi}_{i}=\operatorname{clr}^{-1}\left(\mu+z_{i 1} \varphi_{1}+z_{i 2} \varphi_{2}\right)$ where 
-$z_{i 1} \stackrel{i . i . d .}{\sim} Z_{1}$ and $z_{i 2} \stackrel{i . i . d .}{\sim} Z_{2}$. Where the factors associated with the two principal components are 
-$Z_{1} \stackrel{i . i . d .}{\sim} N(0,0.6)$ and $Z_{2} \stackrel{i . i . d .}{\sim} N(0,0.3)$. (TODO: integrate with the part related to the pca vectors)
-**this apporach varies from my approach: here the clr coordinates are only constructed with the principal components instead of generating the whole parameters of interest: But what are the true parameters in this case?)
-
-A principal component analysis is then performed on the simulated data to estimate the parameters of interest $\boldsymbol{\nu}$ and 
-$\boldsymbol{\Sigma}$. 
-Zum Vergleich mit dem Ergebnissen des MCEM Algorithmus, werden eine klassische PCA und eine robuste PCA (Vgl. Filzmoser et al. 2019) auf den transformierten 
-clr-Koordinaten der Beobachtungen durchgeführt und die Ergebnissen der drei Methoden miteinander verglichen. 
-Im ersten Schritt wird eine vergleichsweise einfache Simulation für eine Komposition mit fünf Komponenten und zwei relevanten Hauptkomponenten durchgeführt. 
-Die erste Hauptkoponente basiert auf dem Kontrast zwischen der ersten und der zweiten Komponente, während die zweite Hauptkomponente auf dem Kontrast der 
-vierten Komponente mit den ersten drei Komponenten aufbaut. Die latenten Eigenwerte der beiden ersten Hauptkomponenten summieren sich zu 0.9, d.h. (TODO: überprüfen)
-es werden 90% der Varianz der Daten durch die beiden Hauptkomponenten erklärt, wobei davon 2/3 auf die erste Hauptkomponente und 1/3 auf die zweite Hauptkomponente entfällt.
-Demenstprechend ist $\boldsymbol{\varphi}_1 = (0, 1/sqrt(2), -1/sqrt(2), 0, 0)$ der Vektor der ersten Hauptkomponente und $\boldsymbol{\varphi}_2 = (-1/3, -1/3, -1/3, 1, 0)$ 
-der Vektor der zweiten Hauptkomponente.
-Der qualitative Unterschied zwischen den Simulationen besteht in der Variation der Stichprobengröße $m$, die zunächst von einer sehr kleinen Stichprobengröße bis hin 
-zu einer moderaten Stichprobengröße variiert. Damit lässt sich die Wirkungsweise des MCEM Algorithmus für Datenmengen mit einer kleinen Stichprobengröße gut einschätzen.
-In einem nächsten Schritt wird eine Simulation durchgeführt, deren Parameter näher an den tatsächlichen Werten des angewandten Datensatzes liegen. 
-
-Zusammenfassen werden zunächst einmal die Ergebnisse für das erste Simulationsbeispiel zusammengetragen. Dafür wurden jeweils **50** Simulationen durchgeführt, 
-bei denen 100 Zähl Kompositionen mit den oben beschriebenen Parametern generiert wurden. Als Mittelwertvektor $\boldsymbol{\mu}$ der clr-transformierten Koordinaten 
-wurde der Vektor $\boldsymbol{\mu} = (0, 1.5, 0.5, -1.5, -0.5)$ gewählt, womit eine relativ starke Variation der relativen Kompositionsanteile abgebildet wird. D.h. 
-die zweite Komponente (TODO: Interpretation clr Koodinaten überprüfen) ist relative zu allen anderen Komponenten dominant, während die vierte Komponente stark unterrepräsentiert 
-ist. Dies führt für die vierte Komponente zu einer erheblichen Anzahl von Nullwerten in den beobachteten Zähl Kompositionen. Dies stellt ein erhebliches Problem für 
-die klassische Anwendung multivariater Methoden dar (TODO: ausführen). Da der MCEM Algorithmus jedoch direkt die Daten auf dem Simplex evaluiert, wird das Problem 
-vermieden (TODO: besser erklären oder raus).  
-
-# Implementierung
-
-```{r libraries, eval=TRUE , echo=FALSE}
+```{r libraries, eval=TRUE , echo=FALSE, include=FALSE}
 library(targets)
 library(compositions)
 library(mvtnorm)
 library(ggplot2)
 library(future.apply)
 library(robCompositions)
+library(gridExtra)
+
 
 source("scripts/helper_functions.R")
 
 ```
+
+This chapter evaluates the performance of the MCEM algorithm introduced in the chapter [...]. The evaluation follows a two-step simulation procedure. First, the latent 
+compositions $\boldsymbol{\pi_i}$ are simulated for 100 observation. The compositions are the backtransformations of the principal component 
+decomposition of the clr-coordinates $\boldsymbol{\rho_i}  \stackrel{i.i.d.}{\sim} \mathcal{N}(\boldsymbol{\mu}, \boldsymbol{K})$. Secondly, realistic count observations are drawn 
+from the associated multinomial distribution $\boldsymbol{x}_{i} {\sim} \text{Multinom}(m, \boldsymbol{\pi}_{i})$ where $m$ denotes a fixed sample size for all observations 
+$i=1,\ldots,100$.  
+The simulated dataset is then used to evaluate the performance of the MCEM algorithm. That is done by evaluating the MCEM algorithm's capability to identify the 
+true mean vector $\boldsymbol{\mu}$ and covariance structure $\boldsymbol{K}$ of the latent compositions. For this purpose, the empirical mean vector is compared to the sample mean and the empirical 
+covariance structure derived from the principal component analysis is compared with the result of both a classical and a robust PCA.  
+It is important to note that the MCEM algorithm operates directly on the simplex, while both classical and robust PCA are performed on the transformed coordinates 
+of the observations.  
+The classical PCA is conducted with the `prcomp` base function in R using a singular value decomposition of the clr-transformed coordinates. This is equivalent to an 
+eigendecomposition on the ilr-coordinates (Filzmoser et al. 2019, p.135). The robust principal component analysis is based on the minimum covariance determinant (MCD) 
+estimator (Rousseeuw 1985; Rousseeuw and Van Driessen 1999) and calculated with the function `princomp` from the `robCompositions` package. The MCD estimator uses the 
+subset of observations that has the smallest determinant for its covariance matrix among all subsets of the same size. Since the determinant measures the overall spread 
+of the data, the MCD estimator identifies the most compact subset of observations by minimizing the spread and consequently provides a valid method to control against 
+outliers (Filzmoser et al. 2019, p. 92).  
+
+Since the sample for the latent compositions $\boldsymbol{\pi_i}$ are obtained as back transformations from the simulated clr-coordinates, the compositions can be 
+simulated by the principal component decomposition: $\boldsymbol{\pi}_{i}=\operatorname{clr}^{-1}\left({\sum_{k=1}^N z_{i k} \boldsymbol{\varphi}_{k}}\right)$ with N being the 
+number of principal components.  
+For a basic comparison a setting with five compositional parts and only two principal components and no no interaction effects (TODO: define?) is considered. Therefore the set of latent compositions 
+can be specified as $\boldsymbol{\pi}_i =  \operatorname{clr}^{-1}\left(\boldsymbol{\mu}+z_{i 1} \boldsymbol{\varphi}_{1}+z_{i 2} \boldsymbol{\varphi}_{2}\right)$ where 
+$z_{i 1} \stackrel{i . i . d .}{\sim} Z_{1}$ and $z_{i 2} \stackrel{i . i . d .}{\sim} Z_{2}$. The factors associated with the two principal components are normally distributed 
+as $Z_{1} \stackrel{i . i . d .}{\sim} N(0,0.6)$ and $Z_{2} \stackrel{i . i . d .}{\sim} N(0,0.3)$.  
+The mean vector is set to $\boldsymbol{\mu} = (0, 1, 0.5, -1, -0.5)$, which simulates a relative strong variation in dominance between the compositional parts. The principal components 
+consist of two contrasts, the first between the second and third compositional part $\boldsymbol{\varphi}_{1} = \left(0, \sqrt{\frac{1}{2}}, -\sqrt{\frac{1}{2}}, 0, 0\right)$ amd the second between the first and the 
+fourth compositional part $\boldsymbol{\varphi}_{2} = \left(\sqrt{\frac{1}{2}}, 0, 0, -\sqrt{\frac{1}{2}}, 0\right)$.  
+To further evaluate the algorithm's performance, the sample size $m_i$ is changed in three steps. Starting with a very small sample size of 20, the size is doubled in every step. 
+This approach allows to assess the effectiveness of the MCEM algorithm for count compositions with small sample sizes. The conducted simulation study contains 50 random runs for every 
+sample size setting.
+
+
+```{r latent parameters front, eval=TRUE}
+set_1 <- c("#e0ecf4", "#9ebcda", "#8856a7")
+
+D <- 5
+basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+basis_matrix <- do.call(rbind, basis_vectors)
+
+eigenvalues <- c(0.6, 0.3)
+mean_2 <- c(0, 1, 0.5, -1, -0.5) # those are clr-coordinates
+
+eigenvalues_2 <- c(0.6, 0.3, 0, 0)
+V_2 <- cbind(c(0, 1, -1, 0, 0), c(-1, 0, 0, 1, 0), c(0, 0, 0, 0, 0), c(0, 0, 0, 0, 0))
+true_sigma_2 <- V_2 %*% diag(eigenvalues_2) %*% t(V_2) 
+
+true_sigma_2
+true_v_2 <- mean_2
+```
+
+
+
+```{r evaluation mean vector front, eval=TRUE}
+
+simulation_data_list_2 <- list(
+  tar_read(sim_comp_2_smi_nSim),
+  tar_read(sim_comp_2_smi_nSim_60),
+  tar_read(sim_comp_2_smi_nSim_120),
+  tar_read(sim_comp_2_smi_nSim_120_300)
+)
+
+n_simulations <- length(simulation_data_list_2[[1]])
+
+pca_clr_rob_2 <- lapply(1:4, function(x) list(n_simulations))
+pca_clr_std_2 <- lapply(1:4, function(x) list(n_simulations))
+
+# calculate standard PCA for each simulation
+for(j in 1:4) {
+  simulation_data <- simulation_data_list_2[[j]]
+  for(i in 1:length(simulation_data)) {
+    sim <- simulation_data[[i]]
+    x_data_list <- sim$x_data
+    x_data <- do.call(rbind, x_data_list)
+    
+    pca_clr_std_2[[j]][[i]] <- prcomp(clr(x_data))
+    pca_clr_rob_2[[j]][[i]] <- pcaCoDa(x_data, method = "robust")
+  }
+}
+
+simulation_results_list_2 <- list(
+  tar_read(pca_sim1_ilr_StdPara_smi_nSim_2),
+  tar_read(pca_sim1_ilr_StdPara_smi_nSim_2_60),
+  tar_read(pca_sim1_ilr_StdPara_smi_nSim_2_120),
+  tar_read(pca_sim1_ilr_StdPara_smi_nSim_2_120_300)
+)
+
+diff_mean_2 <- lapply(1:4, function(x) list(n_simulations))
+diff_mean_std_clr_2 <- lapply(1:4, function(x) list(n_simulations))
+diff_mean_rob_clr_2 <- lapply(1:4, function(x) list(n_simulations))
+
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    diff_mean_2[[j]][[i]] <- sqrt(sum((true_v_2 - t(basis_matrix) %*% simulation_results_list_2[[j]][[i]]$pca$center)^2))
+    diff_mean_std_clr_2[[j]][[i]] <- sqrt(sum((true_v_2 - pca_clr_std_2[[j]][[i]]$center)^2))
+    diff_mean_rob_clr_2[[j]][[i]] <- sqrt(sum((true_v_2 - pca_clr_rob_2[[j]][[i]]$center)^2))
+  }
+}
+
+diff_mean = diff_mean_2
+diff_mean_std_clr = diff_mean_std_clr_2
+diff_mean_rob_clr = diff_mean_rob_clr_2
+```
+
+```{r boxplot simulation front, eval=TRUE}
+# Daten in einen DataFrame zusammenführen
+diff_df_2 <- data.frame(
+  differences = c(
+    unlist(diff_mean_2[[1]]), unlist(diff_mean_2[[2]]), 
+    unlist(diff_mean_2[[3]]), unlist(diff_mean_2[[4]]),
+    unlist(diff_mean_std_clr_2[[1]]), unlist(diff_mean_std_clr_2[[2]]),
+    unlist(diff_mean_std_clr_2[[3]]), unlist(diff_mean_std_clr_2[[4]])
+    # unlist(diff_mean_rob_clr_all[[1]]), unlist(diff_mean_rob_clr_all[[2]]),
+    # unlist(diff_mean_rob_clr_all[[3]]), unlist(diff_mean_rob_clr_all[[4]])
+  ),
+  method = factor(rep(c("MCEM", "sample mean"), each = 4 * n_simulations)),
+  size = factor(rep(rep(c("30", "60", "120", "300 observations"), 
+                         each = n_simulations), 2))
+)
+
+# define order of sequence
+diff_df_2$method <- factor(diff_df_2$method, 
+                        levels = c("MCEM", "sample mean"))
+
+diff_df_2$size <- factor(diff_df_2$size, 
+                        levels = c("30", "60", "120", "300 observations"))
+
+```
+
+
+```{r evaluation covariance front, eval=TRUE, fig.width=12, fig.height=5}
+sigma_distances_2 <- lapply(1:4, function(x) list(n_simulations))
+sigma_distances_std_clr_2 <- lapply(1:4, function(x) list(n_simulations))
+sigma_distances_rob_clr_2 <- lapply(1:4, function(x) list(n_simulations))
+
+
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    # MCEM method
+    sigma_hat_mcem <- with(simulation_results_list_2[[j]][[i]]$pca,
+      t(basis_matrix) %*% rotation %*% diag(sdev^2) %*% t(rotation) %*% basis_matrix)
+    sigma_distances_2[[j]][[i]] <- norm(true_sigma_2 - sigma_hat_mcem, type = "F")
+    
+    # CLR method
+    sigma_hat_clr <- with(pca_clr_std_2[[j]][[i]],
+      rotation %*% diag(sdev^2) %*% t(rotation))
+    sigma_distances_std_clr_2[[j]][[i]] <- norm(true_sigma_2 - sigma_hat_clr, type = "F")
+    
+    # ILR method
+    sigma_hat_rob <- with(pca_clr_rob_2[[j]][[i]],
+    loadings %*% diag(eigenvalues) %*% t(loadings))
+    sigma_distances_rob_clr_2[[j]][[i]] <- norm(true_sigma_2 - sigma_hat_rob, type = "F")
+  }
+}
+
+sigma_diff_df_2 <- data.frame(
+  differences = c(
+    unlist(sigma_distances_2[[1]]), unlist(sigma_distances_2[[2]]), 
+    unlist(sigma_distances_2[[3]]), unlist(sigma_distances_2[[4]]),
+    unlist(sigma_distances_std_clr_2[[1]]), unlist(sigma_distances_std_clr_2[[2]]),
+    unlist(sigma_distances_std_clr_2[[3]]), unlist(sigma_distances_std_clr_2[[4]]),
+    unlist(sigma_distances_rob_clr_2[[1]]), unlist(sigma_distances_rob_clr_2[[2]]),
+    unlist(sigma_distances_rob_clr_2[[3]]), unlist(sigma_distances_rob_clr_2[[4]])
+  ),
+  method = factor(rep(c("MCEM", "classic", "robust"), each = 4 * n_simulations)),
+  size = factor(rep(rep(c("30", "60", "120", "300 observations"), 
+                         each = n_simulations), 3))
+)
+
+# define order of sequence
+sigma_diff_df_2$method <- factor(sigma_diff_df_2$method, 
+                        levels = c("MCEM", "classic", "robust"))
+
+sigma_diff_df_2$size <- factor(sigma_diff_df_2$size, 
+                        levels = c("30", "60", "120", "300 observations"))
+
+plot1 <- ggplot(diff_df_2, aes(x = size, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_grey() +
+  scale_fill_manual(values = set_1) + 
+  labs(y = "dist mean",
+       x = expression(m[i]),
+       fill = "method",
+       title = "Distance of true mean to estimated mean") +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5, size = 10))
+
+
+plot2 <- ggplot(sigma_diff_df_2, aes(x = size, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_grey() +
+  scale_fill_manual(values = set_1) + 
+  labs(y = "dist covariance",
+       x = expression(m[i]),
+       fill = "method",
+       title = "Distance of true covariance to estimated covariance") +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5, size = 10))
+
+grid.arrange(plot1, plot2, ncol = 2)
+
+```
+
+
+
+<!-- Zusammenfassen werden zunächst einmal die Ergebnisse für das erste Simulationsbeispiel zusammengetragen. Dafür wurden jeweils **50** Simulationen durchgeführt, 
+bei denen 100 Zähl Kompositionen mit den oben beschriebenen Parametern generiert wurden. Als Mittelwertvektor $\boldsymbol{\mu}$ der clr-transformierten Koordinaten 
+wurde der Vektor $\boldsymbol{\mu} = (0, 1.5, 0.5, -1.5, -0.5)$ gewählt, womit eine relativ starke Variation der relativen Kompositionsanteile abgebildet wird. D.h. 
+die zweite Komponente (TODO: Interpretation clr Koodinaten überprüfen) ist relative zu allen anderen Komponenten dominant, während die vierte Komponente stark unterrepräsentiert 
+ist. Dies führt für die vierte Komponente zu einer erheblichen Anzahl von Nullwerten in den beobachteten Zähl Kompositionen. Dies stellt ein erhebliches Problem für 
+die klassische Anwendung multivariater Methoden dar (TODO: ausführen). Da der MCEM Algorithmus jedoch direkt die Daten auf dem Simplex evaluiert, wird das Problem 
+vermieden (TODO: besser erklären oder raus).   -->
+
+
+TODO: Vergleich von eigenvalues und totalVariance (Vgl. Filzmoser et al. 2019, p. 133)
+
+# Implementierung
+
+
 
 
 ## Objective Function
@@ -1486,6 +1674,189 @@ ggplot(sigma_diff_df_5, aes(x = size, y = differences, fill = method)) +
         plot.title = element_text(hjust = 0.5, size = 10))
 ```
 
+
+
+## Simulation Setting 6
+
+This is the same as Setting 3 but with the sample sizes from Steyer and Greven.
+
+Therefore, we have four components:
+
+1. Contrast between component 2 and 3 with a eigenvalue of 0.5
+2. Contrast between component 4 and 1,2,3 with a eigenvalue of 0.3
+3. Contrast betwenn component 5 and 1 and 2 with eigenvalue 0.1
+4. Contrast between component 1 and 4 with eigenvalue 0.1
+
+The mean vector is set to `c(0, 1.5, 0.5, -1.5, -0.5)`
+
+```{r latent parameters 6, eval=TRUE}
+n_simulations <- 60
+
+D <- 5
+basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+basis_matrix <- do.call(rbind, basis_vectors)
+
+eigenvalues_6 = c(0.5, 0.3, 0.1, 0.1)
+mean_6 = c(0, 1.5, 0.5, -1.5, -0.5)
+
+# the structure of the covariance matrix is a bit degenerated because we work with only two components
+V_6 <- cbind(c(0, 1/sqrt(2), -1/sqrt(2), 0, 0) , c(-1/3, -1/3, -1/3, 1, 0), c(1/2, 1/2, 0, 0, -1), c(1/sqrt(2), 0, 0, -1/sqrt(2), 0))
+true_sigma_6 <- V_6 %*% diag(eigenvalues_6) %*% t(V_6) 
+
+true_sigma_6
+
+(true_v_6 <- mean_6)
+```
+
+```{r evaluation mean vector 6, eval=TRUE}
+
+simulation_data_list_6 <- list(
+  tar_read(sim_3_smi_nSim_20),
+  tar_read(sim_3_smi_nSim_40),
+  tar_read(sim_3_smi_nSim_80),
+  tar_read(sim_3_smi_nSim_160)
+)
+
+pca_clr_rob_6 <- lapply(1:4, function(x) list(n_simulations))
+pca_clr_std_6 <- lapply(1:4, function(x) list(n_simulations))
+
+# calculate standard PCA for each simulation
+for(j in 1:4) {
+  simulation_data <- simulation_data_list_6[[j]]
+  for(i in 1:length(simulation_data)) {
+    sim <- simulation_data[[i]]
+    x_data_list <- sim$x_data
+    x_data <- do.call(rbind, x_data_list)
+    
+    pca_clr_std_6[[j]][[i]] <- prcomp(clr(x_data))
+    pca_clr_rob_6[[j]][[i]] <- pcaCoDa(x_data, method = "robust")
+  }
+}
+
+simulation_results_list_6 <- list(
+  tar_read(pca_smi_nSim_3_20),
+  tar_read(pca_smi_nSim_3_40),
+  tar_read(pca_smi_nSim_3_80),
+  tar_read(pca_smi_nSim_3_160)
+)
+
+diff_mean_6 <- lapply(1:4, function(x) list(n_simulations))
+diff_mean_std_clr_6 <- lapply(1:4, function(x) list(n_simulations))
+diff_mean_rob_clr_6 <- lapply(1:4, function(x) list(n_simulations))
+
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    diff_mean_6[[j]][[i]] <- sqrt(sum((true_v_6 - t(basis_matrix) %*% simulation_results_list_6[[j]][[i]]$pca$center)^2))
+    diff_mean_std_clr_6[[j]][[i]] <- sqrt(sum((true_v_6 - pca_clr_std_6[[j]][[i]]$center)^2))
+    diff_mean_rob_clr_6[[j]][[i]] <- sqrt(sum((true_v_6 - pca_clr_rob_6[[j]][[i]]$center)^2))
+  }
+}
+diff_mean = diff_mean_6
+diff_mean_std_clr = diff_mean_std_clr_6
+diff_mean_rob_clr = diff_mean_rob_clr_6
+
+```
+
+Let's visualize the results with boxplots for each case.
+
+```{r boxplot simulation 6, eval=TRUE}
+# Daten in einen DataFrame zusammenführen
+diff_df_6 <- data.frame(
+  differences = c(
+    unlist(diff_mean_6[[1]]), unlist(diff_mean_6[[2]]), 
+    unlist(diff_mean_6[[3]]), unlist(diff_mean_6[[4]]),
+    unlist(diff_mean_std_clr_6[[1]]), unlist(diff_mean_std_clr_6[[2]]),
+    unlist(diff_mean_std_clr_6[[3]]), unlist(diff_mean_std_clr_6[[4]])
+    # unlist(diff_mean_rob_clr_all[[1]]), unlist(diff_mean_rob_clr_all[[2]]),
+    # unlist(diff_mean_rob_clr_all[[3]]), unlist(diff_mean_rob_clr_all[[4]])
+  ),
+  method = factor(rep(c("MCEM", "sample mean"), each = 4 * n_simulations)),
+  size = factor(rep(rep(c("20", "40", "80", "160"), 
+                         each = n_simulations), 2))
+)
+
+# define order of sequence
+diff_df_6$method <- factor(diff_df_6$method, 
+                        levels = c("MCEM", "sample mean"))
+
+diff_df_6$size <- factor(diff_df_6$size, 
+                        levels = c("20", "40", "80", "160"))
+
+ggplot(diff_df_6, aes(x = size, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_grey() +
+  scale_fill_manual(values = set_1) + 
+  labs(y = "dist mean",
+       x = expression(m[i]),
+       fill = "method",
+       title = "Distance of true mean to estimated mean: Setting 4") +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5, size = 10))
+```
+
+And for the Kovarianzmatrix:
+
+```{r evaluation covariance 6, eval=TRUE}
+
+sigma_distances_6 <- lapply(1:4, function(x) list(n_simulations))
+sigma_distances_std_clr_6 <- lapply(1:4, function(x) list(n_simulations))
+sigma_distances_rob_clr_6 <- lapply(1:4, function(x) list(n_simulations))
+
+
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    # MCEM method
+    sigma_hat_mcem <- with(simulation_results_list_6[[j]][[i]]$pca,
+      t(basis_matrix) %*% rotation %*% diag(sdev^2) %*% t(rotation) %*% basis_matrix)
+    sigma_distances_6[[j]][[i]] <- norm(true_sigma_6 - sigma_hat_mcem, type = "F")
+    
+    # CLR method
+    sigma_hat_clr <- with(pca_clr_std_6[[j]][[i]],
+      rotation %*% diag(sdev^2) %*% t(rotation))
+    sigma_distances_std_clr_6[[j]][[i]] <- norm(true_sigma_6 - sigma_hat_clr, type = "F")
+    
+    # ILR method
+    sigma_hat_rob <- with(pca_clr_rob_6[[j]][[i]],
+    loadings %*% diag(eigenvalues) %*% t(loadings))
+    sigma_distances_rob_clr_6[[j]][[i]] <- norm(true_sigma_6 - sigma_hat_rob, type = "F")
+  }
+}
+
+```
+
+```{r visualize covariances 6, eval=TRUE}
+sigma_diff_df_6 <- data.frame(
+  differences = c(
+    unlist(sigma_distances_6[[1]]), unlist(sigma_distances_6[[2]]), 
+    unlist(sigma_distances_6[[3]]), unlist(sigma_distances_6[[4]]),
+    unlist(sigma_distances_std_clr_6[[1]]), unlist(sigma_distances_std_clr_6[[2]]),
+    unlist(sigma_distances_std_clr_6[[3]]), unlist(sigma_distances_std_clr_6[[4]]),
+    unlist(sigma_distances_rob_clr_6[[1]]), unlist(sigma_distances_rob_clr_6[[2]]),
+    unlist(sigma_distances_rob_clr_6[[3]]), unlist(sigma_distances_rob_clr_6[[4]])
+  ),
+  method = factor(rep(c("MCEM", "classic", "robust"), each = 4 * n_simulations)),
+  size = factor(rep(rep(c("20", "40", "80", "160"), 
+                         each = n_simulations), 3))
+)
+
+# define order of sequence
+sigma_diff_df_6$method <- factor(sigma_diff_df_6$method, 
+                        levels = c("MCEM", "classic", "robust"))
+
+sigma_diff_df_6$size <- factor(sigma_diff_df_6$size, 
+                        levels = c("20", "40", "80", "160"))
+
+ggplot(sigma_diff_df_6, aes(x = size, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_grey() +
+  scale_fill_manual(values = set_1) + 
+  labs(y = "dist covariance",
+       x = expression(m[i]),
+       fill = "method",
+       title = "Distance of true covariance to estimated covariance") +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5, size = 10))
+```
 
 
 
