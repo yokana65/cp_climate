@@ -58,6 +58,28 @@ plot_pca_rotation <- function(rotation, scale = 1, main = "PCA - clr") {
   abline(h = 0, v = 0, lty = 2, col = "gray")
 }
 
+plot_pca_rotations <- function(rotation, components = c(1,2), scale = 1, main = "PCA - clr") {
+    plot(rotation[, components[1]], rotation[, components[2]],
+         xlab = paste0("PC", components[1]),
+         ylab = paste0("PC", components[2]),
+         main = main)
+    
+    arrows(0, 0,
+           rotation[, components[1]] * scale,
+           rotation[, components[2]] * scale,
+           length = 0.1, col = "blue")
+    
+    labels <- if (!is.null(rownames(rotation))) rownames(rotation)
+              else seq_len(nrow(rotation))
+    
+    text(rotation[, components[1]], rotation[, components[2]],
+         labels = labels,
+         pos = 4,
+         cex = 0.8)
+    
+    abline(h = 0, v = 0, lty = 2, col = "gray")
+}
+
 plot_marginal_scores <- function(proposal_scores, weights, iteration) {
   # Extract dimensions
   n_obs <- length(proposal_scores)
@@ -92,4 +114,8 @@ clrInv_long <- function(clr_coords) {
     
     # Return normalized compositions
     exp_coords / norm_const
+}
+
+sample_from_density <- function(n, density_estimate) {
+    sample(density_estimate$x, size = n, prob = density_estimate$y, replace = TRUE)
 }

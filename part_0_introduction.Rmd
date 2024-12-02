@@ -190,7 +190,50 @@ This allows now for the use of all statistical methods that are available for th
 
 ## Descriptive statistics 
 
+Es wurde bereits herausgearbeitet, dass die üblichen Methoden einer auf absoluten Werten basierenden statistischen Analyse für Kompositionsdaten 
+nicht geeignet sind. Stattdessen sollten Methoden verwendet werden, die im Einklang mit der Aitchison Geometry (chapter [...]) stehen. Diese werden 
+im Folgenden aufgeführt und im kapitel [...] am praktischen Datensatz umgesetzt. The observed data matrix $\boldsymbol{x_i} = (x_{i 1}, \ldots, x_{i D})$ with $i = 1, \ldots, n$ contains *n* rows of observed 
+compositions with *D* columns for the compositional parts. 
 
+Standardmethoden der beschreibenden multivariaten statistischen Analyse beinhalten in der Regel measures of central tendency and dispersion, i.e. the 
+arithmetric mean and the variance of the multivariate data (Vgl. Pawlowsky-Glahn et al. 2015, p. 66). Im Kontext der Aitchison Geometry werden diese 
+durch *center* (Aitchison, 1997), *variation matrix* and *total variance* (Aitchison, 1986) ersetzt.
+
+**Definition 9: Sample center**
+The closed geometric mean is a measure for the central tendancy of a compositional sample. It is called *center*.  For the observed data matrix $\boldsymbol{x}$ 
+it is defined as: $\operatorname{cen}(\mathbf{x})=\hat{\mathbf{g}}=\mathcal{C}\left[\hat{g}_{1}, \hat{g}_{2}, \ldots, \hat{g}_{D}\right]$
+with $\hat{g}_{j}=\left(\prod_{i=1}^{n} x_{i j}\right)^{1 / n}, j=1,2, \ldots, D$.
+
+This corresponds to: 
+$$
+\begin{equation*}
+\overline{\mathbf{x}}=\frac{1}{N} \odot \bigoplus_{n=1}^{N} \mathbf{x}_{n}=\operatorname{clr}^{-1}\left(\frac{1}{N} \sum_{n=1}^{N} \operatorname{clr}\left(\mathbf{x}_{n}\right)\right)=\mathscr{C}\left[\exp \left(\frac{1}{N} \sum_{n=1}^{N} \ln \left(\mathbf{x}_{n}\right)\right)\right] \tag{4.1}
+\end{equation*}
+$$
+With $\mathscr{C}$ being the closure operation.
+
+TODO: How to compute that
+
+**Definition 10: Variation matrix**
+The *variation matrix* is a measure for dispersion in a compositional sample. It is defined as: 
+$$
+\mathbf{T}=\left(\begin{array}{cccc}
+t_{11} & t_{12} & \ldots & t_{1 D} \\
+t_{21} & t_{22} & \ldots & t_{2 D} \\
+\vdots & \vdots & \ddots & \vdots \\
+t_{D 1} & t_{D 2} & \ldots & t_{D D}
+\end{array}\right), \quad t_{i j}=\operatorname{var}\left(\ln \frac{x_{i}}{x_{j}}\right)
+$$
+TODO: add normalized version? -> if so introduce **balances** here as well
+
+**Definition 11: Sample total variance**
+The *Sample total variance* is a measure for global dispersion in a compositional sample. It is defined as: 
+$$
+\operatorname{totvar}[\mathbf{x}]=\frac{1}{2 D} \sum_{i, j=1}^{D} \operatorname{var}\left(\ln \frac{x_{i}}{x_{j}}\right)=\frac{1}{2 D} \sum_{i, j=1}^{D} t_{i j}=\frac{1}{n} \sum_{k=1}^{n} \mathrm{~d}_{a}^{2}\left(\mathbf{x}_{k}, \hat{\mathbf{g}}\right)
+$$
+TODO: change index i to k or l
+
+Since any constant cancels out when taking ratios the measures of dispersion do not depend on any closure, i.e. the scale of the observerd data.
 
 ## Multivariate techniques 
 

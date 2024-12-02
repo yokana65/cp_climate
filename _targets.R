@@ -818,7 +818,7 @@ list(
           x_data, 
           sc_factor = 1,
           max_iter = 80,
-          eps = 0.03
+          eps = 0.04
       )
       pca_results_list[[i]] <- result
     }
@@ -855,8 +855,9 @@ list(
       result <- fit_pca_ilr_vs_2(
           x_data, 
           sc_factor = 1,
+          r = 15,
           max_iter = 80,
-          eps = 0.03
+          eps = 0.04
       )
       pca_results_list[[i]] <- result
     }
@@ -874,8 +875,9 @@ list(
       result <- fit_pca_ilr_vs_2(
           x_data, 
           sc_factor = 1,
+          r = 15,
           max_iter = 80,
-          eps = 0.03
+          eps = 0.04
       )
       pca_results_list[[i]] <- result
     }
@@ -1533,12 +1535,24 @@ list(
     x_data <- data_kl15_comp
     set.seed(12)
     pca_results_ilr_std <-
-      fit_pca_ilr_vs_2(x_data,
+      fit_pca_ilr_vs_4(x_data,
                        max_iter = 10,
-                       r = 10,
+                       r = 20,
                        lambda = 1,
-                       eps = 0.01,
-                       sc_factor = - 390000, 
+                       eps = 0.035,
+                       sc_factor = 1, 
+                       sum_exp = TRUE)
+  }),
+  tar_target(pca_count_ilr_vs2_sc, {
+    x_data <- data_kl15_comp
+    set.seed(12)
+    pca_results_ilr_std <-
+      fit_pca_ilr_vs_4(x_data,
+                       max_iter = 50,
+                       r = 20,
+                       lambda = 0.8,
+                       eps = 0.03,
+                       sc_factor = 1, 
                        sum_exp = TRUE)
   })
 )

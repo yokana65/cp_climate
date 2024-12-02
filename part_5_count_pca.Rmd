@@ -1,5 +1,5 @@
 ---
-title: "count composition"
+title: "Dataset KL15"
 date: "`r Sys.Date()`"
 output:
   html_document:
@@ -22,7 +22,7 @@ basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
 basis_matrix <- do.call(rbind, basis_vectors)
 ```
 
-The MCEM Algorith identified the following principal components for the whole dataset:
+The MCEM Algorithm is applied on the rescaled dataset for *counts per centisecond*. It identifies the following principal components for the whole dataset (n = 2119):
 
 ```{r load data, eval=TRUE}
 pca_count <- tar_read(pca_count_ilr_vs1_1perc)
@@ -45,13 +45,15 @@ pca_rotation_clr[, 1:4]
 
 ## Screeplot
 
+The explained variance by principal component can be visualized by the screeplot.
+
 ```{r screeplot, eval=TRUE}
 plot(pca)
 
-sum(pca$sdev[1:2]^2)/sum(pca$sdev^2)
+# sum(pca$sdev[1:2]^2)/sum(pca$sdev^2)
 ```
 
-We can calculate the percantage of explained variance by the principal components with the **variation matrix**:
+<!-- We can calculate the percentage of explained variance by the principal components with the **variation matrix**: -->
 The first two components explain `r sum(pca$sdev[1:2]^2)/sum(pca$sdev^2) * 100` % of the total variance.  
 The first four components explain `r sum(pca$sdev[1:4]^2)/sum(pca$sdev^2) * 100` % of the total variance.  
 The first component explains `r pca$sdev[1]^2/sum(pca$sdev^2) * 100` % of the total variance.  
@@ -60,6 +62,8 @@ The third component explains `r pca$sdev[3]^2/sum(pca$sdev^2) * 100` % of the to
 The fourth component explains `r pca$sdev[4]^2/sum(pca$sdev^2) * 100` % of the total variance.  
 
 ## Biplot
+
+The biplot helps to discover compositional structures between the compositional parts.
 
 ```{r biplot, eval=TRUE}
 plot_pca_rotations(pca_rotation_clr, components = c(1,2), main = "PC1 vs. PC2")
@@ -71,36 +75,38 @@ plot_pca_rotations(pca_rotation_clr, components = c(1,4), main = "PC1 vs. PC4")
 
 ## Principal Components
 
+The effect of the principal components on the compositional parts can be visualized by their deviations to the mean vector (which is visualised in chapter [...]).
+
 ```{r principal components, eval=TRUE, fig.width=12, fig.height=5}
 center_clr <- t(basis_matrix) %*% pca$center
 
 # Create data frame for plotting
 mean_comp_1 <- data.frame(
-    component = 1:13,
-    mean_value = center_clr,
-    pc1_plus = center_clr + pca_rotation_clr[,1] * pca$sdev[1],
-    pc1_minus = center_clr - pca_rotation_clr[,1] * pca$sdev[1]
+  component = 1:13,
+  mean_value = 0,
+  pc1_plus = pca_rotation_clr[,1] * pca$sdev[1],
+  pc1_minus = - pca_rotation_clr[,1] * pca$sdev[1]
 )
 
 mean_comp_2 <- data.frame(
-    component = 1:13,
-    mean_value = center_clr,
-    pc1_plus = center_clr + pca_rotation_clr[,2] * pca$sdev[2],
-    pc1_minus = center_clr - pca_rotation_clr[,2] * pca$sdev[2]
+  component = 1:13,
+  mean_value = 0,
+  pc1_plus = pca_rotation_clr[,2] * pca$sdev[2],
+  pc1_minus =  - pca_rotation_clr[,2] * pca$sdev[2]
 )
 
 mean_comp_3 <- data.frame(
-    component = 1:13,
-    mean_value = center_clr,
-    pc1_plus = center_clr + pca_rotation_clr[,3] * pca$sdev[3],
-    pc1_minus = center_clr - pca_rotation_clr[,3] * pca$sdev[3]
+  component = 1:13,
+  mean_value = 0,
+  pc1_plus = + pca_rotation_clr[,3] * pca$sdev[3],
+  pc1_minus = - pca_rotation_clr[,3] * pca$sdev[3]
 )
 
 mean_comp_4 <- data.frame(
-    component = 1:13,
-    mean_value = center_clr,
-    pc1_plus = center_clr + pca_rotation_clr[,4] * pca$sdev[4],
-    pc1_minus = center_clr - pca_rotation_clr[,4] * pca$sdev[4]
+  component = 1:13,
+  mean_value = 0,
+  pc1_plus = + pca_rotation_clr[,4] * pca$sdev[4],
+  pc1_minus = - pca_rotation_clr[,4] * pca$sdev[4]
 )
 
 
@@ -121,7 +127,7 @@ plot1 <- ggplot(mean_comp_1) +
                       name = "PC1",
                       breaks = c("Factor 0.35", "Factor -0.35")) +
     labs(x = "Component", y = "clr value",
-         title = "Mean composition with PC1 variations") +
+         title = "PC1 variations: 59%") +
     theme_grey() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1),
           legend.position = "top")
@@ -138,7 +144,7 @@ plot2 <- ggplot(mean_comp_2) +
                       name = "PC2",
                       breaks = c("Factor 0.23", "Factor -0.23")) +
     labs(x = "Component", y = "clr value",
-         title = "Mean composition with PC2 variations") +
+         title = "PC2 variations: 26%") +
     theme_grey() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1),
           legend.position = "top")
@@ -155,7 +161,7 @@ plot3 <- ggplot(mean_comp_3) +
                       name = "PC3",
                       breaks = c("Factor 0.11", "Factor -0.11")) +
     labs(x = "Component", y = "clr value",
-         title = "Mean composition with PC3 variations") +
+         title = "PC3 variations: 6%") +
     theme_grey() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1),
           legend.position = "top")
@@ -168,11 +174,11 @@ plot4 <- ggplot(mean_comp_4) +
              stat = "identity", fill = NA) +
     geom_bar(aes(x = names, y = mean_value), 
              stat = "identity", fill = NA, color = "black") +
-    scale_color_manual(values = c("Factor 0.09" = "red", "Factor -0.35" = "blue"),
+    scale_color_manual(values = c("Factor 0.09" = "red", "Factor -0.09" = "blue"),
                       name = "PC4",
                       breaks = c("Factor 0.09", "Factor -0.09")) +
     labs(x = "Component", y = "clr value",
-         title = "Mean composition with PC4 variations") +
+         title = "PC4 variations: 4%") +
     theme_grey() +
     theme(axis.text.x = element_text(angle = 45, hjust = 1),
           legend.position = "top")
@@ -184,7 +190,7 @@ grid.arrange(plot1,plot2,plot3,plot4, ncol = 4)
 
 The scores for the principal component $k$ can be easily computed with 
 $\boldsymbol{z}_i = \boldsymbol{\varphi}_k^{\top} (\operatorname{clr}(\boldsymbol{x}_i) - \boldsymbol{\mu})$
-```{r scores, eval=TRUE, fig.width=12, fig.height=5}
+```{r scores, eval=TRUE, warning=FALSE, fig.width=12, fig.height=5}
 calculate_pc_scores <- function(data, pca, pc_number) {
     # Center the data
     centered_data <- scale(data, center = TRUE, scale = FALSE)
@@ -219,7 +225,7 @@ pc4_time_data <- data.frame(
 # Plot scores over time
 plot1 <- ggplot(pc1_time_data, aes(x = age, y = score)) +
     geom_point() +
-    geom_smooth(method = "loess") +
+    geom_smooth(method = "loess", formula = y ~ x) +
     labs(x = "Age (ka)", 
          y = "PC1 Score",
          title = "PC1 Scores over Time") +
@@ -230,7 +236,7 @@ plot1 <- ggplot(pc1_time_data, aes(x = age, y = score)) +
 # Plot scores over time
 plot2 <- ggplot(pc2_time_data, aes(x = age, y = score)) +
     geom_point() +
-    geom_smooth(method = "loess") +
+    geom_smooth(method = "loess", formula = y ~ x) +
     labs(x = "Age (ka)", 
          y = "PC2 Score",
          title = "PC2 Scores over Time") +
@@ -239,9 +245,9 @@ plot2 <- ggplot(pc2_time_data, aes(x = age, y = score)) +
 
 
 # Plot scores over time
-plot3 <- ggplot(pc1_time_data, aes(x = age, y = score)) +
+plot3 <- ggplot(pc3_time_data, aes(x = age, y = score)) +
     geom_point() +
-    geom_smooth(method = "loess") +
+    geom_smooth(method = "loess", formula = y ~ x) +
     labs(x = "Age (ka)", 
          y = "PC3 Score",
          title = "PC3 Scores over Time") +
@@ -250,7 +256,7 @@ plot3 <- ggplot(pc1_time_data, aes(x = age, y = score)) +
 # Plot scores over time
 plot4 <- ggplot(pc4_time_data, aes(x = age, y = score)) +
     geom_point() +
-    geom_smooth(method = "loess") +
+    geom_smooth(method = "loess", formula = y ~ x) +
     labs(x = "Age (ka)", 
          y = "PC4 Score",
          title = "PC4 Scores over Time") +
@@ -258,4 +264,23 @@ plot4 <- ggplot(pc4_time_data, aes(x = age, y = score)) +
 
 
 grid.arrange(plot1, plot2, plot3, plot4, ncol = 4)    
+```
+
+Another way to visualize the scores over time is use color as an additional dimension:
+
+```{r scores_2, eval=TRUE, fig.width=12, fig.height=5}
+pc_scores <- data.frame(
+  pc_1 = calculate_pc_scores(x_clr, pca, 1),
+  pc_2 = calculate_pc_scores(x_clr, pca, 2),
+  pc_3 = calculate_pc_scores(x_clr, pca, 3),
+  pc_4 = calculate_pc_scores(x_clr, pca, 4),
+  age = x_count$age
+)
+
+# Create plot
+ggplot(pc_scores, aes(x = pc_1, y = pc_3, color = age)) +
+    geom_point() +
+    scale_color_viridis_c() +
+    labs(x = "PC1", y = "PC3", color = "Age (ka)", title = "Principal component scores over time") +
+    theme_grey()
 ```
