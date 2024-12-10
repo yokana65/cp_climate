@@ -14,6 +14,9 @@ library(targets)
 library(compositions)
 library(gridExtra)
 library(ggplot2)
+library(mgcv)
+library(boot)
+library(tseries)
 
 source("scripts/helper_functions.R")
 
@@ -23,6 +26,9 @@ basis_matrix <- do.call(rbind, basis_vectors)
 ```
 
 The MCEM Algorithm is applied on the rescaled dataset for *counts per centisecond*. It identifies the following principal components for the whole dataset (n = 2119):
+
+**To be clear**, dealing with the KL15 dataset the simulations in chapter [...] show that the "classic" and the robust estimation methods are more effective then the 
+MCEM algorithm. Since this master thesis shows an application of the MCEM algorithm the rescaled dataset from KL15 is used in the following analysis. 
 
 ```{r load data, eval=TRUE}
 pca_count <- tar_read(pca_count_ilr_vs1_1perc)
@@ -200,6 +206,7 @@ calculate_pc_scores <- function(data, pca, pc_number) {
     
     return(scores)
 }
+# TODO: the function above does not use the rotation vectors directly. It only works because they are calculated before 
 
 # Create data frame with scores and age
 pc1_time_data <- data.frame(
@@ -284,3 +291,257 @@ ggplot(pc_scores, aes(x = pc_1, y = pc_3, color = age)) +
     labs(x = "PC1", y = "PC3", color = "Age (ka)", title = "Principal component scores over time") +
     theme_grey()
 ```
+
+## Glättung mit mgcv
+
+```{r gam_pca, eval=TRUE, fig.width=12, fig.height=10}
+# Fit GAM model
+gam_fit1 <- gam(score ~ s(age, k=30, bs="cr"), data=pc1_time_data)
+
+# Create prediction data
+pred_data <- data.frame(age = seq(min(pc1_time_data$age), 
+                                 max(pc1_time_data$age), 
+                                 length.out=200))
+pred_data$fit <- predict(gam_fit1, pred_data)
+
+# Calculate confidence intervals
+pred_se <- predict(gam_fit1, pred_data, se.fit=TRUE)
+pred_data$upper <- pred_data$fit + 1.96 * pred_se$se.fit
+pred_data$lower <- pred_data$fit - 1.96 * pred_se$se.fit
+
+# Updated plot with GAM
+plot1 <- ggplot(pc1_time_data, aes(x = age, y = score)) +
+    geom_point(alpha=0.5) +
+    geom_line(data=pred_data, aes(y=fit), color="blue", size=1) +
+    geom_ribbon(data=pred_data, aes(y=fit, ymin=lower, ymax=upper), 
+                alpha=0.2) +
+    labs(x = "Age (ka)", 
+         y = "PC1 Score",
+         title = "PC1 Scores over Time") +
+    theme_grey()
+
+plot1
+summary(gam_fit1)
+gam.check(gam_fit1)
+```
+
+TODO: evaluate GAM model -> prbly increase k (what does it mean?: Parameter of Komplexity: Anzahl der Basisfunktionen) Try: n/30=70
+
+```{r gam_pca 2, eval=TRUE, fig.width=12, fig.height=10}
+# Fit GAM model
+gam_fit2 <- gam(score ~ s(age, k=30, bs="cr"), data=pc2_time_data)
+
+# Create prediction data
+pred_data <- data.frame(age = seq(min(pc2_time_data$age), 
+                                 max(pc2_time_data$age), 
+                                 length.out=200))
+pred_data$fit <- predict(gam_fit2, pred_data)
+
+# Calculate confidence intervals
+pred_se <- predict(gam_fit2, pred_data, se.fit=TRUE)
+pred_data$upper <- pred_data$fit + 1.96 * pred_se$se.fit
+pred_data$lower <- pred_data$fit - 1.96 * pred_se$se.fit
+
+# Updated plot with GAM
+plot1 <- ggplot(pc2_time_data, aes(x = age, y = score)) +
+    geom_point(alpha=0.5) +
+    geom_line(data=pred_data, aes(y=fit), color="blue", size=1) +
+    geom_ribbon(data=pred_data, aes(y=fit, ymin=lower, ymax=upper), 
+                alpha=0.2) +
+    labs(x = "Age (ka)", 
+         y = "PC2 Score",
+         title = "PC2 Scores over Time") +
+    theme_grey()
+
+plot1
+summary(gam_fit1)
+gam.check(gam_fit1)
+```
+
+
+# Classic PCA
+
+To get an idea about the differences between the two approaches, we can compare the results of classic PCA with the results of MCEM PCA.
+
+```{r classic_pca, eval=TRUE, fig.width=12, fig.height=10}
+x_count_sel <- x_count[4:ncol(x_count)-1]
+x_acomp <- acomp(x_count_sel)
+# pca_classic <- princomp(x_acomp)
+pca_classic <- prcomp(clr(x_count_sel))
+# biplot(pca_classic)
+# plot1 <- plot_pca_rotations(pca_classic$loadings, components = c(1,2), main = "PC1 vs. PC2")
+plot_pca_rotations(pca_classic$rotation, components = c(1,2), main = "PC1 vs. PC2")
+```
+
+In fact, this is quite similar to the results of MCEM PCA. For the first component, Br is dominating and representing the organic productivity that is 
+more or less **independent** of the other elements. For the second component, we see the contrast of terestric input (Fe, Ti) against "Schalenbildner" (Ca, Str).
+Both need further investigation. The classic method and MCEM should produce fairly similar results.
+
+## Block bootstrap estimates
+
+```{r block_bootstrap, eval=TRUE}
+block_bootstrap_pca <- function(data, block_length = 50, R = 1000) {
+  n <- nrow(data)
+  results <- list()
+  
+  for(i in 1:R) {
+    # Generate blocks
+    blocks <- ceiling(n/block_length)
+    start_points <- sample(1:(n - block_length + 1), blocks, replace = TRUE)
+    
+    # Create bootstrap sample
+    boot_indices <- unlist(lapply(start_points, function(x) x:(x + block_length - 1)))
+    boot_indices <- boot_indices[boot_indices <= n][1:n]
+    
+    # Perform PCA on bootstrap sample
+    boot_data <- data[boot_indices, ]
+    boot_pca <- prcomp(boot_data, scale. = FALSE)
+    
+    results[[i]] <- list(
+      rotation = boot_pca$rotation,
+      sdev = boot_pca$sdev
+    )
+  }
+  
+  return(results)
+}
+```
+
+```{r block_bootstrap_pca application, eval=TRUE}
+# Using CLR transformed data
+bootstrap_results <- block_bootstrap_pca(x_clr, block_length = 50, R = 1000)
+
+# Calculate confidence intervals for loadings
+loading_ci <- apply(simplify2array(lapply(bootstrap_results, function(x) x$rotation)), 1:2, 
+                   quantile, probs = c(0.025, 0.975))
+
+loading_df <- data.frame(
+  Variable = rownames(pca_classic$rotation),
+  Loading = pca_classic$rotation[,1],
+  Lower = loading_ci[1,,1],
+  Upper = loading_ci[2,,1]
+)
+
+ggplot(loading_df, aes(x = Variable, y = Loading)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = Lower, ymax = Upper)) +
+  coord_flip() +
+  labs(title = "PC1 Loadings with Bootstrap CI")
+
+```
+
+```{r block_bootstrap_pca distribution, eval=TRUE}
+# Extract Br loadings for PC1 from all bootstrap samples
+br_loadings <- sapply(bootstrap_results, function(x) x$rotation[1,1])
+
+# Create histogram with density curve
+ggplot(data.frame(loading = br_loadings), aes(x = loading)) +
+  geom_histogram(aes(y = ..density..), bins = 30, fill = "lightblue", color = "black") +
+  geom_density(color = "red") +
+  geom_vline(xintercept = pca_classic$rotation[1,1], color = "blue", linetype = "dashed") +
+  labs(title = "Bootstrap Distribution of Br Loading in PC1",
+       x = "Loading Value",
+       y = "Density")
+```
+
+```{r block_bootstrap_pca corrected sampling, eval=TRUE}
+block_bootstrap_pca <- function(data, block_length = 50, R = 1000, reference_pca = NULL) {
+  n <- nrow(data)
+  results <- list()
+  
+  # Calculate reference PCA if not provided
+  if (is.null(reference_pca)) {
+    reference_pca <- prcomp(data, scale. = TRUE)
+  }
+  
+  for(i in 1:R) {
+    # Generate blocks
+    blocks <- ceiling(n/block_length)
+    start_points <- sample(1:(n - block_length + 1), blocks, replace = TRUE)
+    
+    # Create bootstrap sample
+    boot_indices <- unlist(lapply(start_points, function(x) x:(x + block_length - 1)))
+    boot_indices <- boot_indices[boot_indices <= n][1:n]
+    
+    # Perform PCA on bootstrap sample
+    boot_data <- data[boot_indices, ]
+    boot_pca <- prcomp(boot_data, scale. = FALSE)
+    
+    # Align signs with reference PCA
+    for(j in 1:ncol(boot_pca$rotation)) {
+      # Calculate correlation with reference
+      cor_sign <- sign(sum(boot_pca$rotation[,j] * reference_pca$rotation[,j]))
+      # Flip sign if negative correlation
+      if(cor_sign < 0) {
+        boot_pca$rotation[,j] <- -boot_pca$rotation[,j]
+        boot_pca$x[,j] <- -boot_pca$x[,j]
+      }
+    }
+    
+    results[[i]] <- list(
+      rotation = boot_pca$rotation,
+      sdev = boot_pca$sdev
+    )
+  }
+  
+  return(results)
+}
+
+# Anwendung:
+bootstrap_results <- block_bootstrap_pca(x_clr, 
+                                       block_length = 50, 
+                                       R = 1000, 
+                                       reference_pca = pca_classic)
+
+# Calculate confidence intervals for loadings
+loading_ci <- apply(simplify2array(lapply(bootstrap_results, function(x) x$rotation)), 1:2, 
+                   quantile, probs = c(0.025, 0.975))
+
+loading_df <- data.frame(
+  Variable = rownames(pca_classic$rotation),
+  Loading = pca_classic$rotation[,1],
+  Lower = loading_ci[1,,1],
+  Upper = loading_ci[2,,1]
+)
+
+ggplot(loading_df, aes(x = Variable, y = Loading)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = Lower, ymax = Upper)) +
+  coord_flip() +
+  labs(title = "PC1 Loadings with Bootstrap CI")
+```
+
+TODO: Überprüfen der Skalierung (aktuell: FALSE) => Scaling works differently for compositional data: Pawlowsky-Glahn, p. 68, 112!
+
+## Identifizierung Blocklänge
+
+```{r block_length_identification, eval=TRUE}
+# Berechne Autokorrelation für PC1 Scores
+(acf_result <- acf(pc1_time_data$score, plot = TRUE, lag.max=100))
+# Finde lag wo Autokorrelation unter 0.2 fällt
+(block_length <- which(acf_result$acf < 0.3)[1])
+
+# Test verschiedene Blocklängen
+lengths <- c(20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260)
+results <- lapply(lengths, function(len) {
+  block_bootstrap_pca(x_clr, 
+                     block_length = len,
+                     R = 200,  # Reduzierte Anzahl für schnellen Test
+                     reference_pca = pca_classic)
+})
+
+# Vergleiche Konfidenzintervallbreiten
+ci_widths <- sapply(results, function(res) {
+  cis <- apply(simplify2array(lapply(res, function(x) x$rotation)), 1:2,
+               quantile, probs = c(0.025, 0.975))
+  mean(cis[2,,1] - cis[1,,1])  # Mittlere CI-Breite für PC1
+})
+
+plot(lengths, ci_widths, type = "b",
+     xlab = "Block Length",
+     ylab = "Mean CI Width")
+```
+
+We see a high and sustained autocorrelation for the PC1 scores. The test of different block lengths shows that 
+a block length of 50 gives realtively stable results. That corresponds to the `acf` analysis. A bigger block length 
+results in bigger CIs. 
