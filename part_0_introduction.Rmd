@@ -186,7 +186,64 @@ Those operations define a whole vector space on the simplex (TODO: definition of
 is also a real Euclidean space or a finite dimensional real Hilbert space.
 This allows now for the use of all statistical methods that are available for the standard Euclidean space. (TODO: umformulieren)
 
-## Orthonormal coordinates 
+## Clr transformation (generating systems)
+
+Im Allgemeinen sind wir es gewohnt Vektoren anhand ihrer kanonischen Basis $\left\{\mathbf{e}_{1}, \mathbf{e}_{2}, \ldots, \mathbf{e}_{D}\right\}$ in $mathcal{R}^D$ zu beschreiben. 
+Dies gilt auch für den Fall, dass der Vektor eine beobachtete Komposition $\boldsymbol{x}$ ist. In diesem Fall kann der Vektor $\boldsymbol{x}$ als Linearkombination der Basisvektoren
+dargestellt werden: 
+$$
+\mathbf{x}=x_{1}[1,0, \ldots, 0]+x_{2}[0,1, \ldots, 0]+\ldots+x_{D}[0,0, \ldots, 1]=\sum_{j=1}^{D} x_{j} \cdot \mathbf{e}_{j} \tag{X}
+$$
+Das Problem ist, dass die Vektoren $\left\{\mathbf{e}_{1}, \mathbf{e}_{2}, \ldots, \mathbf{e}_{D}\right\}$ keine Basis in Bezug auf den Vektorraum des in [...] definierten Simplex sind. 
+Zum einen liegen nicht alle Linearkombinationen von Koeffizienten $x_i$ im Simplex (negative und Nullwerte sind nicht erlaubt). Zum anderen liegen die Vektoren $\boldsymbol{e}_{j}$ nicht 
+in $mathcal{S}^D$ (siehe Definition 1) (Cp. Pawloswky-Glahn et al. 2015, p. 33).
+Zum Verständnis von Kompositionen ist es aber überaus hilfreich die Kompositionsteile $\left\{x_{1}, x_{2}, \ldots, x_{D}\right\}$ als Koordinaten in Bezug auf eine Basis zu beschreiben, 
+weswegen es äußerst hilfreich ist, einen statistisch validen Weg zu finden dies auch zu tun.
+Pawlowsky-Glahn et al. (2015) zeigen, dass die clr-Transformation ein wichtiger Schritt auf dem Weg zu einer solchen Basis ist. Zunächst einmal macht es für Kompositionsdaten Sinn ein 
+generatives System zu identifizieren, indem die kanonische Basis exponentiert wird. Dies resultiert in $\left\{\mathbf{w}_{1}, \mathbf{w}_{2}, \ldots, \mathbf{w}_{D}\right\}$ mit 
+$$
+\mathbf{w}_{j}=\mathcal{C}\left(\exp \left(\mathbf{e}_{j}\right)\right)=\mathcal{C}[1,1, \ldots, e, \ldots, 1], \quad j=1,2, \ldots, D . \tag{X}
+$$.
+Dieses generative System kann genutzt werden, um den Kompositionsvektor als Perturbation seiner logarithmierten Kompositionsteile zu beschreiben (Cp. Pawlowsky-Glahn et al 2015, p. 34): 
+$$
+\mathbf{x} & =\bigoplus_{j=1}^{D} \ln \frac{x_{j}}{\mathrm{~g}_{m}(\mathbf{x})} \odot \mathbf{w}_{j} \\
+& =\ln \frac{x_{1}}{\mathrm{~g}_{m}(\mathbf{x})} \odot[e, 1, \ldots, 1] \oplus \ldots \oplus \ln \frac{x_{D}}{\mathrm{~g}_{m}(\mathbf{x})} \odot[1,1, \ldots, e], \tag{X}
+$$ 
+wobei 
+$$
+\mathrm{g}_{m}(\mathbf{x})=\left(\prod_{j=1}^{D} x_{j}\right)^{1 / D}=\exp \left(\frac{1}{D} \sum_{i=1}^{D} \ln x_{j}\right)
+$$
+den geometrischen Mittelwert der Komposition darstellt.
+Es ist ersichtlich, dass dies ausgehend von den formulierten Grundprinzipien (Chapter [..]) und der Aitchison-Geometrie ein kompositionelles Equivalent zu der kanonischen Basis ist. Darüber hinaus 
+entsprechen die Koefficienten in [.. ] den von Aitchison definierten Koefficienten der centered logratio Transformation (clr). Die clr Koordinaten haben eine Reihe von Vorteilen. Insbesondere 
+gilt für eine Komposition $\boldsymbol{\pi}_{k} \in \mathcal{S}^{D}$, dass durch die clr-Transformation eine eindeutige Beziehung zwischen den Operationen auf dem Simplex (chapter [...]) und dem 
+reelen Raum hergestellt werden kann.
+Für realen konstanten $\alpha, \beta$ gilt für alle $k=1,2$:
+(a) $\operatorname{clr}\left(\alpha \odot \mathbf{x}_{1} \oplus \beta \odot \mathbf{x}_{2}\right)=\alpha \cdot \operatorname{clr}\left(\mathbf{x}_{1}\right)+\beta \cdot \operatorname{clr}\left(\mathbf{x}_{2}\right)$;
+(b) $\left\langle\mathbf{x}_{1}, \mathbf{x}_{2}\right\rangle_{a}=\left\langle\operatorname{clr}\left(\mathbf{x}_{1}\right), \operatorname{clr}\left(\mathbf{x}_{2}\right)\right\rangle ;$
+(c) $\left\|\mathbf{x}_{1}\right\|_{a}=\left\|\operatorname{clr}\left(\mathbf{x}_{1}\right)\right\|, \quad \mathrm{d}_{a}\left(\mathbf{x}_{1}, \mathbf{x}_{2}\right)=\mathrm{d}\left(\operatorname{clr}\left(\mathbf{x}_{1}\right), \operatorname{clr}\left(\mathbf{x}_{2}\right)\right)$.
+Die Eigenschaft (a) sagt uns, dass die clr-Transformation ein isomorphismus ist, d.h. die Operationen auf dem Simplex werden auf die entsprechenden Operationen im reellen Raum abgebildet. (b) und (c) kennzeichnen 
+eine Isometry (TODO: Quelle Mathebuch), d.h. die Metrik und das Skalarprodukt des Simplex bleiben auch noch der Transformation erhalten.
+
+
+TODO: pi or x? -> für theoretische Aussagen, können wir pi verwenden
+
+
+Allerdings ist an dieser Stelle wichtig zu bemerken, dass die clr Koefficienten keine Koordinaten in Bezug auf eine Basis des Simplex sind. Außerdem haben sie ähnlich wie die ursprünglichen 
+Kompositionsteile eine Beschränkung. Für die clr transformierten Kompositionsteile gilt, dass sie sich zu 0 aufsummieren müssen: $\sum_{j=1}^D \operatorname{clr}({x}_j) = 0$.
+Dies hat zur Folge, dass die Kovarianz Matrix von $\operatorname{clr}(\boldsymbol{x})$ singulär ist, was insbesondere für multivariate Methoden problematisch sein kann. Außerdem sind clr-transformierte 
+Kompositionen nicht subcompositionally coherent, da das geometrische Mittel von der Anzahl der Kompositionsteile abhängt.
+Auch wenn die von Aithcison eingeführten clr-Koefficienten einige Vorteile bieten, ist es hilfreich in einem weiteren Schritt die orthonormalen Koordinaten zu definieren.
+
+
+## Orthonormal coordinates or Coordinate Representations (Cp. Filzmoser et al. 2019, p. 43ff)
+
+Auch wenn die clr-Transformation im Sinne von Aitchison einige Verbesserungen mit sich bringt, so leidet sie doch auch unter einigen Nachteilen, zum 
+Beispiel, dass es sich bei clr-transformierten Koordinaten nicht um orthonormale Koordinaten handelt. Zwar bietet die clr-Transformation die Möglichkeit, 
+Koordinaten auf dem Simplex in den reelen Raum zu übersetzen, sie unterliegen jedoch nach wie vor der Beschränkung $\sum_{j=1}^D \operatorname{clr}(\boldsymbol{x}_j) = 0$.
+Allerdings lässt sich eine orthonormale Basis des Simplex relativ einfach mit Hilfe der Gram-Schmidt Prozedur konstruieren (Egozcue 2003). 
+
+
 
 ## Descriptive statistics 
 
