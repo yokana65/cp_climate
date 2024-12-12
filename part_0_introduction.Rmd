@@ -206,9 +206,10 @@ $$
 $$.
 Dieses generative System kann genutzt werden, um den Kompositionsvektor als Perturbation seiner logarithmierten Kompositionsteile zu beschreiben (Cp. Pawlowsky-Glahn et al 2015, p. 34): 
 $$
-\mathbf{x} & =\bigoplus_{j=1}^{D} \ln \frac{x_{j}}{\mathrm{~g}_{m}(\mathbf{x})} \odot \mathbf{w}_{j} \\
+\mathbf{x} & =\bigoplus_{j=1}^{D} \ln \frac{x_{j}}{\mathrm{~g}_{m}(\mathbf{x})} \odot \mathbf{w}_{j} 
 & =\ln \frac{x_{1}}{\mathrm{~g}_{m}(\mathbf{x})} \odot[e, 1, \ldots, 1] \oplus \ldots \oplus \ln \frac{x_{D}}{\mathrm{~g}_{m}(\mathbf{x})} \odot[1,1, \ldots, e], \tag{X}
 $$ 
+
 wobei 
 $$
 \mathrm{g}_{m}(\mathbf{x})=\left(\prod_{j=1}^{D} x_{j}\right)^{1 / D}=\exp \left(\frac{1}{D} \sum_{i=1}^{D} \ln x_{j}\right)
@@ -243,6 +244,7 @@ Beispiel, dass es sich bei clr-transformierten Koordinaten nicht um orthonormale
 Koordinaten auf dem Simplex in den reelen Raum zu übersetzen, sie unterliegen jedoch nach wie vor der Beschränkung $\sum_{j=1}^D \operatorname{clr}(\boldsymbol{x}_j) = 0$.
 Allerdings lässt sich eine orthonormale Basis des Simplex relativ einfach mit Hilfe der Gram-Schmidt Prozedere konstruieren (Egozcue 2003). Damit lassen sich 
 unendlich viele orthonormale Basen konstruieren. Um ihre allgemeinen Eigenschaften zu untersuchen, müssen wir zunächst folgende orthonormale Basis definieren:
+
 **Definition 9: contrast matrix**
 TODO: transform this definition into the format of Grevens paper
 Let $\left\{\mathbf{e}_{1}, \mathbf{e}_{2}, \ldots, \mathbf{e}_{D-1}\right\}$ be an orthonormal basis of the simplex $\mathcal{S}^{D}$ and consider the 
@@ -256,7 +258,60 @@ Vektoren überträgt:
 $$
 \left\langle\mathbf{e}_{j}, \mathbf{e}_{k}\right\rangle_{a}=\left\langle\operatorname{clr}\left(\mathbf{e}_{j}\right), \operatorname{clr}\left(\mathbf{e}_{k}\right)\right\rangle=\delta_{j k}
 $$.
+Da die Reihen der Matrix $\boldsymbol{\Psi}$ clr Koeffizienten sind, gilt, dass $\sum_{j=1}^D \mathbf{e}_{j} = 0$ für alle $j=1,2, \ldots, D-1$.
 
+Mit dieser Wahl einer orthonormalen Basis lässt sich jede Komposition $\mathbf{x} \in S^{D}$ wie folgt darstellen: 
+$$
+\mathbf{x}=\bigoplus_{i=1}^{D-1} x_{i}^{*} \odot \mathbf{e}_{i}, \quad x_{i}^{*}=\left\langle\mathbf{x}, \mathbf{e}_{i}\right\rangle_{a} \tag{X}
+$$
+wobei $\boldsymbol{x}^*$ der Vektor der Koordinaten in Bezug auf die ausgewählte Basis ist.
+
+In diesem Sinne lässt sich die ilr-Transformation wie folgt definieren:
+Property 4.5 Consider $\mathbf{x}_{k} \in \mathcal{S}^{D}, k=1,2$, and real constants $\alpha, \beta$; then  
+
+(a) $\operatorname{ilr}\left(\alpha \odot \mathbf{x}_{1} \oplus \beta \odot \mathbf{x}_{2}\right)=\alpha \cdot \operatorname{ilr}\left(\mathbf{x}_{1}\right)+\beta \cdot \operatorname{ilr}\left(\mathbf{x}_{2}\right)=\alpha \cdot \mathbf{x}_{1}^{*}+\beta \cdot \mathbf{x}_{2}^{*}$;
+
+(b) $\left\langle\mathbf{x}_{1}, \mathbf{x}_{2}\right\rangle_{a}=\left\langle\operatorname{ilr}\left(\mathbf{x}_{1}\right), \operatorname{ilr}\left(\mathbf{x}_{2}\right)\right\rangle=\left\langle\mathbf{x}_{1}^{*}, \mathbf{x}_{2}^{*}\right\rangle$;
+
+(c) $\left\|\mathbf{x}_{1}\right\|_{a}=\left\|\operatorname{ilr}\left(\mathbf{x}_{1}\right)\right\|=\left\|\mathbf{x}_{1}^{*}\right\|$;
+
+(d) $\mathrm{d}_{a}\left(\mathbf{x}_{1}, \mathbf{x}_{2}\right)=\mathrm{d}\left(\operatorname{ilr}\left(\mathbf{x}_{1}\right), \operatorname{ilr}\left(\mathbf{x}_{2}\right)\right)=\mathrm{d}\left(\mathbf{x}_{1}^{*}, \mathbf{x}_{2}^{*}\right)$. 
+
+Kurzgesagt, die ilr-Transformation $operatorname{ilr}: S^{D} \rightarrow \mathbb{R}^{D-1}$ ist eine isometrische Abbildung zwischen Vektorräumen, die die Aitchison Geometrie auf den reelen Raum abbildet. In diesem 
+Sinne gleicht sie der clr-Transformation, unterscheidet sich jedoch in der Zahl der Dimensionen.
+Mit Hilfe der Matrix $\boldsymbol{\Psi}$ lässt sich außerdem eine direkte Beziehung zwischen den ilr-Koordinaten in $\boldsymbol{x}^*$ und 
+den clr-Koefficenten aus der clr-Transformation ableiten:
+$$
+\mathbf{x}^{*}=\operatorname{ilr}(\mathbf{x})=\operatorname{clr}(\mathbf{x}) \cdot \boldsymbol{\Psi}^{\top}=\ln (\mathbf{x}) \cdot \boldsymbol{\Psi}^{\top}, \tag{X}
+$$
+
+An dieser Stelle ist noch zu erwähnen, dass auch Hauptkomponenten orthogonale Basen sind, die nach dem Prinzip ausgerichtet sind die Richtung der maximalen Variablilität wiederzugeben (Pawlowsky-Glahn et al. 2015, p. 38).
+
+
+## Balances
+
+Balances bauen auf einer weiteren spezifische Form von orthonormalen Basen auf, die das vorrangige Ziel haben strukturelle Zusammenhänge der Kompositionsteile zu erfassen und damit eine direkte Interpretation 
+ihrer zugehörigen Koordinaten bzw. den *Balances* ermöglichen. Die Basisvektoren werden in diesem Fall *balancing elements* genannt und können theoretisch und empirisch 
+fundierte Zusammenhänge der Kompositionsteile untereinander repräsentieren. 
+
+Als letztes relevantes Prinzip zur Einführung mit der Arbeit an Kompositionsdaten, soll an dieser Stelle noch das *Prinzip der Arbeit in Koordinaten* erwähnt werden. Wie bereits 
+ersichtlich wird von Koordinaten in Zusammenhang mit einem System orthonormalen Basen gesprochen. In diesem Sinne wird im Zusammenhang mit der clr-Transformation von **clr-Koefficienten** 
+und bei der ilr-Transformation, die auf der Anwendung von orthonormalen Basen beruht, von ilr-Koordinaten gesprochen.
+Die Grundidee hinter dem Prinzip ist, dass Koordinaten mit einer orthonormalen Basis bestimmten standardisierten Operationsregeln gehorchen. Dazu gehören insbesondere die geteilten 
+Eigenschaften von Perturbation und Addition bzw. von Powering und Multiplikation: 
+$$
+\operatorname{ilr}(\mathbf{x} \oplus \mathbf{y})=\operatorname{ilr}(\mathbf{x})+i \operatorname{lr}(\mathbf{y})=\mathbf{x}^{*}+\mathbf{y}^{*}, \quad \operatorname{ilr}(\alpha \odot \mathbf{x})=\alpha \cdot \operatorname{ilr}(\mathbf{x})=\alpha \cdot \mathbf{x}^{*} \tag{X}
+$$
+
+Allgemein lässt sich formulieren, dass bei der Analyse von Kompositionsdaten Ergebnisse, die mit den ursprünglichen Kompositionen und der Aitchison Geomtry und Ergebnisse, die auf 
+den ilr-Koordinaten unter der Nutzen der normalen euklidischen Geometry beruhen, identisch sind. Dies resultiert in einer "Dualität" der Representation von Kompositionsdaten, die 
+sowohl auf dem Simplex als auch in ihren Koordinaten dargestellt und analysiert werden können (Pawlowsky-Glahn et al. 2015, p.43).
+
+In der Regel ist der Simplex geeignet um die Daten im Kontext der real beobachteten Kompositionen zu interpretieren, während (ilr) Koordinaten mit einer beliebigen orthonormalen Basis 
+insbesondere für die Anwendung multivariater Methoden geeignet sind.
+In weiteren Verlauf dieser Arbeit werden beide Varianten ausgiebig genutzt.
+
+## Normality on the simplex
 
 ## Descriptive statistics 
 
