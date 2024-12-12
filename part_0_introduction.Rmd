@@ -241,8 +241,21 @@ Auch wenn die von Aithcison eingeführten clr-Koefficienten einige Vorteile biet
 Auch wenn die clr-Transformation im Sinne von Aitchison einige Verbesserungen mit sich bringt, so leidet sie doch auch unter einigen Nachteilen, zum 
 Beispiel, dass es sich bei clr-transformierten Koordinaten nicht um orthonormale Koordinaten handelt. Zwar bietet die clr-Transformation die Möglichkeit, 
 Koordinaten auf dem Simplex in den reelen Raum zu übersetzen, sie unterliegen jedoch nach wie vor der Beschränkung $\sum_{j=1}^D \operatorname{clr}(\boldsymbol{x}_j) = 0$.
-Allerdings lässt sich eine orthonormale Basis des Simplex relativ einfach mit Hilfe der Gram-Schmidt Prozedur konstruieren (Egozcue 2003). 
+Allerdings lässt sich eine orthonormale Basis des Simplex relativ einfach mit Hilfe der Gram-Schmidt Prozedere konstruieren (Egozcue 2003). Damit lassen sich 
+unendlich viele orthonormale Basen konstruieren. Um ihre allgemeinen Eigenschaften zu untersuchen, müssen wir zunächst folgende orthonormale Basis definieren:
+**Definition 9: contrast matrix**
+TODO: transform this definition into the format of Grevens paper
+Let $\left\{\mathbf{e}_{1}, \mathbf{e}_{2}, \ldots, \mathbf{e}_{D-1}\right\}$ be an orthonormal basis of the simplex $\mathcal{S}^{D}$ and consider the 
+$(D-1, D)$-matrix $\boldsymbol{\Psi}=\left[\psi_{i j}\right]$ in which rows are the 
+$\boldsymbol{\Psi}_{i}=\operatorname{clr}\left(\mathbf{e}_{i}\right), i=1,2, \ldots$, $D-1$. This matrix is called contrast matrix associated with the 
+orthonormal basis $\left\{\mathbf{e}_{1}, \mathbf{e}_{2}, \ldots, \mathbf{e}_{D-1}\right\}$. Each row is called a (log)contrast (Pawloswky-Glahn et al. 2015, p. 36).
 
+Für eine orthonormale Basis gilt, dass das Aitchison inner product zweier Basiskomponenten dem Kronecker-Delta entspricht. Aufgrund der in Kapitel [...] 
+aufgeführten Eigenschaften der clr-Transformation, ist auch klar, dass sich dieser Zusammenhang auf das standard Skalarprodukt der clr-transformierten 
+Vektoren überträgt:
+$$
+\left\langle\mathbf{e}_{j}, \mathbf{e}_{k}\right\rangle_{a}=\left\langle\operatorname{clr}\left(\mathbf{e}_{j}\right), \operatorname{clr}\left(\mathbf{e}_{k}\right)\right\rangle=\delta_{j k}
+$$.
 
 
 ## Descriptive statistics 
