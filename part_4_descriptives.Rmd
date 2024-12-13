@@ -13,6 +13,7 @@ library(targets)
 library(compositions)
 library(dplyr)
 library(ggplot2)
+library(gridExtra)
 ```
 
 
@@ -59,6 +60,15 @@ data_alr <- tar_read(data_kl15_comp_alr) %>% as.data.frame()
 
 variables <- colnames(data_comp)
 ```
+
+One fact that qualifies the *rescaled* kl15 dataset as a sparsely observed dataset is the high variation in the sum of counts that leads to compositional parts with a very low number
+of counts.
+
+```{r counts summary, eval=TRUE}
+summary(data)
+
+```
+
 
 ```{r plot line sum, eval=TRUE}
 ggplot(data, aes(x = age, y = aggregate)) +
@@ -240,6 +250,7 @@ want to preserve some information about the time dimension.
 
 
 ```{r PCA exploratory 3, eval=TRUE}
+x <- data_acomp
 opar <- par(mar=c(1,1,1,1))
 dots = rep(".", times=nrow(x))
 biplot(pcx, choices = 1:2, xlabs=dots)
@@ -311,7 +322,7 @@ comprel1d = function(data, fixedvar){
   unclass(data)/data[fixedvar]
 }
 
-pivot <- "Al_cts"
+pivot <- "Br_cts"
 
 fk = pcx$scores[,1]
 vd = pcx$Loadings[1,]*pcx$sdev[1]
@@ -343,3 +354,49 @@ labels=colnames(x), pos=2)
 ```
 
 For Bromium the evolution plots display a clear compositional relationship between Br and most other elements, i.e. an increase in Bromium leads to a relative decline in all other parts.
+
+
+## Normality Check
+
+Um die gewünschten Prinzipien von Kompositionsanalyse (See chapter []) zu gewährleisten, sollten die Kompositionen in ihrer Koordinatenrepräsentation untersucht 
+werden. Eine populäre Verteilung für Kompositionsdaten, die Dirichlet-Verteilung leidet z.B. darunter, dass sie nicht scale invariant ist. Um demenstprechende 
+Nachteile zu vermeiden, ist es sinnvoll die Verteilung von Kompositionsdaten auf ihren orthonormalen Koordinaten zu betrachten (Filzmoser et al. 2019, p. 86).  
+Eine Möglichkeit ist es, für die orthonormalen Koordinaten in $mathcal{R}^{D-1}$ eine multivariate Normalveretilung anzunehmen. 
+Da es unendlich viele Möglichkeiten der Basisrepräsentation gibt, ist es wichtig zu betonen dass die Annahme von Normalität für einen Bestimmten Vektor von 
+ilr Koordinaten gilt, diese Annahme sich auf alle Varianten der orthonormalen Koordinaten überträgt (Filzmoser et al. 2019, p. 87).
+Hierdrin können wir einen weiteren Anwendungsfall für die Nutzung von ilr-Koordinaten sehen, die einen passenden Grundraum für das Testen 
+auf bestimmte Verteilungen bieten, ohne dass die Daten weiteren vorgestellten Annahmen unterliegen und gleichzeitig den Prinzipien der Kompositionsanalyse folgen (Filzmoser et al. 2019, p. 87).  
+
+Da jegliche beliebige orthonormale Basis für die Repräsentation der ilr-Koordinaten gewählt werden kann, ist es üblich die SVD zu nutzen, um ein 
+unzweideutige Lösung zu erhalten, die nicht abhängig von der Wahl der Basis ist (Filzmoser et al. 2019, p. 87). TODO: test It
+$$
+\operatorname{clr}\left(\mathbf{X}^{*}\right)=\mathbf{U} \cdot \mathbf{D} \cdot \mathbf{V}^{t}
+$$
+Wenn wir die Scores in $\mathbf{U}$ als normalverteilt annehmen, folgt aus der SVD, dass die **zentrierten** ilr-Koordinaten einer (D-1)-standard 
+Normalverteilung mit unabhängigen Komponenten folgen. 
+TODO: Test mit Q-Q Plot
+
+```{r test normality, eval=TRUE, fig.width=12, fig.height=5}
+x_ilr <- tar_read(data_kl15_comp_ilr)
+x_ilr_sc <- scale(x_ilr, center=TRUE, scale=FALSE)
+
+
+
+
+create_qq_plot <- function(data, var_name) {
+  ggplot(data.frame(x = data), aes(sample = x)) +
+    stat_qq() +
+    stat_qq_line() +
+    ggtitle(paste("Q-Q Plot:", var_name)) +
+    theme_minimal()
+}
+
+# Q-Q Plots für alle Variablen erstellen
+qq_plots <- lapply(1:ncol(x_ilr_sc), function(i) {
+  create_qq_plot(x_ilr_sc[,i], colnames(x_ilr_sc)[i])
+})
+
+grid.arrange(grobs = qq_plots, ncol = 4)
+```
+
+

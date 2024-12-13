@@ -204,7 +204,7 @@ generatives System zu identifizieren, indem die kanonische Basis exponentiert wi
 $$
 \mathbf{w}_{j}=\mathcal{C}\left(\exp \left(\mathbf{e}_{j}\right)\right)=\mathcal{C}[1,1, \ldots, e, \ldots, 1], \quad j=1,2, \ldots, D . \tag{X}
 $$.
-Dieses generative System kann genutzt werden, um den Kompositionsvektor als Perturbation seiner logarithmierten Kompositionsteile zu beschreiben (Cp. Pawlowsky-Glahn et al 2015, p. 34): 
+Dieses generative System kann genutzt werden, um den Kompositionsvektor als perturbation-linear Kombination seiner logarithmierten Kompositionsteile zu beschreiben (Cp. Pawlowsky-Glahn et al 2015, p. 34): 
 $$
 \mathbf{x} & =\bigoplus_{j=1}^{D} \ln \frac{x_{j}}{\mathrm{~g}_{m}(\mathbf{x})} \odot \mathbf{w}_{j} 
 & =\ln \frac{x_{1}}{\mathrm{~g}_{m}(\mathbf{x})} \odot[e, 1, \ldots, 1] \oplus \ldots \oplus \ln \frac{x_{D}}{\mathrm{~g}_{m}(\mathbf{x})} \odot[1,1, \ldots, e], \tag{X}

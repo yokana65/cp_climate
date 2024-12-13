@@ -197,6 +197,7 @@ grid.arrange(plot1,plot2,plot3,plot4, ncol = 4)
 The scores for the principal component $k$ can be easily computed with 
 $\boldsymbol{z}_i = \boldsymbol{\varphi}_k^{\top} (\operatorname{clr}(\boldsymbol{x}_i) - \boldsymbol{\mu})$
 ```{r scores, eval=TRUE, warning=FALSE, fig.width=12, fig.height=5}
+# TODO: make a package function
 calculate_pc_scores <- function(data, pca, pc_number) {
     # Center the data
     centered_data <- scale(data, center = TRUE, scale = FALSE)
@@ -522,7 +523,7 @@ TODO: Überprüfen der Skalierung (aktuell: FALSE) => Scaling works differently 
 (block_length <- which(acf_result$acf < 0.3)[1])
 
 # Test verschiedene Blocklängen
-lengths <- c(20, 40, 60, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260)
+lengths <- c(20, 40, 50, 60, 70, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260)
 results <- lapply(lengths, function(len) {
   block_bootstrap_pca(x_clr, 
                      block_length = len,

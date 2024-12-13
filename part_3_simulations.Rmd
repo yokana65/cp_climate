@@ -18,7 +18,7 @@ library(ggplot2)
 library(future.apply)
 library(robCompositions)
 library(gridExtra)
-
+library(ggnewscale)
 
 source("scripts/helper_functions.R")
 
@@ -27,7 +27,7 @@ source("scripts/helper_functions.R")
 This chapter evaluates the performance of the MCEM algorithm introduced in the chapter [...]. The evaluation follows a two-step simulation procedure. First, the latent 
 compositions $\boldsymbol{\pi_i}$ are simulated for 100 observation. The compositions are the backtransformations of the principal component 
 decomposition of the clr-coordinates $\boldsymbol{\rho_i}  \stackrel{i.i.d.}{\sim} \mathcal{N}(\boldsymbol{\mu}, \boldsymbol{K})$. Secondly, realistic count observations are drawn 
-from the associated multinomial distribution $\boldsymbol{x}_{i} {\sim} \text{Multinom}(m, \boldsymbol{\pi}_{i})$ where $m$ denotes a fixed sample size for all observations 
+from the associated multinomial distribution $\boldsymbol{X}_{i} {\sim} \text{Multinom}(m, \boldsymbol{\pi}_{i})$ where $m$ denotes a fixed sample size for all observations 
 $i=1,\ldots,100$.  
 The simulated dataset is then used to evaluate the performance of the MCEM algorithm. That is done by evaluating the MCEM algorithm's capability to identify the 
 true mean vector $\boldsymbol{\mu}$ and covariance structure $\boldsymbol{K}$ of the latent compositions. For this purpose, the empirical mean vector is compared to the sample mean and the empirical 
@@ -54,7 +54,7 @@ fourth compositional part $\boldsymbol{\varphi}_{2} = \left(\sqrt{\frac{1}{2}}, 
 To further evaluate the algorithm's performance, the sample size $m_i$ is changed in three steps. Starting with a very small sample size of 20, the size is doubled in every step. 
 This approach allows to assess the effectiveness of the MCEM algorithm for count compositions with small sample sizes. The conducted simulation study contains 50 random runs for every 
 sample size setting.
-
+The distances between the oracle estimates for mean and covariance and each method can be computed with the L2-norm and the Frobenius norm.   
 
 ```{r latent parameters front, eval=TRUE}
 set_1 <- c("#e0ecf4", "#9ebcda", "#8856a7")
@@ -67,10 +67,9 @@ eigenvalues <- c(0.6, 0.3)
 mean_2 <- c(0, 1, 0.5, -1, -0.5) # those are clr-coordinates
 
 eigenvalues_2 <- c(0.6, 0.3, 0, 0)
-V_2 <- cbind(c(0, 1, -1, 0, 0), c(-1, 0, 0, 1, 0), c(0, 0, 0, 0, 0), c(0, 0, 0, 0, 0))
+V_2 <- cbind(c(0, sqrt(1/2), -sqrt(1/2), 0, 0), c(-sqrt(1/2), 0, 0, sqrt(1/2), 0), c(0, 0, 0, 0, 0), c(0, 0, 0, 0, 0))
 true_sigma_2 <- V_2 %*% diag(eigenvalues_2) %*% t(V_2) 
 
-true_sigma_2
 true_v_2 <- mean_2
 ```
 
@@ -79,10 +78,10 @@ true_v_2 <- mean_2
 ```{r evaluation mean vector front, eval=TRUE}
 
 simulation_data_list_2 <- list(
-  tar_read(sim_comp_2_smi_nSim),
-  tar_read(sim_comp_2_smi_nSim_60),
-  tar_read(sim_comp_2_smi_nSim_120),
-  tar_read(sim_comp_2_smi_nSim_120_300)
+  tar_read(sim_comp_2_smi_nSim_20),
+  tar_read(sim_comp_2_smi_nSim_40),
+  tar_read(sim_comp_2_smi_nSim_80),
+  tar_read(sim_comp_2_smi_nSim_160)
 )
 
 n_simulations <- length(simulation_data_list_2[[1]])
@@ -104,10 +103,10 @@ for(j in 1:4) {
 }
 
 simulation_results_list_2 <- list(
-  tar_read(pca_sim1_ilr_StdPara_smi_nSim_2),
-  tar_read(pca_sim1_ilr_StdPara_smi_nSim_2_60),
-  tar_read(pca_sim1_ilr_StdPara_smi_nSim_2_120),
-  tar_read(pca_sim1_ilr_StdPara_smi_nSim_2_120_300)
+  tar_read(pca_sim1_ilr_StdPara_smi_nSim_2_20),
+  tar_read(pca_sim1_ilr_StdPara_smi_nSim_2_40),
+  tar_read(pca_sim1_ilr_StdPara_smi_nSim_2_80),
+  tar_read(pca_sim1_ilr_StdPara_smi_nSim_2_160)
 )
 
 diff_mean_2 <- lapply(1:4, function(x) list(n_simulations))
@@ -139,7 +138,7 @@ diff_df_2 <- data.frame(
     # unlist(diff_mean_rob_clr_all[[3]]), unlist(diff_mean_rob_clr_all[[4]])
   ),
   method = factor(rep(c("MCEM", "sample mean"), each = 4 * n_simulations)),
-  size = factor(rep(rep(c("30", "60", "120", "300 observations"), 
+  size = factor(rep(rep(c("20", "40", "80", "160"), 
                          each = n_simulations), 2))
 )
 
@@ -148,7 +147,7 @@ diff_df_2$method <- factor(diff_df_2$method,
                         levels = c("MCEM", "sample mean"))
 
 diff_df_2$size <- factor(diff_df_2$size, 
-                        levels = c("30", "60", "120", "300 observations"))
+                        levels = c("20", "40", "80", "160"))
 
 ```
 
@@ -188,7 +187,7 @@ sigma_diff_df_2 <- data.frame(
     unlist(sigma_distances_rob_clr_2[[3]]), unlist(sigma_distances_rob_clr_2[[4]])
   ),
   method = factor(rep(c("MCEM", "classic", "robust"), each = 4 * n_simulations)),
-  size = factor(rep(rep(c("30", "60", "120", "300 observations"), 
+  size = factor(rep(rep(c("20", "40", "80", "160"), 
                          each = n_simulations), 3))
 )
 
@@ -197,7 +196,7 @@ sigma_diff_df_2$method <- factor(sigma_diff_df_2$method,
                         levels = c("MCEM", "classic", "robust"))
 
 sigma_diff_df_2$size <- factor(sigma_diff_df_2$size, 
-                        levels = c("30", "60", "120", "300 observations"))
+                        levels = c("20", "40", "80", "160"))
 
 plot1 <- ggplot(diff_df_2, aes(x = size, y = differences, fill = method)) +
   geom_boxplot() +
@@ -237,7 +236,446 @@ die klassische Anwendung multivariater Methoden dar (TODO: ausführen). Da der M
 vermieden (TODO: besser erklären oder raus).   -->
 
 
-TODO: Vergleich von eigenvalues und totalVariance (Vgl. Filzmoser et al. 2019, p. 133)
+<!-- TODO: Vergleich von eigenvalues und totalVariance (Vgl. Filzmoser et al. 2019, p. 133) -->
+
+The simple simulation study already provides several valuable insights. First, it is evident that the quality of results improves with increasing sample size. The MCEM 
+method shows on average, a clear improvement compared to both classical and robust PCA. Furthermore it is much better in determining the true structure of the mean vectors 
+for samples with small sample sizes. In addition, looking at the distances of the covariance matrices, the difference between the methods is particularly pronounced in 
+the settings with small sample sizes, but still holds for moderate samples sizes. This supports the suitability of the MCEM method for datasets with small sample sizes.  
+Interestingly, the opposite effect is observed when comparing classical PCA with its robust variant. The robust computation of PCA offers some advantages at moderate sample 
+sizes, while for very small samole sizes, high variance and worse mean estimates are observed. This aligns with the expectation that robust estimation of the covariance 
+structure requires a certain number of samples to effectively identify outliers.
+
+Following, the first two principal components are display for every method. 
+
+```{r plot_pca_results, eval=TRUE}
+plot_pca_rotation_sim <- function(rotation_list1, rotation_list2, rotation_list3, scale = 1, main = "PCA Comparison") {
+    # Create empty dataframe for all rotations
+    df_all <- data.frame()
+    
+    df_oracle <- data.frame(
+      x = c(0, sqrt(1/2), -sqrt(1/2), 0, 0),
+      y = c(-sqrt(1/2), 0, 0, sqrt(1/2), 0),
+      method = "oracle PC",
+      simulation = 1
+    )
+    # Process each simulation
+    for(i in seq_along(rotation_list1)) {
+        # Create data frames for each rotation
+        df1 <- data.frame(
+            x = rotation_list1[[i]][,1] * scale, 
+            y = rotation_list1[[i]][,2] * scale, 
+            method = "MCEM",
+            simulation = i
+        )
+        
+        df2 <- data.frame(
+            x = rotation_list2[[i]][,1] * scale, 
+            y = rotation_list2[[i]][,2] * scale, 
+            method = "classic PCA",
+            simulation = i
+        )
+        
+        df3 <- data.frame(
+            x = rotation_list3[[i]][,1] * scale, 
+            y = rotation_list3[[i]][,2] * scale, 
+            method = "robust PCA",
+            simulation = i
+        )
+  
+        df_all <- rbind(df_all, df1, df2, df3)
+    }
+    
+    df_all <- rbind(df_all, df_oracle)
+    
+    # Add labels
+    labels <- if (!is.null(rownames(rotation_list1[[1]]))) {
+        rownames(rotation_list1[[1]])
+    } else {
+        seq_len(nrow(rotation_list1[[1]]))
+    }
+    
+    df_all$method <- factor(df_all$method, 
+                           levels = c("MCEM", "classic PCA", "robust PCA", "oracle PC"))
+    
+    # Calculate mean directions for 5 components
+    mean_directions <- do.call(rbind, lapply(unique(df_all$method[1:3]), function(m) {
+        # Get all simulations for this method
+        method_data <- df_all[df_all$method == m, ]
+
+        # Reshape to get components together (every 5 rows belong to one simulation)
+        comp_x <- matrix(method_data$x, nrow = 5)
+        comp_y <- matrix(method_data$y, nrow = 5)
+
+        # Calculate mean for each component
+        mean_x <- rowMeans(comp_x)
+        mean_y <- rowMeans(comp_y)
+
+        data.frame(
+            x = mean_x,
+            y = mean_y,
+            method = m
+        )
+    }))
+
+    ggplot() +
+        geom_segment(data = df_all,
+                    aes(x = 0, y = 0, xend = x, yend = y, 
+                        color = method, group = simulation),
+                    arrow = arrow(length = unit(0.2, "cm")),
+                    alpha = 0.3, linewidth = 0.7) +
+        # Add mean directions
+        geom_segment(data = mean_directions,
+                    aes(x = 0, y = 0, xend = x, yend = y, color = method),
+                    arrow = arrow(length = unit(0.2, "cm")),
+                    linewidth = 0.7) +
+        geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+        geom_vline(xintercept = 0, linetype = "dashed", color = "gray") +
+        scale_color_manual(values = c("#8d450e", "#9ebcda", "#8856a7", "black"),
+                          guide = "none") +
+        new_scale_color() +
+        scale_color_manual(values = c("#4a0000", "#00008B", "#4B0082")) +
+        labs(title = main,
+             x = "PC1",
+             y = "PC2") +
+        theme_grey() +
+        theme(legend.position = "top")
+}
+
+mcem_rotation_list <- list(n_simulations)
+classic_rotation_list <- list(n_simulations)
+robust_rotation_list <- list(n_simulations)
+
+mcem_rotation_list <- lapply(seq_along(simulation_results_list_2[[2]]), function(j) {
+  t(basis_matrix) %*% simulation_results_list_2[[2]][[j]]$pca$rotation
+})
+
+classic_rotation_list <- lapply(seq_along(pca_clr_std_2[[2]]), function(j) {
+    pca_clr_std_2[[2]][[j]]$rotation
+})
+
+robust_rotation_list <- lapply(seq_along(pca_clr_rob_2[[2]]), function(j) {
+    pca_clr_rob_2[[2]][[j]]$loadings
+})
+
+plot_pca_rotation_sim(mcem_rotation_list,
+                      classic_rotation_list, 
+                      robust_rotation_list, 
+                      scale = 1, 
+                      main =  expression(paste("PCA comparison for ", m[i], " = 40")))
+
+```
+
+The thicker lines represent the means of the principal components over all simulations. Interestingly, it can be seen that the main advantage of the 
+MCEM method is not the direction of the components but a better capability to catch the correct length of the respective vector. In fact it seems that 
+the classical Method underestimates the variation in the second principal components and the robust method overestimates it.
+
+```{r mean directions, eval=TRUE}
+rotation_list1 <- mcem_rotation_list
+rotation_list2 <- classic_rotation_list
+rotation_list3 <- robust_rotation_list
+
+scale <- 1
+
+    df_all <- data.frame()
+    
+    # Process each simulation
+    for(i in seq_along(rotation_list1)) {
+        # Create data frames for each rotation
+        df1 <- data.frame(
+            x = rotation_list1[[i]][,1] * scale, 
+            y = rotation_list1[[i]][,2] * scale, 
+            method = "MCEM",
+            simulation = i
+        )
+        
+        df2 <- data.frame(
+            x = rotation_list2[[i]][,1] * scale, 
+            y = rotation_list2[[i]][,2] * scale, 
+            method = "classic PCA",
+            simulation = i
+        )
+        
+        df3 <- data.frame(
+            x = rotation_list3[[i]][,1] * scale, 
+            y = rotation_list3[[i]][,2] * scale, 
+            method = "robust PCA",
+            simulation = i
+        )
+        
+        df_all <- rbind(df_all, df1, df2, df3)
+    }
+    
+    # Add labels
+    labels <- if (!is.null(rownames(rotation_list1[[1]]))) {
+        rownames(rotation_list1[[1]])
+    } else {
+        seq_len(nrow(rotation_list1[[1]]))
+    }
+    
+    df_all$method <- factor(df_all$method, 
+                           levels = c("MCEM", "classic PCA", "robust PCA"))
+    
+    # Calculate mean directions for 5 components
+    mean_directions <- do.call(rbind, lapply(unique(df_all$method), function(m) {
+        # Get all simulations for this method
+        method_data <- df_all[df_all$method == m, ]
+
+        # Reshape to get components together (every 5 rows belong to one simulation)
+        comp_x <- matrix(method_data$x, nrow = 5)
+        comp_y <- matrix(method_data$y, nrow = 5)
+
+        # Calculate mean for each component
+        mean_x <- rowMeans(comp_x)
+        mean_y <- rowMeans(comp_y)
+
+        data.frame(
+            pc_1 = mean_x,
+            pc_2 = mean_y,
+            method = m
+        )
+    }))
+
+mean_directions
+```
+
+To further investigate 
+that, the screeplots for the Simulations can be plotted. 
+
+```{r summary screeplot, eval=TRUE}
+normalize <- function(v) {
+    v / sqrt(sum(v^2))
+}
+# Create dataframe with eigenvalues from all simulations
+scree_df <- data.frame()
+for(i in seq_along(simulation_results_list_2[[1]])) {
+  # MCEM eigenvalues
+  mcem_eig <- simulation_results_list_2[[1]][[i]]$pca$sdev^2
+  mcem_eig <- normalize(mcem_eig)
+  
+  # Classic PCA eigenvalues
+  classic_eig <-  pca_clr_std_2[[1]][[i]]$sdev^2
+  classic_eig <- normalize(classic_eig)
+  
+  # Robust PCA eigenvalues
+  robust_eig <- pca_clr_rob_2[[1]][[i]]$eigenvalues
+  robust_eig <- normalize(robust_eig)
+  
+  scree_df <- rbind(scree_df, 
+                    data.frame(eigenvalue = c(mcem_eig, classic_eig[1:4], robust_eig),
+                             component = rep(1:length(mcem_eig), 3),
+                             method = rep(c("MCEM", "classic PCA", "robust PCA"), 
+                                       each = length(mcem_eig)),
+                             simulation = i))
+}
+
+scree_df$method <- factor(scree_df$method, 
+                           levels = c("MCEM", "classic PCA", "robust PCA"))
+# Create screeplot
+ggplot(scree_df, aes(x = component, y = eigenvalue, color = method, group = interaction(simulation, method))) +
+    geom_line(alpha = 0.7) +
+    geom_point(alpha = 0.7) +
+    # stat_summary(aes(group = method), fun = mean, geom = "line", size = 1.2) +
+    scale_color_manual(values = c("#8d450e", "#9ebcda", "#8856a7")) +
+    labs(x = "Principal Component",
+         y = "Eigenvalue",
+         title = "Screeplot Comparison") +
+    theme_grey() +
+    theme(legend.position = "top")
+```
+
+And the covariance structure for the oracle, the MCEM estimate and the classic and robust PCA estimate.
+TODO: plus graphic with the calculated mean structure?
+
+```{r comparison covariance structure, eval=TRUE}
+true_sigma_2
+
+```
+
+Following a more complex setting with 13 compositional parts and 4 components is shown for each method. 
+
+**The main deviance to the other settings is the sample size $m_i$**:
+Is is sampled from a density distribution with:
+```{r density distribution front, eval=TRUE}
+data <- tar_read(data_kl15)
+data <- data * 0.01
+density_estimate <- density(data$aggregate)
+plot(density_estimate)
+```
+
+The mean vector is set to `c(-1.257, -1.741, 1.713, -0.6, 1.07, -3.624, -1.254, 1.05, -0.9, 0.505, 4.0, -0.49)` 
+and there are 4 components. 
+
+```{r latent parameters front 2, eval=TRUE}
+n_simulations <- 20
+
+D <- 13
+basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+basis_matrix <- do.call(rbind, basis_vectors)
+
+eigenvalues_8 = c(0.5, 0.2, 0.12, 0.08)
+mean_8 = c(-1.257, -1.741, 1.713, -0.6,
+             1.07, -3.624, -1.254, 1.05, -0.9,
+             0.505, 4.0, -0.49, 1.532)
+
+pc_1 <- c(0.7, 0, 0, -0.2, 0, 0, -0.2, -0.2, 0.4, -0.1, 0, -0.2, -0.2) / sqrt(0.7^2 + 3*0.2^2 + 0.4^2 + 0.1^2)
+pc_2 <- c(0.5, 0, -0.4, 0.4, 0, 0, 0, 0, 0, 0, -0.5, 0, 0) / sqrt(0.5^2 + 0.4^2 + 0.4^2 + 0.5^2)
+pc_3 <- c(0, 0, 0.3, 0, 0.4, 0, 0, 0, -0.7, 0, 0, 0, 0) / sqrt(0.3^2 + 0.4^2 + 0.7^2)
+pc_4 <- c(0.3, -0.2, 0, -0.3, 0.6, 0.3, 0, 0, -0.4, 0, 0, 0, -0.3)  / sqrt(0.3^2 + 0.2^2 + 0.3^2 + 0.6^2 + 0.3^2 + 0.4^2 + 0.3^2)
+
+V_8 <- cbind(pc_1, pc_2, pc_3, pc_4)
+true_sigma_8 <- V_8 %*% diag(eigenvalues_8) %*% t(V_8) 
+
+true_sigma_8
+
+(true_v_8 <- mean_8)
+```
+
+```{r evaluation mean vector front 2, eval=TRUE}
+
+simulation_data_list_8 <- list(
+  tar_read(sim_6_01_n100),
+  tar_read(sim_6_01_n200),
+  tar_read(sim_6_01_n400),
+  tar_read(sim_6_01_n800)
+)
+
+pca_clr_rob_8 <- lapply(1:4, function(x) list(n_simulations))
+pca_clr_std_8 <- lapply(1:4, function(x) list(n_simulations))
+
+# calculate standard PCA for each simulation
+for(j in 1:4) {
+  simulation_data <- simulation_data_list_8[[j]]
+  for(i in 1:length(simulation_data)) {
+    sim <- simulation_data[[i]]
+    x_data_list <- sim$x_data
+    x_data <- do.call(rbind, x_data_list)
+    
+    pca_clr_std_8[[j]][[i]] <- prcomp(clr(x_data))
+    pca_clr_rob_8[[j]][[i]] <- pcaCoDa(x_data, method = "robust")
+  }
+}
+
+simulation_results_list_8 <- list(
+  tar_read(pca_6_01_n100),
+  tar_read(pca_6_01_n200),
+  tar_read(pca_6_01_n400),
+  tar_read(pca_6_01_n800)
+)
+
+diff_mean_8 <- lapply(1:4, function(x) list(n_simulations))
+diff_mean_std_clr_8 <- lapply(1:4, function(x) list(n_simulations))
+diff_mean_rob_clr_8 <- lapply(1:4, function(x) list(n_simulations))
+
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    diff_mean_8[[j]][[i]] <- sqrt(sum((true_v_8 - t(basis_matrix) %*% simulation_results_list_8[[j]][[i]]$pca$center)^2))
+    diff_mean_std_clr_8[[j]][[i]] <- sqrt(sum((true_v_8 - pca_clr_std_8[[j]][[i]]$center)^2))
+    # diff_mean_rob_clr_8[[j]][[i]] <- sqrt(sum((true_v_8 - pca_clr_rob_8[[j]][[i]]$center)^2))
+  }
+}
+diff_mean = diff_mean_8
+diff_mean_std_clr = diff_mean_std_clr_8
+# diff_mean_rob_clr = diff_mean_rob_clr_8
+
+```
+
+Let's visualize the results with boxplots for each case.
+
+```{r boxplot simulation front 2, eval=TRUE}
+# Daten in einen DataFrame zusammenführen
+diff_df_8 <- data.frame(
+  differences = c(
+    unlist(diff_mean_8[[1]]), unlist(diff_mean_8[[2]]), 
+    unlist(diff_mean_8[[3]]), unlist(diff_mean_8[[4]]),
+    unlist(diff_mean_std_clr_8[[1]]), unlist(diff_mean_std_clr_8[[2]]),
+    unlist(diff_mean_std_clr_8[[3]]), unlist(diff_mean_std_clr_8[[4]])
+    # unlist(diff_mean_rob_clr_all[[1]]), unlist(diff_mean_rob_clr_all[[2]]),
+    # unlist(diff_mean_rob_clr_all[[3]]), unlist(diff_mean_rob_clr_all[[4]])
+  ),
+  method = factor(rep(c("MCEM", "sample mean"), each = 4 * n_simulations)),
+  size = factor(rep(rep(c("100", "200", "400", "800"), 
+                         each = n_simulations), 2))
+)
+
+diff_df_8$method <- factor(diff_df_8$method, 
+                        levels = c("MCEM", "sample mean"))
+
+diff_df_8$size <- factor(diff_df_8$size, 
+                        levels = c("100", "200", "400", "800"))
+
+ggplot(diff_df_8, aes(x = size, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_grey() +
+  scale_fill_manual(values = set_1) + 
+  labs(y = "dist mean",
+       x = "Observations",
+       fill = "method",
+       title = "Distance of true mean to estimated mean: Setting 6") +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5, size = 10))
+```
+
+
+```{r evaluation covariance front 2, eval=TRUE}
+
+sigma_distances_8 <- lapply(1:4, function(x) list(n_simulations))
+sigma_distances_std_clr_8 <- lapply(1:4, function(x) list(n_simulations))
+sigma_distances_rob_clr_8 <- lapply(1:4, function(x) list(n_simulations))
+
+
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    sigma_hat_mcem <- with(simulation_results_list_8[[j]][[i]]$pca,
+      t(basis_matrix) %*% rotation %*% diag(sdev^2) %*% t(rotation) %*% basis_matrix)
+    sigma_distances_8[[j]][[i]] <- norm(true_sigma_8 - sigma_hat_mcem, type = "F")
+    
+    sigma_hat_clr <- with(pca_clr_std_8[[j]][[i]],
+      rotation %*% diag(sdev^2) %*% t(rotation))
+    sigma_distances_std_clr_8[[j]][[i]] <- norm(true_sigma_8 - sigma_hat_clr, type = "F")
+    
+    sigma_hat_rob <- with(pca_clr_rob_8[[j]][[i]],
+    loadings %*% diag(eigenvalues) %*% t(loadings))
+    sigma_distances_rob_clr_8[[j]][[i]] <- norm(true_sigma_8 - sigma_hat_rob, type = "F")
+  }
+}
+
+```
+
+```{r visualize covariances front 2, eval=TRUE}
+sigma_diff_df_8 <- data.frame(
+  differences = c(
+    unlist(sigma_distances_8[[1]]), unlist(sigma_distances_8[[2]]), 
+    unlist(sigma_distances_8[[3]]), unlist(sigma_distances_8[[4]]),
+    unlist(sigma_distances_std_clr_8[[1]]), unlist(sigma_distances_std_clr_8[[2]]),
+    unlist(sigma_distances_std_clr_8[[3]]), unlist(sigma_distances_std_clr_8[[4]]),
+    unlist(sigma_distances_rob_clr_8[[1]]), unlist(sigma_distances_rob_clr_8[[2]]),
+    unlist(sigma_distances_rob_clr_8[[3]]), unlist(sigma_distances_rob_clr_8[[4]])
+  ),
+  method = factor(rep(c("MCEM", "classic", "robust"), each = 4 * n_simulations)),
+  size = factor(rep(rep(c("100", "200", "400", "800"), 
+                         each = n_simulations), 3))
+)
+
+# define order of sequence
+sigma_diff_df_8$method <- factor(sigma_diff_df_8$method, 
+                        levels = c("MCEM", "classic", "robust"))
+
+sigma_diff_df_8$size <- factor(sigma_diff_df_8$size, 
+                        levels = c("100", "200", "400", "800"))
+
+ggplot(sigma_diff_df_8, aes(x = size, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_grey() +
+  scale_fill_manual(values = set_1) + 
+  labs(y = "dist covariance",
+       x = "Observations",
+       fill = "method",
+       title = "Distance of true covariance to estimated covariance") +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5, size = 10))
+```
+
 
 # Implementierung
 
@@ -1858,6 +2296,713 @@ ggplot(sigma_diff_df_6, aes(x = size, y = differences, fill = method)) +
         plot.title = element_text(hjust = 0.5, size = 10))
 ```
 
+
+
+
+## Simulation Setting 7
+
+This is the same  the more complex setting which builds on the structure of the kl15 data.
+
+
+
+The mean vector is set to `c(-1.257, -1.741, 1.713, -0.6, 1.07, -3.624, -1.254, 1.05, -0.9, 0.505, 4.0, -0.49)` 
+and there are 4 components. 
+
+```{r latent parameters 7, eval=TRUE}
+n_simulations <- 20
+
+D <- 13
+basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+basis_matrix <- do.call(rbind, basis_vectors)
+
+eigenvalues_7 = c(0.5, 0.2, 0.12, 0.08)
+mean_7 = c(-1.257, -1.741, 1.713, -0.6,
+             1.07, -3.624, -1.254, 1.05, -0.9,
+             0.505, 4.0, -0.49, 1.532)
+
+pc_1 <- c(0.7, 0, 0, -0.2, 0, 0, -0.2, -0.2, 0.4, -0.1, 0, -0.2, -0.2)
+pc_2 <- c(0.5, 0, -0.4, 0.4, 0, 0, 0, 0, 0, 0, -0.5, 0, 0)
+pc_3 <- c(0, 0, 0.3, 0, 0.4, 0, 0, 0, -0.7, 0, 0, 0, 0)
+pc_4 <- c(0.3, -0.2, 0, -0.3, 0.6, 0.3, 0, 0, -0.4, 0, 0, 0, -0.3)
+
+V_7 <- cbind(pc_1, pc_2, pc_3, pc_4)
+true_sigma_7 <- V_7 %*% diag(eigenvalues_7) %*% t(V_7) 
+
+true_sigma_7
+
+(true_v_7 <- mean_7)
+```
+
+```{r evaluation mean vector 7, eval=TRUE}
+
+simulation_data_list_7 <- list(
+  tar_read(sim_5_0001),
+  tar_read(sim_5_001),
+  tar_read(sim_5_01),
+  tar_read(sim_5_05)
+)
+
+pca_clr_rob_7 <- lapply(1:4, function(x) list(n_simulations))
+pca_clr_std_7 <- lapply(1:4, function(x) list(n_simulations))
+
+# calculate standard PCA for each simulation
+for(j in 1:4) {
+  simulation_data <- simulation_data_list_7[[j]]
+  for(i in 1:length(simulation_data)) {
+    sim <- simulation_data[[i]]
+    x_data_list <- sim$x_data
+    x_data <- do.call(rbind, x_data_list)
+    
+    pca_clr_std_7[[j]][[i]] <- prcomp(clr(x_data))
+    # pca_clr_rob_7[[j]][[i]] <- pcaCoDa(x_data, method = "robust")
+  }
+}
+
+simulation_results_list_7 <- list(
+  tar_read(pca_5_0001),
+  tar_read(pca_5_001),
+  tar_read(pca_5_01),
+  tar_read(pca_5_05)
+)
+
+diff_mean_7 <- lapply(1:4, function(x) list(n_simulations))
+diff_mean_std_clr_7 <- lapply(1:4, function(x) list(n_simulations))
+diff_mean_rob_clr_7 <- lapply(1:4, function(x) list(n_simulations))
+
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    diff_mean_7[[j]][[i]] <- sqrt(sum((true_v_7 - t(basis_matrix) %*% simulation_results_list_7[[j]][[i]]$pca$center)^2))
+    diff_mean_std_clr_7[[j]][[i]] <- sqrt(sum((true_v_7 - pca_clr_std_7[[j]][[i]]$center)^2))
+    # diff_mean_rob_clr_7[[j]][[i]] <- sqrt(sum((true_v_7 - pca_clr_rob_7[[j]][[i]]$center)^2))
+  }
+}
+diff_mean = diff_mean_7
+diff_mean_std_clr = diff_mean_std_clr_7
+# diff_mean_rob_clr = diff_mean_rob_clr_7
+
+```
+
+Let's visualize the results with boxplots for each case.
+
+```{r boxplot simulation 7, eval=TRUE}
+# Daten in einen DataFrame zusammenführen
+diff_df_7 <- data.frame(
+  differences = c(
+    unlist(diff_mean_7[[1]]), unlist(diff_mean_7[[2]]), 
+    unlist(diff_mean_7[[3]]), unlist(diff_mean_7[[4]]),
+    unlist(diff_mean_std_clr_7[[1]]), unlist(diff_mean_std_clr_7[[2]]),
+    unlist(diff_mean_std_clr_7[[3]]), unlist(diff_mean_std_clr_7[[4]])
+    # unlist(diff_mean_rob_clr_all[[1]]), unlist(diff_mean_rob_clr_all[[2]]),
+    # unlist(diff_mean_rob_clr_all[[3]]), unlist(diff_mean_rob_clr_all[[4]])
+  ),
+  method = factor(rep(c("MCEM", "sample mean"), each = 4 * n_simulations)),
+  size = factor(rep(rep(c("0.0001", "0.001", "0.01", "0.05"), 
+                         each = n_simulations), 2))
+)
+
+# define order of sequence
+# diff_df_7$method <- factor(diff_df_7$method, 
+#                         levels = c("MCEM", "sample mean"))
+
+# diff_df_7$size <- factor(diff_df_7$size, 
+#                         levels = c("0.001", "0.001", "0.01", "0.05"))
+
+ggplot(diff_df_7, aes(x = size, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_grey() +
+  scale_fill_manual(values = set_1) + 
+  labs(y = "dist mean",
+       x = expression(m[i]),
+       fill = "method",
+       title = "Distance of true mean to estimated mean: Setting 4") +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5, size = 10))
+```
+
+And for the Kovarianzmatrix:
+
+```{r evaluation covariance 7, eval=TRUE}
+
+sigma_distances_7 <- lapply(1:4, function(x) list(n_simulations))
+sigma_distances_std_clr_7 <- lapply(1:4, function(x) list(n_simulations))
+# sigma_distances_rob_clr_7 <- lapply(1:4, function(x) list(n_simulations))
+
+
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    # MCEM method
+    sigma_hat_mcem <- with(simulation_results_list_7[[j]][[i]]$pca,
+      t(basis_matrix) %*% rotation %*% diag(sdev^2) %*% t(rotation) %*% basis_matrix)
+    sigma_distances_7[[j]][[i]] <- norm(true_sigma_7 - sigma_hat_mcem, type = "F")
+    
+    # CLR method
+    sigma_hat_clr <- with(pca_clr_std_7[[j]][[i]],
+      rotation %*% diag(sdev^2) %*% t(rotation))
+    sigma_distances_std_clr_7[[j]][[i]] <- norm(true_sigma_7 - sigma_hat_clr, type = "F")
+    
+    # ILR method
+    # sigma_hat_rob <- with(pca_clr_rob_7[[j]][[i]],
+    # loadings %*% diag(eigenvalues) %*% t(loadings))
+    # sigma_distances_rob_clr_7[[j]][[i]] <- norm(true_sigma_7 - sigma_hat_rob, type = "F")
+  }
+}
+
+```
+
+```{r visualize covariances 7, eval=TRUE}
+sigma_diff_df_7 <- data.frame(
+  differences = c(
+    unlist(sigma_distances_7[[1]]), unlist(sigma_distances_7[[2]]), 
+    unlist(sigma_distances_7[[3]]), unlist(sigma_distances_7[[4]]),
+    unlist(sigma_distances_std_clr_7[[1]]), unlist(sigma_distances_std_clr_7[[2]]),
+    unlist(sigma_distances_std_clr_7[[3]]), unlist(sigma_distances_std_clr_7[[4]])
+    # unlist(sigma_distances_rob_clr_7[[1]]), unlist(sigma_distances_rob_clr_7[[2]]),
+    # unlist(sigma_distances_rob_clr_7[[3]]), unlist(sigma_distances_rob_clr_7[[4]])
+  ),
+  method = factor(rep(c("MCEM", "classic"), each = 4 * n_simulations)),
+  size = factor(rep(rep(c("0.0001", "0.001", "0.01", "0.05"), 
+                         each = n_simulations), 4))
+)
+
+# define order of sequence
+sigma_diff_df_7$method <- factor(sigma_diff_df_7$method, 
+                        levels = c("MCEM", "classic"))
+
+sigma_diff_df_7$size <- factor(sigma_diff_df_7$size, 
+                        levels = c("0.0001", "0.001", "0.01", "0.05"))
+
+ggplot(sigma_diff_df_7, aes(x = size, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_grey() +
+  scale_fill_manual(values = set_1) + 
+  labs(y = "dist covariance",
+       x = expression(m[i]),
+       fill = "method",
+       title = "Distance of true covariance to estimated covariance") +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5, size = 10))
+```
+
+
+## Simulation Setting 8
+
+This is the same setting as number 7 but with a diverging number of observations (versus 2119) 
+the more complex setting which builds on the structure of the kl15 data.
+
+**The main deviance to the other settings is the sample size $m_i$**:
+Is is sampled from a density distribution with:
+```{r density distribution, eval=TRUE}
+data <- tar_read(data_kl15)
+data <- data * 0.01
+density_estimate <- density(data$aggregate)
+plot(density_estimate)
+```
+
+The mean vector is set to `c(-1.257, -1.741, 1.713, -0.6, 1.07, -3.624, -1.254, 1.05, -0.9, 0.505, 4.0, -0.49)` 
+and there are 4 components. 
+
+```{r latent parameters 8, eval=TRUE}
+n_simulations <- 20
+
+D <- 13
+basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+basis_matrix <- do.call(rbind, basis_vectors)
+
+eigenvalues_8 = c(0.5, 0.2, 0.12, 0.08)
+mean_8 = c(-1.257, -1.741, 1.713, -0.6,
+             1.07, -3.624, -1.254, 1.05, -0.9,
+             0.505, 4.0, -0.49, 1.532)
+
+pc_1 <- c(0.7, 0, 0, -0.2, 0, 0, -0.2, -0.2, 0.4, -0.1, 0, -0.2, -0.2) / sqrt(0.7^2 + 3*0.2^2 + 0.4^2 + 0.1^2)
+pc_2 <- c(0.5, 0, -0.4, 0.4, 0, 0, 0, 0, 0, 0, -0.5, 0, 0) / sqrt(0.5^2 + 0.4^2 + 0.4^2 + 0.5^2)
+pc_3 <- c(0, 0, 0.3, 0, 0.4, 0, 0, 0, -0.7, 0, 0, 0, 0) / sqrt(0.3^2 + 0.4^2 + 0.7^2)
+pc_4 <- c(0.3, -0.2, 0, -0.3, 0.6, 0.3, 0, 0, -0.4, 0, 0, 0, -0.3)  / sqrt(0.3^2 + 0.2^2 + 0.3^2 + 0.6^2 + 0.3^2 + 0.4^2 + 0.3^2)
+
+V_8 <- cbind(pc_1, pc_2, pc_3, pc_4)
+true_sigma_8 <- V_8 %*% diag(eigenvalues_8) %*% t(V_8) 
+
+true_sigma_8
+
+(true_v_8 <- mean_8)
+```
+
+```{r evaluation mean vector 8, eval=TRUE}
+
+simulation_data_list_8 <- list(
+  tar_read(sim_6_01_n100),
+  tar_read(sim_6_01_n200),
+  tar_read(sim_6_01_n400),
+  tar_read(sim_6_01_n800)
+)
+
+pca_clr_rob_8 <- lapply(1:4, function(x) list(n_simulations))
+pca_clr_std_8 <- lapply(1:4, function(x) list(n_simulations))
+
+# calculate standard PCA for each simulation
+for(j in 1:4) {
+  simulation_data <- simulation_data_list_8[[j]]
+  for(i in 1:length(simulation_data)) {
+    sim <- simulation_data[[i]]
+    x_data_list <- sim$x_data
+    x_data <- do.call(rbind, x_data_list)
+    
+    pca_clr_std_8[[j]][[i]] <- prcomp(clr(x_data))
+    pca_clr_rob_8[[j]][[i]] <- pcaCoDa(x_data, method = "robust")
+  }
+}
+
+simulation_results_list_8 <- list(
+  tar_read(pca_6_01_n100),
+  tar_read(pca_6_01_n200),
+  tar_read(pca_6_01_n400),
+  tar_read(pca_6_01_n800)
+)
+
+diff_mean_8 <- lapply(1:4, function(x) list(n_simulations))
+diff_mean_std_clr_8 <- lapply(1:4, function(x) list(n_simulations))
+diff_mean_rob_clr_8 <- lapply(1:4, function(x) list(n_simulations))
+
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    diff_mean_8[[j]][[i]] <- sqrt(sum((true_v_8 - t(basis_matrix) %*% simulation_results_list_8[[j]][[i]]$pca$center)^2))
+    diff_mean_std_clr_8[[j]][[i]] <- sqrt(sum((true_v_8 - pca_clr_std_8[[j]][[i]]$center)^2))
+    # diff_mean_rob_clr_8[[j]][[i]] <- sqrt(sum((true_v_8 - pca_clr_rob_8[[j]][[i]]$center)^2))
+  }
+}
+diff_mean = diff_mean_8
+diff_mean_std_clr = diff_mean_std_clr_8
+# diff_mean_rob_clr = diff_mean_rob_clr_8
+
+```
+
+Let's visualize the results with boxplots for each case.
+
+```{r boxplot simulation 8, eval=TRUE}
+# Daten in einen DataFrame zusammenführen
+diff_df_8 <- data.frame(
+  differences = c(
+    unlist(diff_mean_8[[1]]), unlist(diff_mean_8[[2]]), 
+    unlist(diff_mean_8[[3]]), unlist(diff_mean_8[[4]]),
+    unlist(diff_mean_std_clr_8[[1]]), unlist(diff_mean_std_clr_8[[2]]),
+    unlist(diff_mean_std_clr_8[[3]]), unlist(diff_mean_std_clr_8[[4]])
+    # unlist(diff_mean_rob_clr_all[[1]]), unlist(diff_mean_rob_clr_all[[2]]),
+    # unlist(diff_mean_rob_clr_all[[3]]), unlist(diff_mean_rob_clr_all[[4]])
+  ),
+  method = factor(rep(c("MCEM", "sample mean"), each = 4 * n_simulations)),
+  size = factor(rep(rep(c("100", "200", "400", "800"), 
+                         each = n_simulations), 2))
+)
+
+diff_df_8$method <- factor(diff_df_8$method, 
+                        levels = c("MCEM", "sample mean"))
+
+diff_df_8$size <- factor(diff_df_8$size, 
+                        levels = c("100", "200", "400", "800"))
+
+ggplot(diff_df_8, aes(x = size, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_grey() +
+  scale_fill_manual(values = set_1) + 
+  labs(y = "dist mean",
+       x = "Observations",
+       fill = "method",
+       title = "Distance of true mean to estimated mean: Setting 6") +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5, size = 10))
+```
+
+And for the Kovarianzmatrix:
+
+```{r evaluation covariance 8, eval=TRUE}
+
+sigma_distances_8 <- lapply(1:4, function(x) list(n_simulations))
+sigma_distances_std_clr_8 <- lapply(1:4, function(x) list(n_simulations))
+sigma_distances_rob_clr_8 <- lapply(1:4, function(x) list(n_simulations))
+
+
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    sigma_hat_mcem <- with(simulation_results_list_8[[j]][[i]]$pca,
+      t(basis_matrix) %*% rotation %*% diag(sdev^2) %*% t(rotation) %*% basis_matrix)
+    sigma_distances_8[[j]][[i]] <- norm(true_sigma_8 - sigma_hat_mcem, type = "F")
+    
+    sigma_hat_clr <- with(pca_clr_std_8[[j]][[i]],
+      rotation %*% diag(sdev^2) %*% t(rotation))
+    sigma_distances_std_clr_8[[j]][[i]] <- norm(true_sigma_8 - sigma_hat_clr, type = "F")
+    
+    sigma_hat_rob <- with(pca_clr_rob_8[[j]][[i]],
+    loadings %*% diag(eigenvalues) %*% t(loadings))
+    sigma_distances_rob_clr_8[[j]][[i]] <- norm(true_sigma_8 - sigma_hat_rob, type = "F")
+  }
+}
+
+```
+
+```{r visualize covariances 8, eval=TRUE}
+sigma_diff_df_8 <- data.frame(
+  differences = c(
+    unlist(sigma_distances_8[[1]]), unlist(sigma_distances_8[[2]]), 
+    unlist(sigma_distances_8[[3]]), unlist(sigma_distances_8[[4]]),
+    # unlist(sigma_distances_std_clr_8[[1]]), unlist(sigma_distances_std_clr_8[[2]]),
+    # unlist(sigma_distances_std_clr_8[[3]]), unlist(sigma_distances_std_clr_8[[4]]),
+    unlist(sigma_distances_rob_clr_8[[1]]), unlist(sigma_distances_rob_clr_8[[2]]),
+    unlist(sigma_distances_rob_clr_8[[3]]), unlist(sigma_distances_rob_clr_8[[4]])
+  ),
+  method = factor(rep(c("MCEM", "robust"), each = 4 * n_simulations)),
+  size = factor(rep(rep(c("100", "200", "400", "800"), 
+                         each = n_simulations), 2))
+)
+
+# define order of sequence
+sigma_diff_df_8$method <- factor(sigma_diff_df_8$method, 
+                        levels = c("MCEM", "robust"))
+
+sigma_diff_df_8$size <- factor(sigma_diff_df_8$size, 
+                        levels = c("100", "200", "400", "800"))
+
+ggplot(sigma_diff_df_8, aes(x = size, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_grey() +
+  scale_fill_manual(values = set_1) + 
+  labs(y = "dist covariance",
+       x = "Observations",
+       fill = "method",
+       title = "Distance of true covariance to estimated covariance") +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5, size = 10))
+```
+
+
+## Simulation Setting 9
+
+Again, this is the same setting as in Setting 2 but the variation is in the tuning parameter **lambda**:
+
+  pc_1 <- c(0, 1, -1, 0, 0)  # Contrast between parts 2 and 3
+  pc_2 <- c(-1, 0, 0, 1, 0)  # Contrast between parts 1 and 4
+
+  lambda_1 <- eigenvalues[1]
+  lambda_2 <- eigenvalues[2]
+
+  
+  clr_coords <- lapply(1:n_observations, function(i){
+    mean + rnorm(1, 0, lambda_1)*pc_1 + rnorm(1, 0, lambda_2)*pc_2
+  })
+
+```{r latent parameters 9, eval=TRUE}
+D <- 5
+basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+basis_matrix <- do.call(rbind, basis_vectors)
+
+eigenvalues <- c(0.6, 0.3)
+mean_9 <- c(0, 1, 0.5, -1, -0.5) # those are clr-coordinates
+
+# the structure of the covariance matrix is a bit degenerated because we work with only two components
+eigenvalues_9 <- c(0.6, 0.3, 0, 0)
+V_9 <- cbind(c(0, 1, -1, 0, 0), c(-1, 0, 0, 1, 0), c(0, 0, 0, 0, 0), c(0, 0, 0, 0, 0))
+true_sigma_9 <- V_9 %*% diag(eigenvalues_9) %*% t(V_9) 
+
+true_sigma_9
+
+(true_v_9 <- mean_9)
+```
+
+
+
+1. 20 Simulationen mit 
+  - mean vector: c(0, 1, 0.5, -1, -0.5)
+  - eigenvalues: c(0.6, 0.3)
+  - n_observations: c(100, 100, 100, 300)
+  - n_components: 5
+  - m_i: c(30, 60, 90, 90)
+
+
+
+
+```{r evaluation mean vector 9, eval=TRUE}
+
+simulation_data_list_9 <- list(
+  tar_read(sim_comp_2_smi_nSim_80)
+)
+
+simulation_results_list_9 <- list(
+  tar_read(pca_sim1_2_80_l06),
+  tar_read(pca_sim1_2_80_l08),
+  tar_read(pca_sim1_ilr_StdPara_smi_nSim_2_80),
+  tar_read(pca_sim1_2_80_l12),
+  tar_read(pca_sim1_2_80_l14)
+)
+
+diff_mean_9 <- replicate(5, list(n_simulations), simplify = FALSE)
+
+for(j in 1:5) {
+  for(i in 1:n_simulations) {
+    diff_mean_9[[j]][[i]] <- sqrt(sum((true_v_9 - t(basis_matrix) %*% simulation_results_list_9[[j]][[i]]$pca$center)^2))
+  }
+}
+
+diff_mean = diff_mean_9
+```
+
+Let's visualize the results with boxplots for each case.
+
+```{r boxplot simulation 9, eval=TRUE}
+# Daten in einen DataFrame zusammenführen
+diff_df_9 <- data.frame(
+  differences = c(
+    unlist(diff_mean_9[[1]]), unlist(diff_mean_9[[2]]), 
+    unlist(diff_mean_9[[3]]), unlist(diff_mean_9[[4]]),
+    unlist(diff_mean_9[[5]])
+    # unlist(diff_mean_std_clr_2[[1]]), unlist(diff_mean_std_clr_2[[2]]),
+    # unlist(diff_mean_std_clr_2[[3]]), unlist(diff_mean_std_clr_2[[4]])
+    # unlist(diff_mean_rob_clr_all[[1]]), unlist(diff_mean_rob_clr_all[[2]]),
+    # unlist(diff_mean_rob_clr_all[[3]]), unlist(diff_mean_rob_clr_all[[4]])
+  ),
+  method = factor(rep(c("MCEM"), each = 5 * n_simulations)),
+  size = factor(rep(rep(c("0.6", "0.8", "base", "1.2", "1.4"), 
+                         each = n_simulations), 1))
+)
+
+diff_df_9$size <- factor(diff_df_9$size, 
+                        levels = c("0.6", "0.8", "base", "1.2", "1.4"))
+
+ggplot(diff_df_9, aes(x = size, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_grey() +
+  scale_fill_manual(values = set_1) + 
+  labs(y = "dist mean",
+       x = expression(m[i]),
+       fill = "method",
+       title = "Distance of true mean to estimated mean") +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5, size = 10))
+```
+
+And for the Kovarianzmatrix:
+
+```{r evaluation covariance 9, eval=TRUE}
+sigma_distances_9 <- replicate(5, list(n_simulations), simplify = FALSE)
+
+for(j in 1:5) {
+  for(i in 1:n_simulations) {
+    # MCEM method
+    sigma_hat_mcem <- with(simulation_results_list_9[[j]][[i]]$pca,
+      t(basis_matrix) %*% rotation %*% diag(sdev^2) %*% t(rotation) %*% basis_matrix)
+    sigma_distances_9[[j]][[i]] <- norm(true_sigma_9 - sigma_hat_mcem, type = "F")
+  }
+}
+
+sigma_diff_df_9 <- data.frame(
+  differences = c(
+    unlist(sigma_distances_9[[1]]), unlist(sigma_distances_9[[2]]), 
+    unlist(sigma_distances_9[[3]]), unlist(sigma_distances_9[[4]]),
+    unlist(sigma_distances_9[[5]])
+  ),
+  method = factor(rep(c("MCEM"), each = 5 * n_simulations)),
+  size = factor(rep(rep(c("0.6", "0.8", "base", "1.2", "1.4"), 
+                         each = n_simulations), 1))
+)
+
+sigma_diff_df_9$size <- factor(sigma_diff_df_9$size, 
+                        levels = c("0.6", "0.8", "base", "1.2", "1.4"))
+
+ggplot(sigma_diff_df_9, aes(x = size, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_grey() +
+  scale_fill_manual(values = set_1) + 
+  labs(y = "dist covariance",
+       x = expression(m[i]),
+       fill = "method",
+       title = "Distance of true covariance to estimated covariance") +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5, size = 10))
+```
+
+
+## Simulation Setting 10
+
+This is the same setting as number 8 but using the original scale of the kl15 dataset.
+
+**The main deviance to the other settings is the sample size $m_i$**:
+Is is sampled from a density distribution with:
+```{r density distribution 10, eval=TRUE}
+data <- tar_read(data_kl15)
+density_estimate <- density(data$aggregate)
+plot(density_estimate)
+```
+
+The mean vector is set to `c(-1.257, -1.741, 1.713, -0.6, 1.07, -3.624, -1.254, 1.05, -0.9, 0.505, 4.0, -0.49)` 
+and there are 4 components. 
+
+```{r latent parameters 10, eval=TRUE}
+n_simulations <- 20
+
+D <- 13
+basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+basis_matrix <- do.call(rbind, basis_vectors)
+
+eigenvalues_10 = c(0.5, 0.2, 0.12, 0.08)
+mean_10 = c(-1.257, -1.741, 1.713, -0.6,
+             1.07, -3.624, -1.254, 1.05, -0.9,
+             0.505, 4.0, -0.49, 1.532)
+
+pc_1 <- c(0.7, 0, 0, -0.2, 0, 0, -0.2, -0.2, 0.4, -0.1, 0, -0.2, -0.2) / sqrt(0.7^2 + 3*0.2^2 + 0.4^2 + 0.1^2)
+pc_2 <- c(0.5, 0, -0.4, 0.4, 0, 0, 0, 0, 0, 0, -0.5, 0, 0) / sqrt(0.5^2 + 0.4^2 + 0.4^2 + 0.5^2)
+pc_3 <- c(0, 0, 0.3, 0, 0.4, 0, 0, 0, -0.7, 0, 0, 0, 0) / sqrt(0.3^2 + 0.4^2 + 0.7^2)
+pc_4 <- c(0.3, -0.2, 0, -0.3, 0.6, 0.3, 0, 0, -0.4, 0, 0, 0, -0.3)  / sqrt(0.3^2 + 0.2^2 + 0.3^2 + 0.6^2 + 0.3^2 + 0.4^2 + 0.3^2)
+
+V_10 <- cbind(pc_1, pc_2, pc_3, pc_4)
+true_sigma_10 <- V_10 %*% diag(eigenvalues_10) %*% t(V_10) 
+
+true_sigma_10
+
+(true_v_10 <- mean_10)
+```
+
+```{r evaluation mean vector 10, eval=TRUE}
+
+simulation_data_list_10 <- list(
+  tar_read(sim_6_sc1_n200),
+  tar_read(sim_6_sc1_n400),
+  tar_read(sim_6_sc1_n800),
+  tar_read(sim_6_sc1_n1600)
+)
+
+pca_clr_rob_10 <- lapply(1:4, function(x) list(n_simulations))
+pca_clr_std_10 <- lapply(1:4, function(x) list(n_simulations))
+
+# calculate standard PCA for each simulation
+for(j in 1:4) {
+  simulation_data <- simulation_data_list_10[[j]]
+  for(i in 1:length(simulation_data)) {
+    sim <- simulation_data[[i]]
+    x_data_list <- sim$x_data
+    x_data <- do.call(rbind, x_data_list)
+    
+    pca_clr_std_10[[j]][[i]] <- prcomp(clr(x_data))
+    pca_clr_rob_10[[j]][[i]] <- pcaCoDa(x_data, method = "robust")
+  }
+}
+
+simulation_results_list_10 <- list(
+  tar_read(pca_6_sc1_n200),
+  tar_read(pca_6_sc1_n400),
+  tar_read(pca_6_sc1_n800),
+  tar_read(pca_6_sc1_n1600)
+)
+
+diff_mean_10 <- lapply(1:4, function(x) list(n_simulations))
+diff_mean_std_clr_10 <- lapply(1:4, function(x) list(n_simulations))
+diff_mean_rob_clr_10 <- lapply(1:4, function(x) list(n_simulations))
+
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    diff_mean_10[[j]][[i]] <- sqrt(sum((true_v_10 - t(basis_matrix) %*% simulation_results_list_10[[j]][[i]]$pca$center)^2))
+    diff_mean_std_clr_10[[j]][[i]] <- sqrt(sum((true_v_10 - pca_clr_std_10[[j]][[i]]$center)^2))
+    # diff_mean_rob_clr_10[[j]][[i]] <- sqrt(sum((true_v_10 - pca_clr_rob_10[[j]][[i]]$center)^2))
+  }
+}
+diff_mean = diff_mean_10
+diff_mean_std_clr = diff_mean_std_clr_10
+# diff_mean_rob_clr = diff_mean_rob_clr_10
+
+```
+
+Let's visualize the results with boxplots for each case.
+
+```{r boxplot simulation 10, eval=TRUE}
+# Daten in einen DataFrame zusammenführen
+diff_df_10 <- data.frame(
+  differences = c(
+    unlist(diff_mean_10[[1]]), unlist(diff_mean_10[[2]]), 
+    unlist(diff_mean_10[[3]]), unlist(diff_mean_10[[4]]),
+    unlist(diff_mean_std_clr_10[[1]]), unlist(diff_mean_std_clr_10[[2]]),
+    unlist(diff_mean_std_clr_10[[3]]), unlist(diff_mean_std_clr_10[[4]])
+    # unlist(diff_mean_rob_clr_all[[1]]), unlist(diff_mean_rob_clr_all[[2]]),
+    # unlist(diff_mean_rob_clr_all[[3]]), unlist(diff_mean_rob_clr_all[[4]])
+  ),
+  method = factor(rep(c("MCEM", "sample mean"), each = 4 * n_simulations)),
+  size = factor(rep(rep(c("200", "400", "800", "1600"), 
+                         each = n_simulations), 2))
+)
+
+diff_df_10$method <- factor(diff_df_10$method, 
+                        levels = c("MCEM", "sample mean"))
+
+diff_df_10$size <- factor(diff_df_10$size, 
+                        levels = c("200", "400", "800", "1600"))
+
+ggplot(diff_df_10, aes(x = size, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_grey() +
+  scale_fill_manual(values = set_1) + 
+  labs(y = "dist mean",
+       x = "Observations",
+       fill = "method",
+       title = "Distance of true mean to estimated mean: Setting 6") +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5, size = 10))
+```
+
+And for the Kovarianzmatrix:
+
+```{r evaluation covariance 10, eval=TRUE}
+
+sigma_distances_10 <- lapply(1:4, function(x) list(n_simulations))
+sigma_distances_std_clr_10 <- lapply(1:4, function(x) list(n_simulations))
+sigma_distances_rob_clr_10 <- lapply(1:4, function(x) list(n_simulations))
+
+
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    sigma_hat_mcem <- with(simulation_results_list_10[[j]][[i]]$pca,
+      t(basis_matrix) %*% rotation %*% diag(sdev^2) %*% t(rotation) %*% basis_matrix)
+    sigma_distances_10[[j]][[i]] <- norm(true_sigma_10 - sigma_hat_mcem, type = "F")
+    
+    sigma_hat_clr <- with(pca_clr_std_10[[j]][[i]],
+      rotation %*% diag(sdev^2) %*% t(rotation))
+    sigma_distances_std_clr_10[[j]][[i]] <- norm(true_sigma_10 - sigma_hat_clr, type = "F")
+    
+    sigma_hat_rob <- with(pca_clr_rob_10[[j]][[i]],
+    loadings %*% diag(eigenvalues) %*% t(loadings))
+    sigma_distances_rob_clr_10[[j]][[i]] <- norm(true_sigma_10 - sigma_hat_rob, type = "F")
+  }
+}
+
+```
+
+```{r visualize covariances 10, eval=TRUE}
+sigma_diff_df_10 <- data.frame(
+  differences = c(
+    unlist(sigma_distances_10[[1]]), unlist(sigma_distances_10[[2]]), 
+    unlist(sigma_distances_10[[3]]), unlist(sigma_distances_10[[4]]),
+    unlist(sigma_distances_std_clr_10[[1]]), unlist(sigma_distances_std_clr_10[[2]]),
+    unlist(sigma_distances_std_clr_10[[3]]), unlist(sigma_distances_std_clr_10[[4]]),
+    unlist(sigma_distances_rob_clr_10[[1]]), unlist(sigma_distances_rob_clr_10[[2]]),
+    unlist(sigma_distances_rob_clr_10[[3]]), unlist(sigma_distances_rob_clr_10[[4]])
+  ),
+  method = factor(rep(c("MCEM", "classic", "robust"), each = 4 * n_simulations)),
+  size = factor(rep(rep(c("200", "400", "800", "1600"), 
+                         each = n_simulations), 3))
+)
+
+# define order of sequence
+sigma_diff_df_10$method <- factor(sigma_diff_df_10$method, 
+                        levels = c("MCEM", "classic", "robust"))
+
+sigma_diff_df_10$size <- factor(sigma_diff_df_10$size, 
+                        levels = c("200", "400", "800", "1600"))
+
+ggplot(sigma_diff_df_10, aes(x = size, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_grey() +
+  scale_fill_manual(values = set_1) + 
+  labs(y = "dist covariance",
+       x = "Observations",
+       fill = "method",
+       title = "Distance of true covariance to estimated covariance") +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5, size = 10))
+```
 
 
 
