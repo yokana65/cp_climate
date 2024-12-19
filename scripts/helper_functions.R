@@ -119,3 +119,30 @@ clrInv_long <- function(clr_coords) {
 sample_from_density <- function(n, density_estimate) {
     sample(density_estimate$x, size = n, prob = density_estimate$y, replace = TRUE)
 }
+
+seq_ilr_transform <- function(x_data) {
+  # sequential calculation of ilr Coordinates (Cp. robCompositions::pcaCoDa)
+  x_ilr = matrix(NA, nrow = nrow(x_data), ncol = ncol(x_data) - 1)
+  for (i in seq_len(x_ilr)) {
+    x_ilr[, i] <- sqrt((i) / (i + 1)) *
+      log(((apply(as.matrix(x_data[, 1:i]), 1, prod))^(1/i)) / (x_data[, i + 1]))
+  }
+  return(x_ilr)
+}
+# TODO: check if this results in same coorddinates as basis_matrix multiplication
+
+get_helmert <- function(x) {    
+  V <- matrix(0, nrow = ncol(x), ncol = ncol(x) - 1)
+    for (i in 1:ncol(V)) {
+      V[1:i, i] <- 1/i
+      V[i + 1, i] <- (-1)
+      V[, i] <- V[, i] * sqrt(i/(i + 1))
+    }
+  return(V)
+}
+# TODO: make connection between Helmert Matrix and Bases in theoretical part
+fix_sign <- function(A) {
+    mysign <- function(x) ifelse(x < 0, -1L, 1L)
+    A[] <- apply(A, 2L, function(x) x * mysign(x[1L]))
+    A
+}

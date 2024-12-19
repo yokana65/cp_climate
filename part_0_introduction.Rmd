@@ -85,13 +85,14 @@ aber deren relative Information identisch ist (Vgl. Pawlowsky-Glahn et al 2015,p
 In der Praxis ist es üblich beobachteten Kompositionen eine konstante Summe zuzuordnen, um sie als Teil eines festen Ganzen zu betrachten, z.B. als prozentuale Anteile mit einer konstanten Summe 
 von eins oder als ppm (parts per Million). Derartige Vektoren werden in der Literatur auch als *closed data* bezeichnet und die Operation einer Komposition eine konstante Summe zuzuordnen 
 als *closure*: 
+
 **Definition 2: closure**
-For any compositional vector $\boldsymbol{x} = (x_1, x_2, ..., x_D)$ with positive components, the closure of $\boldsymbol{x}$ to a constant is defined as
+For any compositional vector $\boldsymbol{x} = (x_1, x_2, ..., x_D)$ with positive components, the closure of $\boldsymbol{x}$ to a constant $\kappa > 0$ is defined as
 $$
-\mathcal{C}(\mathbf{x})=\left[\frac{\kappa \cdot x_{1}}{\sum_{i=1}^{D} x_{i}}, \frac{\kappa \cdot x_{2}}{\sum_{i=1}^{D} x_{i}}, \ldots, \frac{\kappa \cdot x_{D}}{\sum_{i=1}^{D} x_{i}}\right]
+\mathcal{C}(\mathbf{x})=\left[\frac{\kappa \cdot x_{1}}{\sum_{j=1}^{D} x_{j}}, \frac{\kappa \cdot x_{2}}{\sum_{j=1}^{D} x_{j}}, \ldots, \frac{\kappa \cdot x_{D}}{\sum_{j=1}^{D} x_{j}}\right]
 $$
 
-[TODO: is change between x and pi necessary?]
+[TODO: is change between x and pi necessary?] -> hier Einführung \pi sinnvoll -> latent composition has a closure with \kappa = 1
 
 In der Regel können beobachtete Kompositionen als zufällige Ziehungen aus einer latenten Komposition $\boldsymbol{\pi} = (\pi_1, \pi_2, ..., \pi_D)$ modelliert werden, welche die zugrunde 
 liegenden Anteile der Komposition enthält.  
@@ -154,13 +155,13 @@ Mathematische Operationen auf dem Simplex erscheinen auf den ersten Blick nicht 
 zu definieren. Dafür benötigen wir zwei Operationen, die Addition und Multiplikation im reelen Raum entsprechen und die angepassten Definitionen vom Skalarprodukt der Norm und der Distanz.
 
 **Definition 4: Perturbation**
-For two compositional vectors $\boldsymbol{x}$ and $\boldsymbol{y}$ in \mathcal{S}^{D} their perturbation is defined as:
+For two compositional vectors $\boldsymbol{x}$ and $\boldsymbol{y}$ in $\mathcal{S}^{D}$ their perturbation is defined as:
 $$
 \mathbf{x} \oplus \mathbf{y}=\mathcal{C}\left[x_{1} y_{1}, x_{2} y_{2}, \ldots, x_{D} y_{D}\right] \in S^{D}
 $$
 
 **Definition 5: Powering**
-The powering of a compositional vector $\boldsymbol{x}$ in \mathcal{S}^{D} by a constant $a \in \mathbb{R}$ is defined as:
+The powering of a compositional vector $\boldsymbol{x}$ in $\mathcal{S}^{D}$ by a constant $a \in \mathbb{R}$ is defined as:
 $$
 \alpha \odot \mathbf{x}=\mathcal{C}\left[x_{1}^{\alpha}, x_{2}^{\alpha}, \ldots, x_{D}^{\alpha}\right] \in \mathcal{S}^{D}
 $$
@@ -188,7 +189,7 @@ This allows now for the use of all statistical methods that are available for th
 
 ## Clr transformation (generating systems)
 
-Im Allgemeinen sind wir es gewohnt Vektoren anhand ihrer kanonischen Basis $\left\{\mathbf{e}_{1}, \mathbf{e}_{2}, \ldots, \mathbf{e}_{D}\right\}$ in $mathcal{R}^D$ zu beschreiben. 
+Im Allgemeinen sind wir es gewohnt Vektoren anhand ihrer kanonischen Basis $\left\{\mathbf{e}_{1}, \mathbf{e}_{2}, \ldots, \mathbf{e}_{D}\right\}$ in $\mathcal{R}^D$ zu beschreiben. 
 Dies gilt auch für den Fall, dass der Vektor eine beobachtete Komposition $\boldsymbol{x}$ ist. In diesem Fall kann der Vektor $\boldsymbol{x}$ als Linearkombination der Basisvektoren
 dargestellt werden: 
 $$
@@ -205,25 +206,28 @@ $$
 \mathbf{w}_{j}=\mathcal{C}\left(\exp \left(\mathbf{e}_{j}\right)\right)=\mathcal{C}[1,1, \ldots, e, \ldots, 1], \quad j=1,2, \ldots, D . \tag{X}
 $$.
 Dieses generative System kann genutzt werden, um den Kompositionsvektor als perturbation-linear Kombination seiner logarithmierten Kompositionsteile zu beschreiben (Cp. Pawlowsky-Glahn et al 2015, p. 34): 
+
 $$
-\mathbf{x} & =\bigoplus_{j=1}^{D} \ln \frac{x_{j}}{\mathrm{~g}_{m}(\mathbf{x})} \odot \mathbf{w}_{j} 
-& =\ln \frac{x_{1}}{\mathrm{~g}_{m}(\mathbf{x})} \odot[e, 1, \ldots, 1] \oplus \ldots \oplus \ln \frac{x_{D}}{\mathrm{~g}_{m}(\mathbf{x})} \odot[1,1, \ldots, e], \tag{X}
+\mathbf{x} =\bigoplus_{j=1}^{D} \ln \frac{x_{j}}{\mathrm{~g}_{m}(\mathbf{x})} \odot \mathbf{w}_{j} 
+=\ln \frac{x_{1}}{\mathrm{~g}_{m}(\mathbf{x})} \odot[e, 1, \ldots, 1] \oplus \ldots \oplus \ln \frac{x_{D}}{\mathrm{~g}_{m}(\mathbf{x})} \odot[1,1, \ldots, e], \tag{X}
 $$ 
 
 wobei 
 $$
-\mathrm{g}_{m}(\mathbf{x})=\left(\prod_{j=1}^{D} x_{j}\right)^{1 / D}=\exp \left(\frac{1}{D} \sum_{i=1}^{D} \ln x_{j}\right)
+\mathrm{g}_{m}(\mathbf{x})=\left(\prod_{j=1}^{D} x_{j}\right)^{1 / D}=\exp \left(\frac{1}{D} \sum_{j=1}^{D} \ln x_{j}\right)
 $$
 den geometrischen Mittelwert der Komposition darstellt.
 Es ist ersichtlich, dass dies ausgehend von den formulierten Grundprinzipien (Chapter [..]) und der Aitchison-Geometrie ein kompositionelles Equivalent zu der kanonischen Basis ist. Darüber hinaus 
-entsprechen die Koefficienten in [.. ] den von Aitchison definierten Koefficienten der centered logratio Transformation (clr). Die clr Koordinaten haben eine Reihe von Vorteilen. Insbesondere 
-gilt für eine Komposition $\boldsymbol{\pi}_{k} \in \mathcal{S}^{D}$, dass durch die clr-Transformation eine eindeutige Beziehung zwischen den Operationen auf dem Simplex (chapter [...]) und dem 
-reelen Raum hergestellt werden kann.
-Für realen konstanten $\alpha, \beta$ gilt für alle $k=1,2$:
-(a) $\operatorname{clr}\left(\alpha \odot \mathbf{x}_{1} \oplus \beta \odot \mathbf{x}_{2}\right)=\alpha \cdot \operatorname{clr}\left(\mathbf{x}_{1}\right)+\beta \cdot \operatorname{clr}\left(\mathbf{x}_{2}\right)$;
-(b) $\left\langle\mathbf{x}_{1}, \mathbf{x}_{2}\right\rangle_{a}=\left\langle\operatorname{clr}\left(\mathbf{x}_{1}\right), \operatorname{clr}\left(\mathbf{x}_{2}\right)\right\rangle ;$
-(c) $\left\|\mathbf{x}_{1}\right\|_{a}=\left\|\operatorname{clr}\left(\mathbf{x}_{1}\right)\right\|, \quad \mathrm{d}_{a}\left(\mathbf{x}_{1}, \mathbf{x}_{2}\right)=\mathrm{d}\left(\operatorname{clr}\left(\mathbf{x}_{1}\right), \operatorname{clr}\left(\mathbf{x}_{2}\right)\right)$.
-Die Eigenschaft (a) sagt uns, dass die clr-Transformation ein isomorphismus ist, d.h. die Operationen auf dem Simplex werden auf die entsprechenden Operationen im reellen Raum abgebildet. (b) und (c) kennzeichnen 
+entsprechen die Koefficienten in [.. ] den von Aitchison definierten Koefficienten der centered logratio Transformation (clr).  
+**Definition: clr-Transformation**
+
+Die clr Koordinaten haben eine Reihe von Vorteilen. Insbesondere 
+gilt für eine Komposition $\boldsymbol{\boldsymbol{x}}_{j} \in \mathcal{S}^{D}$, dass durch die clr-Transformation eine eindeutige Beziehung zwischen den Operationen auf dem Simplex (chapter [...]) und dem 
+reelen Raum hergestellt werden kann.  
+Für realen konstanten $\alpha, \beta$ gilt für alle $j=1,2$:  
+(a) $\operatorname{clr}\left(\alpha \odot \mathbf{x}_{1} \oplus \beta \odot \mathbf{x}_{2}\right)=\alpha \cdot \operatorname{clr}\left(\mathbf{x}_{1}\right)+\beta \cdot \operatorname{clr}\left(\mathbf{x}_{2}\right)$;  
+(b) $\left\langle\mathbf{x}_{1}, \mathbf{x}_{2}\right\rangle_{a}=\left\langle\operatorname{clr}\left(\mathbf{x}_{1}\right), \operatorname{clr}\left(\mathbf{x}_{2}\right)\right\rangle ;$  
+(c) $\left\|\mathbf{x}_{1}\right\|_{a}=\left\|\operatorname{clr}\left(\mathbf{x}_{1}\right)\right\|, \quad \mathrm{d}_{a}\left(\mathbf{x}_{1}, \mathbf{x}_{2}\right)=\mathrm{d}\left(\operatorname{clr}\left(\mathbf{x}_{1}\right), \operatorname{clr}\left(\mathbf{x}_{2}\right)\right)$.Die Eigenschaft (a) sagt uns, dass die clr-Transformation ein isomorphismus ist, d.h. die Operationen auf dem Simplex werden auf die entsprechenden Operationen im reellen Raum abgebildet. (b) und (c) kennzeichnen 
 eine Isometry (TODO: Quelle Mathebuch), d.h. die Metrik und das Skalarprodukt des Simplex bleiben auch noch der Transformation erhalten.
 
 
@@ -237,7 +241,7 @@ Kompositionen nicht subcompositionally coherent, da das geometrische Mittel von 
 Auch wenn die von Aithcison eingeführten clr-Koefficienten einige Vorteile bieten, ist es hilfreich in einem weiteren Schritt die orthonormalen Koordinaten zu definieren.
 
 
-## Orthonormal coordinates or Coordinate Representations (Cp. Filzmoser et al. 2019, p. 43ff)
+## Orthonormal coordinates or Coordinate Representations (Cp. Filzmoser et al. 2019, p. 43ff, Egozcue 2003)
 
 Auch wenn die clr-Transformation im Sinne von Aitchison einige Verbesserungen mit sich bringt, so leidet sie doch auch unter einigen Nachteilen, zum 
 Beispiel, dass es sich bei clr-transformierten Koordinaten nicht um orthonormale Koordinaten handelt. Zwar bietet die clr-Transformation die Möglichkeit, 
@@ -258,7 +262,7 @@ Vektoren überträgt:
 $$
 \left\langle\mathbf{e}_{j}, \mathbf{e}_{k}\right\rangle_{a}=\left\langle\operatorname{clr}\left(\mathbf{e}_{j}\right), \operatorname{clr}\left(\mathbf{e}_{k}\right)\right\rangle=\delta_{j k}
 $$.
-Da die Reihen der Matrix $\boldsymbol{\Psi}$ clr Koeffizienten sind, gilt, dass $\sum_{j=1}^D \mathbf{e}_{j} = 0$ für alle $j=1,2, \ldots, D-1$.
+Da die Reihen der Matrix $\boldsymbol{\Psi}$ clr Koeffizienten sind, gilt, dass $\sum_{j=1}^D \operatorname{clr}\left(\mathbf{e}_{j}\right) = 0$ für alle $j=1,2, \ldots, D-1$.
 
 Mit dieser Wahl einer orthonormalen Basis lässt sich jede Komposition $\mathbf{x} \in S^{D}$ wie folgt darstellen: 
 $$
@@ -277,7 +281,7 @@ Property 4.5 Consider $\mathbf{x}_{k} \in \mathcal{S}^{D}, k=1,2$, and real cons
 
 (d) $\mathrm{d}_{a}\left(\mathbf{x}_{1}, \mathbf{x}_{2}\right)=\mathrm{d}\left(\operatorname{ilr}\left(\mathbf{x}_{1}\right), \operatorname{ilr}\left(\mathbf{x}_{2}\right)\right)=\mathrm{d}\left(\mathbf{x}_{1}^{*}, \mathbf{x}_{2}^{*}\right)$. 
 
-Kurzgesagt, die ilr-Transformation $operatorname{ilr}: S^{D} \rightarrow \mathbb{R}^{D-1}$ ist eine isometrische Abbildung zwischen Vektorräumen, die die Aitchison Geometrie auf den reelen Raum abbildet. In diesem 
+Kurzgesagt, die ilr-Transformation $\operatorname{ilr}: S^{D} \rightarrow \mathbb{R}^{D-1}$ ist eine isometrische Abbildung zwischen Vektorräumen, die die Aitchison Geometrie auf den reelen Raum abbildet. In diesem 
 Sinne gleicht sie der clr-Transformation, unterscheidet sich jedoch in der Zahl der Dimensionen.
 Mit Hilfe der Matrix $\boldsymbol{\Psi}$ lässt sich außerdem eine direkte Beziehung zwischen den ilr-Koordinaten in $\boldsymbol{x}^*$ und 
 den clr-Koefficenten aus der clr-Transformation ableiten:

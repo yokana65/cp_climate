@@ -136,8 +136,8 @@ The marginal likelihood of $\boldsymbol{\nu}$ and $\boldsymbol{\Sigma}$ can be d
 \begin{align*}
 L\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right) & =\prod_{i=1}^{n} \mathcal{p}\left(\boldsymbol{x}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)=\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \mathcal{p}\left(\boldsymbol{x}_{i} \mid \boldsymbol{\theta}_{i}\right) \mathcal{p}\left(\boldsymbol{\theta}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right) d \boldsymbol{\theta_{i}} \\
 & =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}}\left(\prod_{j=1}^{D} \, \boldsymbol{\pi}_{ij}^{x_{i j}} \left(\boldsymbol{\theta}_{i}\right)\right) \mathcal{p}\left(\boldsymbol{ \theta}_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right) d \boldsymbol{\theta_{i}} \\
-& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}}\left(\prod_{j=1}^{D} \, \frac{\exp \left(x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right)\right)^{x_{i j}}}\right) \mathcal{p}\left( \theta_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right) d \boldsymbol{\theta_{i}} \\
-& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \, \frac{ \exp \left(\sum_{j=1}^{D} x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right) \mathcal{p}\left(\theta_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right)\right)^{m_{i}}}  d \boldsymbol{\theta_{i}} \\
+& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}}\left(\prod_{j=1}^{D} \, \frac{\exp \left(x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_{k j}\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_{k j}\right)\right)^{x_{i j}}}\right) \mathcal{p}\left( \theta_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right) d \boldsymbol{\theta_{i}} \\
+& =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \, \frac{ \exp \left(\sum_{j=1}^{D} x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_{k j}\right) \mathcal{p}\left(\theta_{i} \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_{k j}\right)\right)^{m_{i}}}  d \boldsymbol{\theta_{i}} \\
 \end{align*}
 
 with $\mathcal{p}$ denoting a generic probability mass function, i.e. $\mathcal{p}\left(\boldsymbol{x}_i \mid \boldsymbol{\theta}_i\right)$ being the conditional probability mass function of the multinomial distribution
@@ -147,7 +147,7 @@ To summarize, we can write the marginal likelihood of our parameters of interest
 
 
 $$
-L\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right) =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \, \frac{ \exp \left(\sum_{j=1}^{D} x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right) \mathcal{p}\left( \theta_{i } \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_k \left(A_j\right)\right)\right)^{m_{i}}}  d \boldsymbol{\theta_{i}}
+L\left(\boldsymbol{\nu}, \boldsymbol{\Sigma} \mid \boldsymbol{x}_{1}, \ldots, \boldsymbol{x}_{n}\right) =\prod_{i=1}^{n} \int_{\mathbb{R}^{D-1}} \, \frac{ \exp \left(\sum_{j=1}^{D} x_{ij} \, \sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_{k j}\right) \mathcal{p}\left( \theta_{i } \mid \boldsymbol{\nu}, \boldsymbol{\Sigma}\right)}{\left(\sum_{j=1}^{D} \exp \left(\sum_{k=1}^{D-1} \theta_{i k} \boldsymbol{e}_{k j}\right)\right)^{m_{i}}}  d \boldsymbol{\theta_{i}}
 $$
 
 ## Principal component representation

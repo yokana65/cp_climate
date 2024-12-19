@@ -737,6 +737,28 @@ list(
     }
     sim_composition_6_results
   }),
+  tar_target(sim_6_sc1_n100, {
+    n_simulations <- 20
+    n_observations <- 100
+    data <- data_kl15
+    eigenvalues = c(0.5, 0.2, 0.12, 0.08)
+    mean = c(-1.257, -1.741, 1.713, -0.6,
+             1.07, -3.624, -1.254, 1.05, -0.9,
+             0.505, 4.0, -0.49, 1.532)
+    scale = 1
+    sim_composition_6_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(1 * i)
+      sim_composition_6_results[[i]] <-
+        build_setting_4comp_13parts_vs2(data,
+                                 eigenvalues,
+                                 mean,
+                                 scale,
+                                 n_observations)
+    }
+    sim_composition_6_results
+  }),
   tar_target(sim_6_01_n200, {
     n_simulations <- 20
     n_observations <- 200
@@ -872,6 +894,28 @@ list(
   tar_target(sim_6_sc1_n1600, {
     n_simulations <- 20
     n_observations <- 1600
+    data <- data_kl15
+    eigenvalues = c(0.5, 0.2, 0.12, 0.08)
+    mean = c(-1.257, -1.741, 1.713, -0.6,
+             1.07, -3.624, -1.254, 1.05, -0.9,
+             0.505, 4.0, -0.49, 1.532)
+    scale = 1
+    sim_composition_6_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(1 * i)
+      sim_composition_6_results[[i]] <-
+        build_setting_4comp_13parts_vs2(data,
+                                 eigenvalues,
+                                 mean,
+                                 scale,
+                                 n_observations)
+    }
+    sim_composition_6_results
+  }),
+  tar_target(sim_6_sc1_n2000, {
+    n_simulations <- 20
+    n_observations <- 2000
     data <- data_kl15
     eigenvalues = c(0.5, 0.2, 0.12, 0.08)
     mean = c(-1.257, -1.741, 1.713, -0.6,
@@ -1045,6 +1089,172 @@ list(
           r = 15,
           max_iter = 80,
           eps = 0.05
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_6_sc1_n2000, {
+    number_simulations <- length(sim_6_sc1_n2000)
+    pca_results_list <- list(length(sim_6_sc1_n2000))
+    for  (i in 1:length(sim_6_sc1_n2000)) {
+      sim <-  sim_6_sc1_n2000[[i]]
+      x_data <- sim$x_data
+      cat("Iteration sim_6_sc1_n2000", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_2(
+        x_data, 
+        sc_factor = 1,
+        r = 15,
+        max_iter = 80,
+        eps = 0.05
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_6_sc01_n2000, {
+    number_simulations <- length(sim_6_sc1_n2000)
+    pca_results_list <- list(length(sim_6_sc1_n2000))
+    for  (i in 1:length(sim_6_sc1_n2000)) {
+      sim <-  sim_6_sc1_n2000[[i]]
+      x_data <- sim$x_data
+      scaled_data <- lapply(x_data, function(x) x * 0.1)
+      cat("Iteration sim_6_sc01_n2000", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_2(
+        scaled_data, 
+        sc_factor = 1,
+        r = 15,
+        max_iter = 80,
+        eps = 0.05
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_6_sc001_n2000, {
+    number_simulations <- length(sim_6_sc1_n2000)
+    pca_results_list <- list(length(sim_6_sc1_n2000))
+    for  (i in 1:length(sim_6_sc1_n2000)) {
+      sim <-  sim_6_sc1_n2000[[i]]
+      x_data <- sim$x_data
+      scaled_data <- lapply(x_data, function(x) x * 0.01)
+      cat("Iteration sim_6_sc001_n2000", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_2(
+        scaled_data, 
+        sc_factor = 1,
+        r = 15,
+        max_iter = 80,
+        eps = 0.05
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_6_sc0001_n2000, {
+    number_simulations <- length(sim_6_sc1_n2000)
+    pca_results_list <- list(length(sim_6_sc1_n2000))
+    for  (i in 1:length(sim_6_sc1_n2000)) {
+      sim <-  sim_6_sc1_n2000[[i]]
+      x_data <- sim$x_data
+      scaled_data <- lapply(x_data, function(x) x * 0.001)
+      cat("Iteration sim_6_sc0001_n2000", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_2(
+        scaled_data, 
+        sc_factor = 1,
+        r = 15,
+        max_iter = 80,
+        eps = 0.05
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_6_sc1_n100, {
+    number_simulations <- length(sim_6_sc1_n100)
+    pca_results_list <- list(length(sim_6_sc1_n100))
+    for  (i in 1:length(sim_6_sc1_n100)) {
+      sim <-  sim_6_sc1_n100[[i]]
+      x_data <- sim$x_data
+      cat("Iteration sim_6_sc1_n100", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_2(
+          x_data, 
+          sc_factor = 1,
+          r = 15,
+          max_iter = 80,
+          eps = 0.07
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_6_sc01_n100, {
+    number_simulations <- length(sim_6_sc1_n100)
+    pca_results_list <- list(length(sim_6_sc1_n100))
+    for  (i in 1:length(sim_6_sc1_n100)) {
+      sim <-  sim_6_sc1_n100[[i]]
+      x_data <- sim$x_data
+      scaled_data <- lapply(x_data, function(x) x * 0.1)
+      cat("Iteration sim_6_sc01_n100", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_2(
+        scaled_data, 
+        sc_factor = 1,
+        r = 15,
+        max_iter = 80,
+        eps = 0.05
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_6_sc001_n100, {
+    number_simulations <- length(sim_6_sc1_n100)
+    pca_results_list <- list(length(sim_6_sc1_n100))
+    for  (i in 1:length(sim_6_sc1_n100)) {
+      sim <-  sim_6_sc1_n100[[i]]
+      x_data <- sim$x_data
+      scaled_data <- lapply(x_data, function(x) x * 0.01)
+      cat("Iteration sim_6_sc001_n100", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_2(
+        scaled_data, 
+        sc_factor = 1,
+        r = 15,
+        max_iter = 80,
+        eps = 0.05
+      )
+      pca_results_list[[i]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(pca_6_sc0001_n100, {
+    number_simulations <- length(sim_6_sc1_n100)
+    pca_results_list <- list(length(sim_6_sc1_n100))
+    for  (i in 1:length(sim_6_sc1_n100)) {
+      sim <-  sim_6_sc1_n100[[i]]
+      x_data <- sim$x_data
+      scaled_data <- lapply(x_data, function(x) x * 0.001)
+      cat("Iteration sim_6_sc0001_n100", i, "\n")
+
+      set.seed(1 * i)
+      result <- fit_pca_ilr_vs_2(
+        scaled_data, 
+        sc_factor = 1,
+        r = 15,
+        max_iter = 80,
+        eps = 0.05
       )
       pca_results_list[[i]] <- result
     }
@@ -1830,13 +2040,44 @@ list(
   }),
   tar_target(bbootstrap_01_1, {
     x_data <- data_kl15_comp
+    results_mcem <- pca_count_ilr_vs1_1perc
+    reference_pca <- results_mcem$pca    
     set.seed(12)
     results <-
       bbootstrap_pca_ts_par(x_data,
                         block_length = 50,
                         replicates = 100,
+                        reference_pca = reference_pca,
+                        scale = 0.01,
+                        eps = 0.03,
+                        workers = 10)
+  }),
+  tar_target(bbootstrap_01_2, {
+    x_data <- data_kl15_comp
+    results_mcem <- pca_count_ilr_vs1_1perc
+    reference_pca <- results_mcem$pca    
+    set.seed(12)
+    results <-
+      bbootstrap_pca_ts_par_vs2(x_data,
+                        block_length = 50,
+                        replicates = 100,
+                        reference_pca = reference_pca,
                         scale = 0.01,
                         eps = 0.03,
                         workers = 10)
   })
+  # tar_target(bbootstrap_01_2, {
+  #   x_data <- data_kl15_comp
+  #   results_mcem <- pca_count_ilr_vs1_01
+  #   reference_pca <- results_mcem$pca
+  #   set.seed(123)
+  #   results <-
+  #     bbootstrap_pca_ts_par(x_data,
+  #                       block_length = 50,
+  #                       replicates = 900,
+  #                       reference_pca = reference_pca,
+  #                       scale = 0.01,
+  #                       eps = 0.03,
+  #                       workers = 10)
+  # })
 )

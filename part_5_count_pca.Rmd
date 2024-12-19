@@ -40,8 +40,14 @@ x_clr <- tar_read(data_kl15_comp_clr)
 
 count_acomp <- acomp(count_matrix)
 
+x_count_sel <- x_count[4:ncol(x_count)-1]
+x_acomp <- acomp(x_count_sel)
+# pca_classic <- princomp(x_acomp)
+pca_classic <- prcomp(clr(x_count_sel))
+
 # pc is needs to be transformed to the clr space
-pca_rotation_clr <- t(basis_matrix) %*% pca$rotation %*% basis_matrix
+pca_rotation_clr <- t(basis_matrix) %*% pca$rotation 
+# %*% basis_matrix
 colnames(count_matrix) <- gsub("_cts$", "_clr", colnames(count_matrix))
 rownames(pca_rotation_clr) <- colnames(count_matrix)
 
@@ -191,6 +197,63 @@ plot4 <- ggplot(mean_comp_4) +
 
 grid.arrange(plot1,plot2,plot3,plot4, ncol = 4)
 ```
+
+### Bootstrap for PC
+
+```{r bootstrap_pca, eval=TRUE, fig.width=12, fig.height=5}
+btst_results <- tar_read(bbootstrap_01_1)
+
+# Calculate confidence intervals for loadings
+loading_ci <- apply(simplify2array(lapply(btst_results, function(x) 
+                  t(basis_matrix) %*% x$rotation)), 1:2, 
+                   quantile, probs = c(0.025, 0.975))
+
+clr_rotation <- t(basis_matrix) %*% pca$rotation
+
+# TODO: would it make sense to backtransform the results here into the Simplex!!!
+loading_df <- data.frame(
+  Variable = rownames(pca_classic$rotation),
+  Loading = clr_rotation[,1],
+  Lower = loading_ci[1,,1],
+  Upper = loading_ci[2,,1]
+)
+
+ggplot(loading_df, aes(x = Variable, y = Loading)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = Lower, ymax = Upper)) +
+  coord_flip() +
+  labs(title = "PC1 Loadings with Bootstrap CI")
+
+```
+
+Control:
+
+
+```{r bootstrap_pca 2, eval=TRUE, fig.width=12, fig.height=5}
+btst_results <- tar_read(bbootstrap_01_2)
+
+# Calculate confidence intervals for loadings
+loading_ci <- apply(simplify2array(lapply(btst_results, function(x) 
+                  t(basis_matrix) %*% x$rotation)), 1:2, 
+                   quantile, probs = c(0.025, 0.975))
+
+clr_rotation <- t(basis_matrix) %*% pca$rotation
+
+loading_df <- data.frame(
+  Variable = rownames(pca_classic$rotation),
+  Loading = clr_rotation[,1],
+  Lower = loading_ci[1,,1],
+  Upper = loading_ci[2,,1]
+)
+
+ggplot(loading_df, aes(x = Variable, y = Loading)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = Lower, ymax = Upper)) +
+  coord_flip() +
+  labs(title = "PC1 Loadings with Bootstrap CI")
+
+```
+
 
 ## Scores 
 
@@ -365,10 +428,7 @@ gam.check(gam_fit1)
 To get an idea about the differences between the two approaches, we can compare the results of classic PCA with the results of MCEM PCA.
 
 ```{r classic_pca, eval=TRUE, fig.width=12, fig.height=10}
-x_count_sel <- x_count[4:ncol(x_count)-1]
-x_acomp <- acomp(x_count_sel)
-# pca_classic <- princomp(x_acomp)
-pca_classic <- prcomp(clr(x_count_sel))
+
 # biplot(pca_classic)
 # plot1 <- plot_pca_rotations(pca_classic$loadings, components = c(1,2), main = "PC1 vs. PC2")
 plot_pca_rotations(pca_classic$rotation, components = c(1,2), main = "PC1 vs. PC2")
@@ -546,3 +606,6 @@ plot(lengths, ci_widths, type = "b",
 We see a high and sustained autocorrelation for the PC1 scores. The test of different block lengths shows that 
 a block length of 50 gives realtively stable results. That corresponds to the `acf` analysis. A bigger block length 
 results in bigger CIs. 
+
+
+TODO: build test that check the clr restictons (orthogonality and sum zero for all clr coordinates)
