@@ -58,12 +58,22 @@ plot_pca_rotation <- function(rotation, scale = 1, main = "PCA - clr") {
   abline(h = 0, v = 0, lty = 2, col = "gray")
 }
 
-plot_pca_rotations <- function(rotation, components = c(1,2), scale = 1, main = "PCA - clr") {
-    plot(rotation[, components[1]], rotation[, components[2]],
-         xlab = paste0("PC", components[1]),
-         ylab = paste0("PC", components[2]),
-         main = main)
-    
+plot_pca_rotations <- function(rotation, components = c(1,2), scale = 1, main = "PCA - clr", fixed = FALSE) {
+    # Set up the plot with optional fixed axes
+    if (fixed) {
+        plot(rotation[, components[1]], rotation[, components[2]],
+             xlab = paste0("PC", components[1]),
+             ylab = paste0("PC", components[2]),
+             main = main,
+             xlim = c(-0.6, 0.6),
+             ylim = c(-0.6, 0.6))
+    } else {
+        plot(rotation[, components[1]], rotation[, components[2]],
+             xlab = paste0("PC", components[1]),
+             ylab = paste0("PC", components[2]),
+             main = main)
+    }
+
     arrows(0, 0,
            rotation[, components[1]] * scale,
            rotation[, components[2]] * scale,
