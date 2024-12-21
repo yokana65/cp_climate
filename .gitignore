@@ -31,6 +31,9 @@
 # Temporary files created by R markdown
 *.utf8.md
 *.knit.md
+*.html
+*.pdf
+*.png
 
 # R Environment Variables
 .Renviron
@@ -62,3 +65,5 @@ files/
 graphs/
 overview_pandoc.html
 sample_error_estimation.Rmd
+Code_Greven/
+Spatio-Temporal-Variations/

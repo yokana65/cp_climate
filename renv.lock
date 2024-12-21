@@ -1,6 +1,6 @@
 {
   "R": {
-    "Version": "4.4.1",
+    "Version": "4.4.2",
     "Repositories": [
       {
         "Name": "CRAN",
@@ -189,6 +189,18 @@
       ],
       "Hash": "6377d4336f5c291b8a89d75fb8074828"
     },
+    "boot": {
+      "Package": "boot",
+      "Version": "1.3-30",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "graphics",
+        "stats"
+      ],
+      "Hash": "96abeed416a286d4a0f52e550b612343"
+    },
     "bslib": {
       "Package": "bslib",
       "Version": "0.7.0",
@@ -362,6 +374,20 @@
       ],
       "Hash": "fedd9d00c2944ff00a0e2696ccf048ec"
     },
+    "energy": {
+      "Package": "energy",
+      "Version": "1.7-12",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "Rcpp",
+        "boot",
+        "gsl",
+        "stats"
+      ],
+      "Hash": "bedbcd2df44262c374062791966f7d4c"
+    },
     "evaluate": {
       "Package": "evaluate",
       "Version": "0.24.0",
@@ -422,6 +448,35 @@
       ],
       "Hash": "15aeb8c27f5ea5161f9f6a641fafd93a"
     },
+    "future": {
+      "Package": "future",
+      "Version": "1.34.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "digest",
+        "globals",
+        "listenv",
+        "parallel",
+        "parallelly",
+        "utils"
+      ],
+      "Hash": "475771e3edb711591476be387c9a8c2e"
+    },
+    "future.apply": {
+      "Package": "future.apply",
+      "Version": "1.11.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "future",
+        "globals",
+        "parallel",
+        "utils"
+      ],
+      "Hash": "0efead26b03bb60716ed29971b1953dc"
+    },
     "generics": {
       "Package": "generics",
       "Version": "0.1.3",
@@ -458,6 +513,17 @@
       ],
       "Hash": "44c6a2f8202d5b7e878ea274b1092426"
     },
+    "globals": {
+      "Package": "globals",
+      "Version": "0.16.3",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "codetools"
+      ],
+      "Hash": "2580567908cafd4f187c1e5a91e98b7f"
+    },
     "glue": {
       "Package": "glue",
       "Version": "1.7.0",
@@ -468,6 +534,16 @@
         "methods"
       ],
       "Hash": "e0b3a53876554bd45879e596cdb10a52"
+    },
+    "gsl": {
+      "Package": "gsl",
+      "Version": "2.1-8",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "8f8205cbb9f1066a94e22898fe949184"
     },
     "gtable": {
       "Package": "gtable",
@@ -510,6 +586,21 @@
         "utils"
       ],
       "Hash": "81d371a9cc60640e74e4ab6ac46dcedc"
+    },
+    "htmlwidgets": {
+      "Package": "htmlwidgets",
+      "Version": "1.6.4",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "grDevices",
+        "htmltools",
+        "jsonlite",
+        "knitr",
+        "rmarkdown",
+        "yaml"
+      ],
+      "Hash": "04291cc45198225444a397606810ac37"
     },
     "igraph": {
       "Package": "igraph",
@@ -620,6 +711,16 @@
       ],
       "Hash": "b8552d117e1b808b09a832f589b79035"
     },
+    "listenv": {
+      "Package": "listenv",
+      "Version": "0.9.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R"
+      ],
+      "Hash": "e2fca3e12e4db979dccc6e519b10a7ee"
+    },
     "magrittr": {
       "Package": "magrittr",
       "Version": "2.0.3",
@@ -692,14 +793,14 @@
     },
     "mvtnorm": {
       "Package": "mvtnorm",
-      "Version": "1.2-5",
+      "Version": "1.3-1",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
         "R",
         "stats"
       ],
-      "Hash": "4d1891e59ac7a12b4e7e8a69349125f1"
+      "Hash": "77c61d51ce0f36e3c1a76e6b295aab31"
     },
     "nlme": {
       "Package": "nlme",
@@ -714,6 +815,18 @@
         "utils"
       ],
       "Hash": "2769a88be217841b1f33ed469675c3cc"
+    },
+    "parallelly": {
+      "Package": "parallelly",
+      "Version": "1.38.0",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "parallel",
+        "tools",
+        "utils"
+      ],
+      "Hash": "6e8b139c1904f5e9e14c69db64453bbe"
     },
     "patchwork": {
       "Package": "patchwork",
@@ -853,6 +966,28 @@
         "utils"
       ],
       "Hash": "397b7b2a265bc5a7a06852524dabae20"
+    },
+    "rgl": {
+      "Package": "rgl",
+      "Version": "1.3.12",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "R6",
+        "base64enc",
+        "grDevices",
+        "graphics",
+        "htmltools",
+        "htmlwidgets",
+        "jsonlite",
+        "knitr",
+        "magrittr",
+        "mime",
+        "stats",
+        "utils"
+      ],
+      "Hash": "983b99c0be0dd052350c6aa359c960a3"
     },
     "rlang": {
       "Package": "rlang",

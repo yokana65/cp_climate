@@ -31,8 +31,6 @@ fit_pca_vs_5 <- function(x_data,
 
   proposal_scores <- list(length(x_data))
   weights <- list(length(x_data))
-  sdev_list <- list(length(max_iter))
-  center_list <- list(length(max_iter))
 
   if (max_iter > 0) {
     for (k in 1L:max_iter) {
@@ -69,59 +67,47 @@ fit_pca_vs_5 <- function(x_data,
         } else {
           max_log_weight <- max(log_weights)
           weights <- exp(log_weights - max_log_weight)
-          normalized_weights <- weights / sum(weights)
+          weights[[i]] <- weights / sum(weights)
         }
       }
-
-      mean_ess <- mean(sapply(all_weights, function(w) 1 / sum(w^2)))
-
       # M-Step ###################
       scores_matrix <- sapply(seq_along(weights), function(i){
         proposal_scores[[i]] %*% weights[[i]]
       })
-      na_count <- sum(is.na(scores_matrix))  
       mu_scores <- rowMeans(scores_matrix, na.rm = TRUE)
       # update parameters
       pca_old <- pca
       pca$center <- pca$center + pca$rotation %*% mu_scores
-      center_list[[k]] <- pca$center
       Sigma <- Reduce("+", lapply(seq_along(weights), function(i) {
-          Reduce("+", lapply(1L:(r * k), function(t) {
+        Reduce("+", lapply(1L:(r * k), function(t) {
           C_it <- weights[[i]][t] * (proposal_scores[[i]][, t] - mu_scores) %*%
-              t((proposal_scores[[i]][, t] - mu_scores))
-          }))
+            t((proposal_scores[[i]][, t] - mu_scores))
+        }))
       })) / length(weights)
       edc <-  tryCatch({eigen(Sigma, symmetric = TRUE)}, error = function(e) {
-          cat("error eigen() in iteration", k, "for observation", i, "\n")
-          cat("error message:", e$message, "\n")
+        cat("error eigen() in iteration", k, "for observation", i, "\n")
+        cat("error message:", e$message, "\n")
       })
       edc$vectors <- fix_sign(edc$vectors)
       ev <- edc$values
       if (any(neg <- ev < 0)) {
-          if (any(ev[neg] < -9 * .Machine$double.eps * ev[1L])) 
-              stop("covariance matrix is not non-negative definite")
-          else ev[neg] <- 0
+        if (any(ev[neg] < -9 * .Machine$double.eps * ev[1L])) 
+          stop("covariance matrix is not non-negative definite")
+        else ev[neg] <- 0
       }
-
       pca$sdev <- sqrt(edc$values)
       sdev_list[[k]] <- pca$sdev
       # TODO: Das ist der entscheidende Teil für die Konvergenz: herausarbeiten! -> wird hier eigentlich auch eine Vorzeichenkorrektur benötigt?
       pca$rotation <- pca$rotation %*% edc$vectors
-      # check convergence
       critical_value_1 <- sqrt(sum((pca_old$center - pca$center)^2))
       Sigma_old <- Reduce("+", lapply(seq_along(pca_old$sdev), function(k) {
-          pca_old$rotation[, k] %*% t(pca_old$rotation[, k]) * (pca_old$sdev[k]^2)
+        pca_old$rotation[, k] %*% t(pca_old$rotation[, k]) * (pca_old$sdev[k]^2)
       }))
       Sigma_new <- Reduce("+", lapply(seq_along(pca$sdev), function(k) {
         pca$rotation[, k] %*% t(pca$rotation[, k]) * (pca$sdev[k]^2)
       }))
       Sigma_diff <- Sigma_old - Sigma_new
       critical_value_2 <- norm(Sigma_diff, type = "F")
-      # clr_rotation <- t(basis_matrix) %*% pca$rotation %*% basis_matrix
-      # cat("clr-coordinates PCA1:", clr_rotation[ , 1], "\n")
-      # pca$sdev <- pca$sdev / max(pca$sdev) # change log
-      
-      # TODO: rework this part and transform the ilr coordinates to clr-coefficients
       if (max(critical_value_1, critical_value_2) < eps) {
         constant <- apply(pca$rotation, 2, function(g) {
           sqrt(sum(g^2))
@@ -129,25 +115,21 @@ fit_pca_vs_5 <- function(x_data,
         pca$rotation <- t(t(pca$rotation) / constant)
         pca$rotation_ilr <- pca$rotation
         pca$rotation <- V %*% pca$rotation_ilr
-
-        pca$sdev <- pca$sdev * constant
-        # TODO: improving scaling of data; give option for empirical mean vs mcem mean
+        pca$sdev <- pca$sdev / sum(pca$sdev)
         pca$scores_clr <- if (scores) {
-          scale(clr(x_data), center = pca$center, scale = FALSE) %*% pca$rotation
+          scale(clr(x_data),
+                center = pca$center, scale = FALSE) %*% pca$rotation
         }
-
         rownames(pca$rotation) <- names(x_data[[1L]])
         cn <- paste0("Comp.", seq_len(ncol(pca$rotation)))
         colnames(pca$rotation) <- cn
-
+        mean_ess <- mean(sapply(weights, function(w) 1 / sum(w^2)))
         end_time <- Sys.time()
         elapsed_time <- end_time - start_time
         print(paste("The algorithm converged after:", elapsed_time, attr(elapsed_time, "units")))
         return(list("iteration" = k,
                     "pca" = pca,
                     "x_data" = x_data,
-                    "list_center" = center_list,
-                    "list_sdev" = sdev_list,
                     "time" = elapsed_time,
                     "ESS" = mean_ess))
       }
@@ -156,21 +138,23 @@ fit_pca_vs_5 <- function(x_data,
   constant <- apply(pca$rotation, 2, function(g) {
     sqrt(sum(g^2))
   })
-  pca$rotation <- t(t(pca$rotation) / constant) # unit 1 for each column
-  pca$sdev <- pca$sdev * constant
-
-
+  pca$rotation <- t(t(pca$rotation) / constant)
+  pca$rotation_ilr <- pca$rotation
+  pca$rotation <- V %*% pca$rotation_ilr
+  pca$sdev <- pca$sdev / sum(pca$sdev)
+  pca$scores_clr <- if (scores) {
+    scale(clr(x_data),
+          center = pca$center, scale = FALSE) %*% pca$rotation
+  }
   rownames(pca$rotation) <- names(x_data[[1L]])
   cn <- paste0("Comp.", seq_len(ncol(pca$rotation)))
   colnames(pca$rotation) <- cn
-  
+  mean_ess <- mean(sapply(weights, function(w) 1 / sum(w^2)))
   end_time <- Sys.time()
   elapsed_time <- end_time - start_time
   return(list("iteration" = max_iter,
               "pca" = pca,
               "x_data" = x_data,
-              "list_center" = center_list,
-              "list_sdev" = sdev_list,
               "time" = elapsed_time,
               "ESS" = mean_ess))
 }
