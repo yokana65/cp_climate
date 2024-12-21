@@ -317,11 +317,15 @@ $\left\langle\mathbf{y}, \vec{e}_{i}\right\rangle=\left\langle\mathbf{x}, \mathb
 # example data
 x <-matrix(c(0.2,0.5,0.3,0.1,0.4,0.5,0.4,0.3,0.3,0.3,0.5,0.2), nrow=4,ncol=3,byrow=TRUE)
 x_clr <- clr(x)
+x_ilr <- ilr(x)
 
 n <- 3  # Total number of elements in the vector
 basis_vectors <- lapply(1:(n - 1), generate_orthonormal_basis, D = n)
 
 basis_matrix <- do.call(rbind, basis_vectors)
+
+# calculate clr from ilr coordinates
+x_ilr%*%basis_matrix*(-1)
 ```
 
 The orthonormal basis in clr-Space are defined by:
@@ -393,3 +397,46 @@ clrInv((sum_1 + sum_2)*(-1))
 ```
 
 More importantly, this implies that the clr-coordinates are identical to the projected ilr-coordinates onto the orthonormal basis vectors. **Which basically means we can just use the clr-coordinates in our calculations??**
+
+Boogart et al. 2013, p. 43
+
+$$
+\begin{align*}
+\operatorname{clr}(\mathbf{x}) \cdot \mathbf{V}^{t}= & \ln (\mathbf{x}) \cdot \mathbf{V}^{t}=: \operatorname{ilr}(\mathbf{x})=\xi  \tag{2.9}\\
+& \operatorname{ilr}(\mathbf{x}) \cdot \mathbf{V}=\operatorname{clr}(\mathbf{x}) \longrightarrow \mathbf{x}=\mathscr{C}[\exp (\xi \cdot \mathbf{V})] \tag{2.10}
+\end{align*}
+$$
+
+We can show this by:
+
+```{r summary 8, eval=TRUE}
+# clr coordinates multiplied by basis_matrix
+(x_clr%*%t(basis_matrix))
+
+```
+
+This is equivalent to the negative ilr-coordinates. The sign depends on the direction of our orthonormal basis and has no analytical significance.
+
+Let's check of the log transformation gives us the same results
+
+```{r summary 7, eval=TRUE} 
+# log(x) times basis_matrix
+(log(x)%*%t(basis_matrix))
+
+```
+
+```{r summary 9, eval=TRUE}
+# and back transformation
+acomp(exp(x_ilr%*%(basis_matrix*(-1))))
+```
+
+
+## Proves
+
+It must hold that $E*E^T = I_{D-1}$
+
+```{r prove, eval=TRUE}
+basis_matrix%*%t(basis_matrix)
+```
+
+Thats correct except for the typical numerical error.

@@ -941,7 +941,6 @@ n_samples <- 40
 # })
 x_data <- unlist(lapply(1:n_data, function(i) {
   probs <- true_observed_comp[[i]][,2]
-  # TODO: needs to be redesigned since X is modelled as a latent process G_i and not as Multinomial
   samples <- t(rmultinom(n_samples, n_counts, probs))
   lapply(1:nrow(samples), function(j) samples[j,])
 }), recursive = FALSE)
