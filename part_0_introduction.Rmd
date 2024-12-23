@@ -97,17 +97,32 @@ Multiplikation des eingeführten Vektors $\boldsymbol{x}$ mit einem positiven Sk
 der relativen Informationen, können die in Definition 1 definierten Vektoren als Teil einer Equivalenzklasse von Kompositionsvektoren beschrieben werden, deren Ganzes voneinader abweicht, 
 aber deren relative Information identisch ist (Vgl. Pawlowsky-Glahn et al 2015,p.9).  
 
-
+The vector $\boldsymbol{x}$ typically contains the observed values for the $D$ components, which, for terminological precision, are called compositional parts in the context of this thesis. 
+The sum of these of the observed values or compositional parts is referred to as the whole or total. Notably, the magnitude of the whole the whole is not relevant for the definition of a 
+composition, and it is not necessary for this total to remain constant across multiple observations from a population of compositions, as was required in some older and more restrictive definitions. 
+This can be illustrated by the fact that multiplying the vector $\boldsymbol{x}$ by a positive scalar $c > 0$ has no effect on the proportions of the compositional parts. Due to this preservation 
+of relative information, the defined D-part composition ~\ref{def:dpart} can be described (TODO: better expression? see literature) as members of an of an equivalence class of compositional vectors 
+whose totals may differ but whose relative information remains idenftical 
 
 In der Praxis ist es üblich beobachteten Kompositionen eine konstante Summe zuzuordnen, um sie als Teil eines festen Ganzen zu betrachten, z.B. als prozentuale Anteile mit einer konstanten Summe 
 von eins oder als ppm (parts per Million). Derartige Vektoren werden in der Literatur auch als *closed data* bezeichnet und die Operation einer Komposition eine konstante Summe zuzuordnen 
 als *closure*: 
+
+In practice, it is common to assign a constant sum to observed compositions to make them comparable. Typical examples are relative shares with a constant sum of one or ppm (parts per million). 
+Such vectors are referred to in the literature as *closed data*. and the operation of assigning a constant sum to a composition $\boldsymbol{x}$ is called a *closure*:
 
 **Definition 2: closure**
 For any compositional vector $\boldsymbol{x} = (x_1, x_2, ..., x_D)$ with positive components, the closure of $\boldsymbol{x}$ to a constant $\kappa > 0$ is defined as
 $$
 \mathcal{C}(\mathbf{x})=\left[\frac{\kappa \cdot x_{1}}{\sum_{j=1}^{D} x_{j}}, \frac{\kappa \cdot x_{2}}{\sum_{j=1}^{D} x_{j}}, \ldots, \frac{\kappa \cdot x_{D}}{\sum_{j=1}^{D} x_{j}}\right]
 $$
+
+Again, it is important to emphasize that the closure operator implies that every observed composition can be *rescaled* such that the sum over its components equals $\kappa$ without any loss of 
+relative information between the compositional parts. This property leads to the following definition of equivalence classes for compositional vectors:
+
+**Definition 2b: equivalence class**
+Two vectors of $D$ positive real components $\mathbf{x}, \mathbf{y} \in \mathbb{R}_{+}^{D} \quad \left(x_{j}, y_{j}>0\right.$, for all $j=1,2, \ldots, D)$ are compositionally equivalent if 
+\mathcal{C}(\mathbf{x}) = \mathcal{C}(\mathbf{y}).
 
 [TODO: is change between x and pi necessary?] -> hier Einführung \pi sinnvoll -> latent composition has a closure with \kappa = 1
 
@@ -126,10 +141,14 @@ dass heißt einer Equivalenzklasse. [TODO: Definition einfügen?]
 
 Auf dieser Argumentation aufbauend, kann der Grundraum für Kompositionsdaten definiert werden:
 
+Mit Hilfe dieser Vorüberlegungen kann der Grundraum aller möglichen Kompositionen definiert werden. Dieser wird der Tradition Atchisons folgend als Simplex bezeichnet:
+
 **Definition 3: sample space**
 The sample space of compositional data is the simplex,
 $\mathcal{S}^{D}=\left\{\boldsymbol{\pi} \in \mathbb{R}^{D} \mid \sum_{j=1}^{D} \pi_{j}=1, \pi_{j} \geq 0 \forall j=1, \ldots, D\right\}$.
 
+Nachdem in der Einführung die Grundelemente in der Arbeit mit Kompositionsdaten vorgestellt wurden, wird im nächsten Schritt dagelegt, auf welchen Grundprinzipien eine statistisch 
+valide Arbeit mit Kompositionsdaten zu erfolgen hat. Dies ist notwendig, da die Anwendung von Standardmethoden der statistischen Analyse zu einer Reihe von Problemen führt.
 Neben den bereits erwähnten Besonderheiten oder Paradoxien bei der Arbeit mit Kompositionsdaten, gibt es auch eine Reihe von handfesten Problemen bei der Anwendung von multivariaten 
 Methooden (Boogart et al. 2013, p. 2):
 - Indepentent compositional parts can show spurious correlation
@@ -140,13 +159,24 @@ Methooden (Boogart et al. 2013, p. 2):
 Um diese Probleme zu vermeiden, wurden von WissenschaftlerInnen wie Aitchison (1982) und Pawlowsky-Glahn (2015) Grundsätze entwickelt, die eine mathematisch fundierte Arbeit mit relativen 
 Daten ermöglichen. Diese Grundsätze und die von Aitchison entwickelten Operationen eines Euklidischen Vektorraumes auf dem Simplex werden im Folgenden vorgestellt.
 
+Having introduced the fundamental elements of compositional data analysis, now the the core principles required for statistically valid work with compositional data will be established. 
+This is essential because applying standard statistical tools leads to several significant problems. 
+Beyond the already mentioned paradoxes that apply when working with compositional data, there are also a number of specific problems when conducting standard multivariate analysis (Boogart et al. 2013, p. 2):
+
+- Independent compositional parts can show spurious correlation
+- The covariance of two compositional parts depends on the other compositional parts included in the analysis
+- Variance matrices of compositional data are singular
+- The values of compositional data cannot follow a normal distribution on the simplex due to their bounded range
+
+To address these challanges, researchers such as Aitchison (1982), Egozcue (2005) and Pawlowsky-Glahn (2015) developed principles that enable mathematically rigorous analysis of relative data. The 
+principles and the operations of an Euclidean vector space on the simples developed by Aitchison (1982) are presented in the following section.
 
 ## Principles of CoDa
 
 Die Daten auf dem Simplex müssen folgenden drei Prinzipien gerecht werden, um eine robuste und widerspruchsfreie statistische Analyse zu ermöglichen (Aitchison ??, Pawlowsky-Glahn et al. 2015, p. 12):
 
 1. Scale invariance:
-Das Prinzip der Scale invariance folgt aus der Definition der Equivalenzklasse von Kompositionen. Es bedeutet, dass die relavtiven Informationen in den Kompositionsteilen unabhängig von 
+Das Prinzip der Scale invariance lässt sich aus der Definition der Equivalenzklasse von Kompositionen ableiten. Es bedeutet, dass die relavtiven Informationen in den Kompositionsteilen unabhängig von 
 der Einheit sind, in der diese erfasst werden, solange alle in derselben Einheit gemessen werden. In diesem Sinne muss jede Komposition invariant gegenüber jeder Veränderung der Skalierung 
 sein. Mathematisch kann dies für eine beliebige Funktion $f( )$ in $\mathbb{R}^{D}$ wie folgt definiert werden (Pawloswky-Glahn et al. 2015, p.14): The function $f$ is scale invariant if it 
 satisfies $f(\lambda \boldsymbol{\pi}) = f(\boldsymbol{\pi})$ for all $\lambda > 0$ and any compistion $\boldsymbol{\pi} \in \mathcal{S}^{D}$.
@@ -155,7 +185,7 @@ satisfies $f(\lambda \boldsymbol{\pi}) = f(\boldsymbol{\pi})$ for all $\lambda >
 It is required that any change in the order of compositional parts does not influence the analyses, i.e. any function $f$ is permutation invariant if it results in equivalent results when 
 the order of the compositional parts is changed.
 
-A typical choice for for $f$ are log ratios for the compositional parts. It is obvious that ratios are scale invariant since $f(\boldsymbol{\pi}) = \pi_1 / \pi_2 = (\lambda * \pi_1) / (\lambda * \pi_2)$.
+A typical choice for $f$ that follows both of the principles mentioned so far are log ratios for the compositional parts. It is obvious that ratios are scale invariant since $f(\boldsymbol{\pi}) = \pi_1 / \pi_2 = (\lambda * \pi_1) / (\lambda * \pi_2)$.
 But ratios depend on the order of the compositional parts. Therefore, the logratio is choosen $f(\boldsymbol{\pi}) = \log(\pi_1 / \pi_2)$. Since $\log(\pi_1 / \pi_2) = - \log(\pi_2 / \pi_1)$ 
 it is clear that a change in the order only results in a change of sign and the logratio provides a symmetry with respect to the ordering of parts.
 
@@ -164,6 +194,36 @@ A subcompisition is a subset of a composition. The last principle of subcomposit
 composition. This principle can be illustrated in two dimensions. The first is that of *subcompositional dominance* and states that the distance between two full compositions must be greater 
 or equal to the distance between any two subcomposition. Again, it is useful to mention that the standard Euclidean distance does not fullfill this principle when applied to compositional data.
 The second dimension of this principle is that of *ratio preserving*, which means that the choice of a subcomposition does not affect the ratio between the remaining parts.
+
+Data on the simplex must satisfy the following three principles to enable a robust and consistent statistical analysis citet{Aitchison2018, Pawlowsky-Glahna}:
+
+\begin{enumerate}
+    \item Scale invariance
+    
+    The principle of scale invariance is closely related to the definition of the equivalence classes of compositions. It means that the relative information in the compositional parts is 
+    independent of the unit in which they are measured, as long as all parts are measured in the same unit. As a consequence, every composition must be invariant to any change in 
+    scaling. Mathematically, this can be defined for any function $f( )$ in $\mathbb{R}^{D}$ as follows citep[p.~14]{PawlowskyGlahna}: The function $f$ is scale invariant if it 
+    satisfies $f(\lambda \boldsymbol{x}) = f(\boldsymbol{x})$ for all $\lambda > 0$ and any composition $\boldsymbol{x} \in \mathcal{S}^{D}$.
+
+    \item Permutation invariance
+    
+    It is required that any change in the order of compositional parts does not influence the analyses, i.e. any function $f$ is permutation invariant if it results in equivalent results 
+    when the order of the compositional parts is changed. \\
+
+    A typical choice for $f$ that follows the first principle of scale invariance are ratios for the compositional parts. It is obvious that ratios are scale invariant since $f(\boldsymbol{x}) = x_1 / x_2 = (\lambda * x_1) / (\lambda * x_2)$. 
+    But ratios depend on the order of the compositional parts, therefore violating the second principle. Therefore, the logratio is chosen $f(\boldsymbol{x}) = \log(x_1 / x_2)$. Since 
+    $\log(x_1 / x_2) = - \log(x_2 / x_1)$ it becomes clear that a change in the order only results in a change of sign and the log-ratio provides a symmetry with respect to the ordering of parts.
+
+    \item Subcompositional coherence
+
+    A subcomposition is a subset of a composition. The third principle of subcompositional coherence states that the choice of a subcomposition does not affect the statistical properties of the 
+    composition. This principle can be illustrated in two dimensions. The first dimension is called \emph{subcompositional dominance} and states that the distance between two complete compositions must 
+    be greater or equal to the distance between any two subcompositions. Again, it is useful to mention that the standard Euclidean distance does not fullfill this principle when applied to 
+    compositional data. \autoref{subsec:operations} is going to introduce the Aitchison distance that follows the principle of \emph{subcompositional dominance}. 
+    The second dimension of subcompositional coherence is called \emph{ratio preseving}, which means the choice of a subcomposition does not affect the ratio between the remaining parts.
+
+\end{enumerate}
+
 
 ## Operations of the vector space
 
