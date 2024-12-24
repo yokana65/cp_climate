@@ -10,6 +10,7 @@ source("scripts/fit_density_pca.R")
 source("scripts/fit_composition_pca.R")
 source("scripts/fit_composition_pca_ilr.R")
 source("scripts/fit_pca_ilr.R")
+source("scripts/fit_pca_ilr_2.R")
 source("scripts/conditional_scores_function.R")
 source("scripts/gradient.R")
 source("scripts/simulations.R")
@@ -19,6 +20,7 @@ source("scripts/simulation_4.R")
 source("scripts/simulation_5.R")
 source("scripts/simulation_6.R")
 source("scripts/bootstrap.R")
+source("scripts/helper_functions.R")
 
 # Set target-specific options such as packages:
 # tar_option_set(packages = c("dplyr", "tidyr"))
@@ -1398,14 +1400,14 @@ list(
     for  (i in 1:length(sim_6_sc1_n50)) {
       sim <-  sim_6_sc1_n50[[i]]
       x_data <- sim$x_data
-      cat("Iteration sim_6_sc01_n50", i, "\n")
+      cat("Iteration sim_6_sc1_n50", i, "\n")
       set.seed(1 * i)
       result <- fit_pca_ilr_vs_2(
         x_data, 
         sc_factor = 1,
         r = 15,
         max_iter = 80,
-        eps = 0.06
+        eps = 0.07
       )
       pca_results_list[[i]] <- result
     }
@@ -1424,7 +1426,7 @@ list(
         sc_factor = 1,
         r = 15,
         max_iter = 80,
-        eps = 0.06
+        eps = 0.07
       )
       pca_results_list[[i]] <- result
     }
@@ -2284,6 +2286,94 @@ list(
                        sc_factor = 1, 
                        sum_exp = TRUE)
   }),
+  tar_target(pca_count_ilr_vs5_sc01, {
+    x_data <- data_kl15_comp
+    x_data <- x_data * 0.01
+    set.seed(12)
+    pca_results_ilr_std <-
+      fit_pca_vs_5(x_data,
+                   max_iter = 50,
+                   r = 10,
+                   lambda = 1,
+                   eps = 0.03,
+                   sc_factor = 1,
+                   scores = TRUE,
+                   sum_exp = TRUE,
+                   fix_sign = TRUE)
+ }),
+  tar_target(pca_count_ilr_vs5, {
+    x_data <- data_kl15_comp
+    set.seed(12)
+    pca_results_ilr_std <-
+      fit_pca_vs_5(x_data,
+                   max_iter = 50,
+                   r = 10,
+                   lambda = 1,
+                   eps = 0.03,
+                   sc_factor = 1,
+                   scores = TRUE,
+                   sum_exp = TRUE,
+                   fix_sign = TRUE)
+ }),
+  tar_target(pca_count_ilr_vs5_e06, {
+    x_data <- data_kl15_comp
+    set.seed(12)
+    pca_results_ilr_std <-
+      fit_pca_vs_5(x_data,
+                   max_iter = 50,
+                   r = 10,
+                   lambda = 1,
+                   eps = 0.06,
+                   sc_factor = 1,
+                   scores = TRUE,
+                   sum_exp = TRUE,
+                   fix_sign = TRUE)
+ }),
+  tar_target(pca_count_ilr_vs5_sc01_e06, {
+    x_data <- data_kl15_comp
+    x_data <- x_data * 0.01
+    set.seed(12)
+    pca_results_ilr_std <-
+      fit_pca_vs_5(x_data,
+                   max_iter = 50,
+                   r = 10,
+                   lambda = 1,
+                   eps = 0.06,
+                   sc_factor = 1,
+                   scores = TRUE,
+                   sum_exp = TRUE,
+                   fix_sign = TRUE)
+ }),
+  tar_target(pca_count_ilr_vs5_sc01_noSign, {
+    x_data <- data_kl15_comp
+    x_data <- x_data * 0.01
+    set.seed(12)
+    pca_results_ilr_std <-
+      fit_pca_vs_5(x_data,
+                   max_iter = 50,
+                   r = 10,
+                   lambda = 1,
+                   eps = 0.03,
+                   sc_factor = 1,
+                   scores = TRUE,
+                   sum_exp = TRUE,
+                   fix_sign = FALSE)
+ }),
+  tar_target(pca_count_ilr_vs5_sc01_r30, {
+    x_data <- data_kl15_comp
+    x_data <- x_data * 0.01
+    set.seed(12)
+    pca_results_ilr_std <-
+      fit_pca_vs_5(x_data,
+                   max_iter = 50,
+                   r = 30,
+                   lambda = 1,
+                   eps = 0.03,
+                   sc_factor = 1,
+                   scores = TRUE,
+                   sum_exp = TRUE,
+                   fix_sign = TRUE)
+ }),
   tar_target(bbootstrap_01_1, {
     x_data <- data_kl15_comp
     results_mcem <- pca_count_ilr_vs1_1perc

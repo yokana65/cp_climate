@@ -1,8 +1,4 @@
 # version mit ESS
-
-
-
-
 fit_pca_vs_5 <- function(x_data,
                          max_iter = 50,
                          r = 10,
@@ -16,16 +12,20 @@ fit_pca_vs_5 <- function(x_data,
   if (!is.list(x_data) && !is.matrix(x_data)) {
     stop("Input x_data must be a list or a matrix")
   }
+  if (is.list(x_data)) {
+    x_df <- do.call(rbind, x_data)
+  }
   if (is.data.frame(x_data) || is.matrix(x_data)) {
+    x_df <- x_data
     x_data <- apply(x_data, 1, function(x) x, simplify = FALSE)
   }
   lengths <- unique(sapply(x_data, length))
   if (length(lengths) != 1) {
     stop("All observations must have the same number of components")
   }
-  V <- get_helmert(x_data)
-  nu <- rep(0, D - 1)
-  Sigma <- diag(D - 1)
+  V <- get_helmert(x_df)
+  nu <- rep(0, ncol(x_df) - 1)
+  Sigma <- diag(ncol(x_df) - 1)
   pca <- prcomp(Sigma, center = FALSE)
   pca$center <- nu
 
@@ -96,7 +96,6 @@ fit_pca_vs_5 <- function(x_data,
         else ev[neg] <- 0
       }
       pca$sdev <- sqrt(edc$values)
-      sdev_list[[k]] <- pca$sdev
       # TODO: Das ist der entscheidende Teil für die Konvergenz: herausarbeiten! -> wird hier eigentlich auch eine Vorzeichenkorrektur benötigt?
       pca$rotation <- pca$rotation %*% edc$vectors
       critical_value_1 <- sqrt(sum((pca_old$center - pca$center)^2))
@@ -115,9 +114,10 @@ fit_pca_vs_5 <- function(x_data,
         pca$rotation <- t(t(pca$rotation) / constant)
         pca$rotation_ilr <- pca$rotation
         pca$rotation <- V %*% pca$rotation_ilr
+        pca$center <- V %*% pca$center
         pca$sdev <- pca$sdev / sum(pca$sdev)
         pca$scores_clr <- if (scores) {
-          scale(clr(x_data),
+          scale(clr(x_df),
                 center = pca$center, scale = FALSE) %*% pca$rotation
         }
         rownames(pca$rotation) <- names(x_data[[1L]])
@@ -141,9 +141,10 @@ fit_pca_vs_5 <- function(x_data,
   pca$rotation <- t(t(pca$rotation) / constant)
   pca$rotation_ilr <- pca$rotation
   pca$rotation <- V %*% pca$rotation_ilr
+  pca$center <- V %*% pca$center
   pca$sdev <- pca$sdev / sum(pca$sdev)
   pca$scores_clr <- if (scores) {
-    scale(clr(x_data),
+    scale(clr(x_df),
           center = pca$center, scale = FALSE) %*% pca$rotation
   }
   rownames(pca$rotation) <- names(x_data[[1L]])
