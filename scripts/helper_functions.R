@@ -141,8 +141,8 @@ seq_ilr_transform <- function(x_data) {
 }
 # TODO: check if this results in same coorddinates as basis_matrix multiplication
 
-get_helmert <- function(x) {    
-  V <- matrix(0, nrow = ncol(x), ncol = ncol(x) - 1)
+get_helmert <- function(D) {    
+  V <- matrix(0, nrow = D, ncol = D - 1)
     for (i in 1:ncol(V)) {
       V[1:i, i] <- 1/i
       V[i + 1, i] <- (-1)
@@ -155,4 +155,151 @@ fix_sign <- function(A) {
     mysign <- function(x) ifelse(x < 0, -1L, 1L)
     A[] <- apply(A, 2L, function(x) x * mysign(x[1L]))
     A
+}
+
+clr_transform <- function(x, replace_zeros = "fraction") {
+  replace_zeros <- match.arg(replace_zeros, c("neutral", "fraction"))
+  if (!is.vector(x) && !is.matrix(x)) {
+    stop("Input must be a vector or a matrix")
+  }
+  if (is.vector(x)) {
+    x <- matrix(x, nrow = 1)
+  }
+  if (any(is.na(x))) {
+    stop("Input contains NA values")
+  }
+  if (any(!is.finite(x))) {
+    stop("Input contains infinite values")
+  }
+  if (any(x < 0)) {
+    stop("All values must be positive for log-ratio transformation")
+  }
+  
+  # Behandlung von Nullwerten
+  if (replace_zeros == "fraction") {
+    x[x == 0] <- 0.0333
+  }
+  log_x <- log(x)
+  # Berechne CLR für jede Zeile
+  clr_values <- t(apply(log_x, 1, function(row) {
+    if (replace_zeros == "neutral") {
+      row - mean(row[row != -Inf])
+    } else {
+      row - mean(row)
+    }
+  }))
+  if (replace_zeros == "neutral") {
+    clr_values[x == 0] <- 0
+  }
+  # Rückgabe als Vektor wenn Eingabe ein Vektor war
+  if (nrow(x) == 1 && is.vector(x)) {
+    clr_values <- as.vector(clr_values)
+  }
+  
+  return(clr_values)
+}
+
+clrTransVec <- function(x) {
+  if (!is.vector(x)) {
+    stop("Input must be a vector")
+  }  
+  if (any(is.na(x))) {
+    stop("Input contains NA values")
+  }
+  if (any(!is.finite(x))) {
+    stop("Input contains infinite values")
+  }  
+  if (any(x <= 0)) {
+    stop("All values must be positive for log-ratio transformation")
+  }
+  log_x <- log(x)
+  
+  mean_log_x <- mean(log_x)
+
+  clr_values <- log_x - mean_log_x
+  
+  return(clr_values)
+}
+
+inv_clr <- function(y, check_sum = FALSE) {
+  if (!is.vector(x) && !is.matrix(x)) {
+    stop("Input must be a vector or a matrix")
+  }
+  if (is.vector(x)) {
+    x <- matrix(x, nrow = 1)
+  }
+  if (check_sum) {
+    row_sums <- rowSums(y)
+    if (any(abs(row_sums) > 1e-10)) {
+      stop("The sum of CLR coordinates must be close to zero for each row.")
+    }
+  }
+  exp_values <- exp(y)
+  
+  # Normalisiere die Werte, damit sie sich zu 1 summieren
+  normalized_values <- exp_values / rowSums(exp_values)
+  
+  return(normalized_values)
+}
+
+ilr_transform <- function(x) {
+  if (is.vector(x)) {
+    x <- matrix(x, nrow = 1)
+  }
+  if (any(x < 0)) {
+    stop("Alle Werte müssen positiv sein, um die ILR-Transformation anzuwenden.")
+  }
+  V <- get_helmert(ncol(x))
+
+  clr_x <- clr_transform(x)
+
+  # Anwendung der ILR-Transformation
+  ilr_x <- clr_x %*% V
+  
+  return(ilr_x)
+}
+
+inv_ilr <- function(ilr_x, use_transpose = FALSE) {
+  # Überprüfen, ob ilr_x eine Matrix oder eine Liste ist
+  if (!is.matrix(ilr_x) && !is.list(ilr_x)) {
+    stop("Input must be a matrix or a list")
+  }
+  
+  # Anzahl der Komponenten bestimmen
+  if (is.matrix(ilr_x)) {
+    D <- ncol(ilr_x) + 1
+  } else { # ilr_x ist eine Liste
+    D <- length(ilr_x[[1]]) + 1
+    ilr_x <- do.call(rbind, ilr_x) # Konvertiere Liste in Matrix
+  }
+  # Erstellung der Helmert-Matrix
+  V <- get_helmert(D)
+  
+  # Rücktransformation in den CLR-Raum
+  if (use_transpose) {
+    clr_x <- ilr_x %*% t(V)
+  } else {
+    # Berechnung der inversen Matrix von V nur wenn benötigt
+    V_inv <- MASS::ginv(V)
+    clr_x <- ilr_x %*% V_inv
+  }
+  # Rücktransformation in den kompositionellen Raum
+  x <- exp(clr_x)
+  x <- x / rowSums(x)
+  
+  return(x)
+}
+
+replace_zeros <- function(x, repl = 0.0333) {
+  # Überprüfen, ob x ein Vektor, eine Matrix oder ein Data Frame ist
+  if (is.data.frame(x)) {
+    x <- as.matrix(x)
+  } else if (!is.vector(x) && !is.matrix(x)) {
+    stop("Die Eingabe muss ein Vektor, eine Matrix oder ein Data Frame sein.")
+  }
+  
+  # Ersetzen der Nullwerte durch 0.0333
+  x[x == 0] <- repl
+  
+  return(x)
 }
