@@ -303,3 +303,18 @@ replace_zeros <- function(x, repl = 0.0333) {
   
   return(x)
 }
+
+egv_clr2ilr <- function(egv_clr, E) {
+  # Get number of relevant eigenvectors (D-1)
+  n_eigenvectors <- ncol(E)
+  
+  # Transform each eigenvector separately
+  transformed_vectors <- lapply(1:n_eigenvectors, function(i) {
+    t(egv_clr[,i] %*% E)
+  })
+  
+  # Combine transformed vectors
+  result <- do.call(cbind, transformed_vectors)
+  
+  return(result)
+}
