@@ -21,7 +21,10 @@ library(gridExtra)
 library(ggnewscale)
 
 source("scripts/helper_functions.R")
-
+source("scripts/fit_pca_ilr.R")
+source("scripts/fit_pca_ilr_2.R")
+source("scripts/conditional_scores_function.R")
+source("scripts/gradient.R")
 ```
 
 This chapter evaluates the performance of the MCEM algorithm introduced in the chapter [...]. The evaluation follows a two-step simulation procedure. First, the latent 
@@ -31,10 +34,10 @@ from the associated multinomial distribution $\boldsymbol{X}_{i} {\sim} \text{Mu
 $i=1,\ldots,100$.  
 The simulated dataset is then used to evaluate the performance of the MCEM algorithm. That is done by evaluating the MCEM algorithm's capability to identify the 
 true mean vector $\boldsymbol{\mu}$ and covariance structure $\boldsymbol{K}$ of the latent compositions. For this purpose, the empirical mean vector is compared to the sample mean and the empirical 
-covariance structure derived from the principal component analysis is compared with the result of both a classical and a robust PCA.  
-It is important to note that the MCEM algorithm operates directly on the simplex, while both classical and robust PCA are performed on the transformed coordinates 
+covariance structure derived from the principal component analysis is compared with the result of both a standardal and a robust PCA.  
+It is important to note that the MCEM algorithm operates directly on the simplex, while both standardal and robust PCA are performed on the transformed coordinates 
 of the observations.  
-The classical PCA is conducted with the `prcomp` base function in R using a singular value decomposition of the clr-transformed coordinates. This is equivalent to an 
+The standardal PCA is conducted with the `prcomp` base function in R using a singular value decomposition of the clr-transformed coordinates. This is equivalent to an 
 eigendecomposition on the ilr-coordinates (Filzmoser et al. 2019, p.135). The robust principal component analysis is based on the minimum covariance determinant (MCD) 
 estimator (Rousseeuw 1985; Rousseeuw and Van Driessen 1999) and calculated with the function `princomp` from the `robCompositions` package. The MCD estimator uses the 
 subset of observations that has the smallest determinant for its covariance matrix among all subsets of the same size. Since the determinant measures the overall spread 
@@ -46,7 +49,7 @@ simulated by the principal component decomposition: $\boldsymbol{\pi}_{i}=\opera
 number of principal components.  
 For a basic comparison a setting with five compositional parts and only two principal components and no no interaction effects (TODO: define?) is considered. Therefore the set of latent compositions 
 can be specified as $\boldsymbol{\pi}_i =  \operatorname{clr}^{-1}\left(\boldsymbol{\mu}+z_{i 1} \boldsymbol{\varphi}_{1}+z_{i 2} \boldsymbol{\varphi}_{2}\right)$ where 
-$z_{i 1} \stackrel{i . i . d .}{\sim} Z_{1}$ and $z_{i 2} \stackrel{i . i . d .}{\sim} Z_{2}$. The factors associated with the two principal components are normally distributed 
+$z_{i 1} \stackrel{i . i . d .}{\sim} Z_{1}$ and $z_{i 2} \stackrel{i . i . d .}{\sim} Z_{2}$. The scores associated with the two principal components are normally distributed 
 as $Z_{1} \stackrel{i . i . d .}{\sim} N(0,0.6)$ and $Z_{2} \stackrel{i . i . d .}{\sim} N(0,0.3)$.  
 The mean vector is set to $\boldsymbol{\mu} = (0, 1, 0.5, -1, -0.5)$, which simulates a relative strong variation in dominance between the compositional parts. The principal components 
 consist of two contrasts, the first between the second and third compositional part $\boldsymbol{\varphi}_{1} = \left(0, \sqrt{\frac{1}{2}}, -\sqrt{\frac{1}{2}}, 0, 0\right)$ amd the second between the first and the 
@@ -97,7 +100,7 @@ for(j in 1:4) {
     x_data_list <- sim$x_data
     x_data <- do.call(rbind, x_data_list)
     
-    pca_clr_std_2[[j]][[i]] <- prcomp(clr(x_data))
+    pca_clr_std_2[[j]][[i]] <- prcomp(clr_transform(x_data, replace_zeros = "neutral"))
     pca_clr_rob_2[[j]][[i]] <- pcaCoDa(x_data, method = "robust")
   }
 }
@@ -186,14 +189,14 @@ sigma_diff_df_2 <- data.frame(
     unlist(sigma_distances_rob_clr_2[[1]]), unlist(sigma_distances_rob_clr_2[[2]]),
     unlist(sigma_distances_rob_clr_2[[3]]), unlist(sigma_distances_rob_clr_2[[4]])
   ),
-  method = factor(rep(c("MCEM", "classic", "robust"), each = 4 * n_simulations)),
+  method = factor(rep(c("MCEM", "standard", "robust"), each = 4 * n_simulations)),
   size = factor(rep(rep(c("20", "40", "80", "160"), 
                          each = n_simulations), 3))
 )
 
 # define order of sequence
 sigma_diff_df_2$method <- factor(sigma_diff_df_2$method, 
-                        levels = c("MCEM", "classic", "robust"))
+                        levels = c("MCEM", "standard", "robust"))
 
 sigma_diff_df_2$size <- factor(sigma_diff_df_2$size, 
                         levels = c("20", "40", "80", "160"))
@@ -239,10 +242,10 @@ vermieden (TODO: besser erklären oder raus).   -->
 <!-- TODO: Vergleich von eigenvalues und totalVariance (Vgl. Filzmoser et al. 2019, p. 133) -->
 
 The simple simulation study already provides several valuable insights. First, it is evident that the quality of results improves with increasing sample size. The MCEM 
-method shows on average, a clear improvement compared to both classical and robust PCA. Furthermore it is much better in determining the true structure of the mean vectors 
+method shows on average, a clear improvement compared to both standard and robust PCA. Furthermore it is much better in determining the true structure of the mean vectors 
 for samples with small sample sizes. In addition, looking at the distances of the covariance matrices, the difference between the methods is particularly pronounced in 
 the settings with small sample sizes, but still holds for moderate samples sizes. This supports the suitability of the MCEM method for datasets with small sample sizes.  
-Interestingly, the opposite effect is observed when comparing classical PCA with its robust variant. The robust computation of PCA offers some advantages at moderate sample 
+Interestingly, the opposite effect is observed when comparing standard PCA with its robust variant. The robust computation of PCA offers some advantages at moderate sample 
 sizes, while for very small samole sizes, high variance and worse mean estimates are observed. This aligns with the expectation that robust estimation of the covariance 
 structure requires a certain number of samples to effectively identify outliers.
 
@@ -272,7 +275,7 @@ plot_pca_rotation_sim <- function(rotation_list1, rotation_list2, rotation_list3
         df2 <- data.frame(
             x = rotation_list2[[i]][,1] * scale, 
             y = rotation_list2[[i]][,2] * scale, 
-            method = "classic PCA",
+            method = "standard PCA",
             simulation = i
         )
         
@@ -296,7 +299,7 @@ plot_pca_rotation_sim <- function(rotation_list1, rotation_list2, rotation_list3
     }
     
     df_all$method <- factor(df_all$method, 
-                           levels = c("MCEM", "classic PCA", "robust PCA", "oracle PC"))
+                           levels = c("MCEM", "standard PCA", "robust PCA", "oracle PC"))
     
     # Calculate mean directions for 5 components
     mean_directions <- do.call(rbind, lapply(unique(df_all$method[1:3]), function(m) {
@@ -343,14 +346,14 @@ plot_pca_rotation_sim <- function(rotation_list1, rotation_list2, rotation_list3
 }
 
 mcem_rotation_list <- list(n_simulations)
-classic_rotation_list <- list(n_simulations)
+standard_rotation_list <- list(n_simulations)
 robust_rotation_list <- list(n_simulations)
 
 mcem_rotation_list <- lapply(seq_along(simulation_results_list_2[[2]]), function(j) {
   t(basis_matrix) %*% simulation_results_list_2[[2]][[j]]$pca$rotation
 })
 
-classic_rotation_list <- lapply(seq_along(pca_clr_std_2[[2]]), function(j) {
+standard_rotation_list <- lapply(seq_along(pca_clr_std_2[[2]]), function(j) {
     pca_clr_std_2[[2]][[j]]$rotation
 })
 
@@ -359,7 +362,7 @@ robust_rotation_list <- lapply(seq_along(pca_clr_rob_2[[2]]), function(j) {
 })
 
 plot_pca_rotation_sim(mcem_rotation_list,
-                      classic_rotation_list, 
+                      standard_rotation_list, 
                       robust_rotation_list, 
                       scale = 1, 
                       main =  expression(paste("PCA comparison for ", m[i], " = 40")))
@@ -368,11 +371,11 @@ plot_pca_rotation_sim(mcem_rotation_list,
 
 The thicker lines represent the means of the principal components over all simulations. Interestingly, it can be seen that the main advantage of the 
 MCEM method is not the direction of the components but a better capability to catch the correct length of the respective vector. In fact it seems that 
-the classical Method underestimates the variation in the second principal components and the robust method overestimates it.
+the standardal Method underestimates the variation in the second principal components and the robust method overestimates it.
 
 ```{r mean directions, eval=TRUE}
 rotation_list1 <- mcem_rotation_list
-rotation_list2 <- classic_rotation_list
+rotation_list2 <- standard_rotation_list
 rotation_list3 <- robust_rotation_list
 
 scale <- 1
@@ -392,7 +395,7 @@ scale <- 1
         df2 <- data.frame(
             x = rotation_list2[[i]][,1] * scale, 
             y = rotation_list2[[i]][,2] * scale, 
-            method = "classic PCA",
+            method = "standard PCA",
             simulation = i
         )
         
@@ -414,7 +417,7 @@ scale <- 1
     }
     
     df_all$method <- factor(df_all$method, 
-                           levels = c("MCEM", "classic PCA", "robust PCA"))
+                           levels = c("MCEM", "standard PCA", "robust PCA"))
     
     # Calculate mean directions for 5 components
     mean_directions <- do.call(rbind, lapply(unique(df_all$method), function(m) {
@@ -453,24 +456,24 @@ for(i in seq_along(simulation_results_list_2[[1]])) {
   mcem_eig <- simulation_results_list_2[[1]][[i]]$pca$sdev^2
   mcem_eig <- normalize(mcem_eig)
   
-  # Classic PCA eigenvalues
-  classic_eig <-  pca_clr_std_2[[1]][[i]]$sdev^2
-  classic_eig <- normalize(classic_eig)
+  # standard PCA eigenvalues
+  standard_eig <-  pca_clr_std_2[[1]][[i]]$sdev^2
+  standard_eig <- normalize(standard_eig)
   
   # Robust PCA eigenvalues
   robust_eig <- pca_clr_rob_2[[1]][[i]]$eigenvalues
   robust_eig <- normalize(robust_eig)
   
   scree_df <- rbind(scree_df, 
-                    data.frame(eigenvalue = c(mcem_eig, classic_eig[1:4], robust_eig),
+                    data.frame(eigenvalue = c(mcem_eig, standard_eig[1:4], robust_eig),
                              component = rep(1:length(mcem_eig), 3),
-                             method = rep(c("MCEM", "classic PCA", "robust PCA"), 
+                             method = rep(c("MCEM", "standard PCA", "robust PCA"), 
                                        each = length(mcem_eig)),
                              simulation = i))
 }
 
 scree_df$method <- factor(scree_df$method, 
-                           levels = c("MCEM", "classic PCA", "robust PCA"))
+                           levels = c("MCEM", "standard PCA", "robust PCA"))
 # Create screeplot
 ggplot(scree_df, aes(x = component, y = eigenvalue, color = method, group = interaction(simulation, method))) +
     geom_line(alpha = 0.7) +
@@ -484,7 +487,7 @@ ggplot(scree_df, aes(x = component, y = eigenvalue, color = method, group = inte
     theme(legend.position = "top")
 ```
 
-And the covariance structure for the oracle, the MCEM estimate and the classic and robust PCA estimate.
+And the covariance structure for the oracle, the MCEM estimate and the standard and robust PCA estimate.
 TODO: plus graphic with the calculated mean structure?
 
 ```{r comparison covariance structure, eval=TRUE}
@@ -652,14 +655,14 @@ sigma_diff_df_8 <- data.frame(
     unlist(sigma_distances_rob_clr_8[[1]]), unlist(sigma_distances_rob_clr_8[[2]]),
     unlist(sigma_distances_rob_clr_8[[3]]), unlist(sigma_distances_rob_clr_8[[4]])
   ),
-  method = factor(rep(c("MCEM", "classic", "robust"), each = 4 * n_simulations)),
+  method = factor(rep(c("MCEM", "standard", "robust"), each = 4 * n_simulations)),
   size = factor(rep(rep(c("100", "200", "400", "800"), 
                          each = n_simulations), 3))
 )
 
 # define order of sequence
 sigma_diff_df_8$method <- factor(sigma_diff_df_8$method, 
-                        levels = c("MCEM", "classic", "robust"))
+                        levels = c("MCEM", "standard", "robust"))
 
 sigma_diff_df_8$size <- factor(sigma_diff_df_8$size, 
                         levels = c("100", "200", "400", "800"))
@@ -990,7 +993,7 @@ Insights:
 
 Targets are used for computation to avoid an unneccessary amount of computation.
 
-```{r classic pca, eval=FALSE}
+```{r standard pca, eval=FALSE}
 x_data_matrix <- setting_1$x_data_matrix
 pca_ilr <- prcomp(ilr(x_data_matrix)) 
 pca_clr <- prcomp(clr(x_data_matrix)) 
@@ -1278,14 +1281,14 @@ sigma_diff_df_1 <- data.frame(
     unlist(sigma_distances_rob_clr_1[[1]]), unlist(sigma_distances_rob_clr_1[[2]]),
     unlist(sigma_distances_rob_clr_1[[3]]), unlist(sigma_distances_rob_clr_1[[4]])
   ),
-  method = factor(rep(c("MCEM", "classic", "robust"), each = 4 * n_simulations)),
+  method = factor(rep(c("MCEM", "standard", "robust"), each = 4 * n_simulations)),
   size = factor(rep(rep(c("30", "60", "90", "300 observations"), 
                          each = n_simulations), 3))
 )
 
 # define order of sequence
 sigma_diff_df_1$method <- factor(sigma_diff_df_1$method, 
-                        levels = c("MCEM", "classic", "robust"))
+                        levels = c("MCEM", "standard", "robust"))
 
 sigma_diff_df_1$size <- factor(sigma_diff_df_1$size, 
                         levels = c("30", "60", "90", "300 observations"))
@@ -1310,7 +1313,7 @@ ggplot(sigma_diff_df_1, aes(x = size, y = differences, fill = method)) +
 plot_pca_rotation_gg <- function(rotation1, rotation2, rotation3, scale = 1, main = "PCA Comparison") {
     # Create data frames for each rotation
     df1 <- data.frame(x = rotation1[,1] * scale, y = rotation1[,2] * scale, method = "MCEM")
-    df2 <- data.frame(x = rotation2[,1] * scale, y = rotation2[,2] * scale, method = "classic PCA")
+    df2 <- data.frame(x = rotation2[,1] * scale, y = rotation2[,2] * scale, method = "standard PCA")
     df3 <- data.frame(x = rotation3[,1] * scale, y = rotation3[,2] * scale, method = "robust PCA")
     
     # Combine data
@@ -1320,7 +1323,7 @@ plot_pca_rotation_gg <- function(rotation1, rotation2, rotation3, scale = 1, mai
     labels <- if (!is.null(rownames(rotation1))) rownames(rotation1)
               else seq_len(nrow(rotation1))
     
-    df$method <- factor(df$method, levels = c("MCEM", "classic PCA", "robust PCA"))
+    df$method <- factor(df$method, levels = c("MCEM", "standard PCA", "robust PCA"))
 
 
     # Create plot
@@ -1515,14 +1518,14 @@ sigma_diff_df_2 <- data.frame(
     unlist(sigma_distances_rob_clr_2[[1]]), unlist(sigma_distances_rob_clr_2[[2]]),
     unlist(sigma_distances_rob_clr_2[[3]]), unlist(sigma_distances_rob_clr_2[[4]])
   ),
-  method = factor(rep(c("MCEM", "classic", "robust"), each = 4 * n_simulations)),
+  method = factor(rep(c("MCEM", "standard", "robust"), each = 4 * n_simulations)),
   size = factor(rep(rep(c("30", "60", "120", "300 observations"), 
                          each = n_simulations), 3))
 )
 
 # define order of sequence
 sigma_diff_df_2$method <- factor(sigma_diff_df_2$method, 
-                        levels = c("MCEM", "classic", "robust"))
+                        levels = c("MCEM", "standard", "robust"))
 
 sigma_diff_df_2$size <- factor(sigma_diff_df_2$size, 
                         levels = c("30", "60", "120", "300 observations"))
@@ -1539,7 +1542,7 @@ ggplot(sigma_diff_df_2, aes(x = size, y = differences, fill = method)) +
         plot.title = element_text(hjust = 0.5, size = 10))
 ```
 
-Surprisingly, the classic PCA performs best in this setting. Let's have a look at the calculated Kovarianzes and the MCEM parameters:
+Surprisingly, the standard PCA performs best in this setting. Let's have a look at the calculated Kovarianzes and the MCEM parameters:
 
 ```{r evaluation covariance sanity 2, eval=TRUE} 
 true_sigma_2
@@ -1705,14 +1708,14 @@ sigma_diff_df_3 <- data.frame(
     unlist(sigma_distances_rob_clr_3[[1]]), unlist(sigma_distances_rob_clr_3[[2]]),
     unlist(sigma_distances_rob_clr_3[[3]]), unlist(sigma_distances_rob_clr_3[[4]])
   ),
-  method = factor(rep(c("MCEM", "classic", "robust"), each = 4 * n_simulations)),
+  method = factor(rep(c("MCEM", "standard", "robust"), each = 4 * n_simulations)),
   size = factor(rep(rep(c("30", "60", "120", "400"), 
                          each = n_simulations), 3))
 )
 
 # define order of sequence
 sigma_diff_df_3$method <- factor(sigma_diff_df_3$method, 
-                        levels = c("MCEM", "classic", "robust"))
+                        levels = c("MCEM", "standard", "robust"))
 
 sigma_diff_df_3$size <- factor(sigma_diff_df_3$size, 
                         levels = c("30", "60", "120", "400"))
@@ -1907,14 +1910,14 @@ sigma_diff_df_4 <- data.frame(
     unlist(sigma_distances_rob_clr_4[[1]]), unlist(sigma_distances_rob_clr_4[[2]]),
     unlist(sigma_distances_rob_clr_4[[3]]), unlist(sigma_distances_rob_clr_4[[4]])
   ),
-  method = factor(rep(c("MCEM", "classic", "robust"), each = 4 * n_simulations)),
+  method = factor(rep(c("MCEM", "standard", "robust"), each = 4 * n_simulations)),
   size = factor(rep(rep(c("30", "60", "120", "400"), 
                          each = n_simulations), 3))
 )
 
 # define order of sequence
 sigma_diff_df_4$method <- factor(sigma_diff_df_4$method, 
-                        levels = c("MCEM", "classic", "robust"))
+                        levels = c("MCEM", "standard", "robust"))
 
 sigma_diff_df_4$size <- factor(sigma_diff_df_4$size, 
                         levels = c("30", "60", "120", "400"))
@@ -2088,14 +2091,14 @@ sigma_diff_df_5 <- data.frame(
     unlist(sigma_distances_rob_clr_5[[1]]), unlist(sigma_distances_rob_clr_5[[2]]),
     unlist(sigma_distances_rob_clr_5[[3]]), unlist(sigma_distances_rob_clr_5[[4]])
   ),
-  method = factor(rep(c("MCEM", "classic", "robust"), each = 4 * n_simulations)),
+  method = factor(rep(c("MCEM", "standard", "robust"), each = 4 * n_simulations)),
   size = factor(rep(rep(c("20", "40", "80", "160"), 
                          each = n_simulations), 3))
 )
 
 # define order of sequence
 sigma_diff_df_5$method <- factor(sigma_diff_df_5$method, 
-                        levels = c("MCEM", "classic", "robust"))
+                        levels = c("MCEM", "standard", "robust"))
 
 sigma_diff_df_5$size <- factor(sigma_diff_df_5$size, 
                         levels = c("20", "40", "80", "160"))
@@ -2272,14 +2275,14 @@ sigma_diff_df_6 <- data.frame(
     unlist(sigma_distances_rob_clr_6[[1]]), unlist(sigma_distances_rob_clr_6[[2]]),
     unlist(sigma_distances_rob_clr_6[[3]]), unlist(sigma_distances_rob_clr_6[[4]])
   ),
-  method = factor(rep(c("MCEM", "classic", "robust"), each = 4 * n_simulations)),
+  method = factor(rep(c("MCEM", "standard", "robust"), each = 4 * n_simulations)),
   size = factor(rep(rep(c("20", "40", "80", "160"), 
                          each = n_simulations), 3))
 )
 
 # define order of sequence
 sigma_diff_df_6$method <- factor(sigma_diff_df_6$method, 
-                        levels = c("MCEM", "classic", "robust"))
+                        levels = c("MCEM", "standard", "robust"))
 
 sigma_diff_df_6$size <- factor(sigma_diff_df_6$size, 
                         levels = c("20", "40", "80", "160"))
@@ -2459,14 +2462,14 @@ sigma_diff_df_7 <- data.frame(
     # unlist(sigma_distances_rob_clr_7[[1]]), unlist(sigma_distances_rob_clr_7[[2]]),
     # unlist(sigma_distances_rob_clr_7[[3]]), unlist(sigma_distances_rob_clr_7[[4]])
   ),
-  method = factor(rep(c("MCEM", "classic"), each = 4 * n_simulations)),
+  method = factor(rep(c("MCEM", "standard"), each = 4 * n_simulations)),
   size = factor(rep(rep(c("0.0001", "0.001", "0.01", "0.05"), 
                          each = n_simulations), 4))
 )
 
 # define order of sequence
 sigma_diff_df_7$method <- factor(sigma_diff_df_7$method, 
-                        levels = c("MCEM", "classic"))
+                        levels = c("MCEM", "standard"))
 
 sigma_diff_df_7$size <- factor(sigma_diff_df_7$size, 
                         levels = c("0.0001", "0.001", "0.01", "0.05"))
@@ -2980,14 +2983,14 @@ sigma_diff_df_10 <- data.frame(
     unlist(sigma_distances_rob_clr_10[[1]]), unlist(sigma_distances_rob_clr_10[[2]]),
     unlist(sigma_distances_rob_clr_10[[3]]), unlist(sigma_distances_rob_clr_10[[4]])
   ),
-  method = factor(rep(c("MCEM", "classic", "robust"), each = 4 * n_simulations)),
+  method = factor(rep(c("MCEM", "standard", "robust"), each = 4 * n_simulations)),
   size = factor(rep(rep(c("200", "400", "800", "1600"), 
                          each = n_simulations), 3))
 )
 
 # define order of sequence
 sigma_diff_df_10$method <- factor(sigma_diff_df_10$method, 
-                        levels = c("MCEM", "classic", "robust"))
+                        levels = c("MCEM", "standard", "robust"))
 
 sigma_diff_df_10$size <- factor(sigma_diff_df_10$size, 
                         levels = c("200", "400", "800", "1600"))
@@ -3237,6 +3240,7 @@ simulation_data_list_12 <- list(
   tar_read(sim_6_sc1_n100)
   )
 
+pca_clr_std_12 <- lapply(1:4, function(x) list(n_simulations))
 pca_clr_rob_12 <- lapply(1:4, function(x) list(n_simulations))
 
 # calculate standard PCA for each simulation
@@ -3252,7 +3256,11 @@ simulation_data <- simulation_data_list_12[[1]]
     pca_clr_rob_12[[1]][[i]] <- pcaCoDa(x_data, method = "robust")
     pca_clr_rob_12[[2]][[i]] <- pcaCoDa(x_data_01, method = "robust")
     pca_clr_rob_12[[3]][[i]] <- pcaCoDa(x_data_001, method = "robust")
-    pca_clr_rob_12[[4]][[i]] <- pcaCoDa(x_data_0001, method = "robust")
+    pca_clr_rob_12[[4]][[i]] <- pcaCoDa(x_data_0001, method = "robust")    
+    pca_clr_std_12[[1]][[i]] <- princomp(clr(x_data))
+    pca_clr_std_12[[2]][[i]] <- princomp(clr(x_data_01))
+    pca_clr_std_12[[3]][[i]] <- princomp(clr(x_data_001))
+    pca_clr_std_12[[4]][[i]] <- princomp(clr(x_data_0001))
 
 
   }
@@ -3266,17 +3274,26 @@ simulation_results_list_12 <- list(
 )
 
 diff_mean_12 <- lapply(1:4, function(x) list(n_simulations))
-diff_mean_rob_clr_12 <- lapply(1:4, function(x) list(n_simulations))
+diff_mean_std_clr_12 <- lapply(1:4, function(x) list(n_simulations))
 
 for(j in 1:4) {
   for(i in 1:n_simulations) {
     diff_mean_12[[j]][[i]] <- sqrt(sum((true_v_12 - t(basis_matrix) %*% simulation_results_list_12[[j]][[i]]$pca$center)^2))
-    diff_mean_rob_clr_12[[j]][[i]] <- sqrt(sum((true_v_12 - pca_clr_rob_12[[j]][[i]]$center)^2))
+    diff_mean_std_clr_12[[j]][[i]] <- sqrt(sum((true_v_12 - pca_clr_std_12[[j]][[i]]$center)^2))
   }
 }
 
 diff_mean = diff_mean_12
-diff_mean_rob_clr = diff_mean_rob_clr_12
+diff_mean_std_clr = diff_mean_std_clr_12
+
+for (j in 1:4) {
+    for (i in 1:n_simulations) {
+        print(paste("j =", j, "i =", i))
+        print(paste("Time:", simulation_results_list_12[[j]][[i]]$time))
+        print(paste("Iteration:", simulation_results_list_12[[j]][[i]]$iteration))
+        print("-------------------")
+    }
+}
 
 ```
 
@@ -3288,10 +3305,10 @@ diff_df_12 <- data.frame(
   differences = c(
     unlist(diff_mean_12[[1]]), unlist(diff_mean_12[[2]]), 
     unlist(diff_mean_12[[3]]), unlist(diff_mean_12[[4]]),
-    # unlist(diff_mean_std_clr_10[[1]]), unlist(diff_mean_std_clr_10[[2]]),
-    # unlist(diff_mean_std_clr_10[[3]]), unlist(diff_mean_std_clr_10[[4]])
-    unlist(diff_mean_rob_clr_12[[1]]), unlist(diff_mean_rob_clr_12[[2]]),
-    unlist(diff_mean_rob_clr_12[[3]]), unlist(diff_mean_rob_clr_12[[4]])
+    unlist(diff_mean_std_clr_12[[1]]), unlist(diff_mean_std_clr_12[[2]]),
+    unlist(diff_mean_std_clr_12[[3]]), unlist(diff_mean_std_clr_12[[4]])
+    # unlist(diff_mean_rob_clr_12[[1]]), unlist(diff_mean_rob_clr_12[[2]]),
+    # unlist(diff_mean_rob_clr_12[[3]]), unlist(diff_mean_rob_clr_12[[4]])
   ),
   method = factor(rep(c("MCEM", "sample mean"), each = 4 * n_simulations)),
   size = factor(rep(rep(c("original", "0.1", "0.01", "0.001"), 
@@ -3564,17 +3581,453 @@ ggplot(sigma_diff_df_13, aes(x = size, y = differences, fill = method)) +
         plot.title = element_text(hjust = 0.5, size = 10))
 ```
 
+## Simulation Setting 14
+
+This setting is the same as the base setting with 5 dimensions and 2 components. It uses a **balanced**
+setting with a clr-mean around zero for every component. This should result in less zeros in the samples.
 
 
-# example
+```{r latent parameters 14, eval=TRUE}
 
-```{r example, eval=TRUE}
-pca_cts <- tar_read(pca_count_ilr_vs1_1perc)
+D <- 5
+basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+basis_matrix <- do.call(rbind, basis_vectors)
+
+mean_14 <- c(0, 0.2, 0.1, -0.2, -0.1)
+
+eigenvalues_14 <- c(0.6, 0.3, 0, 0)
+V_14 <- cbind(c(0, sqrt(1/2), -sqrt(1/2), 0, 0), c(-sqrt(1/2), 0, 0, sqrt(1/2), 0), c(0, 0, 0, 0, 0), c(0, 0, 0, 0, 0))
+true_sigma_14 <- V_14 %*% diag(eigenvalues_14) %*% t(V_14) 
+
+true_v_14 <- mean_14
+```
+
+
+
+```{r evaluation mean vector 14, eval=TRUE}
+
+simulation_data_list_14 <- list(
+  tar_read(sim_comp_2_smi_nSim_eb_20),
+  tar_read(sim_comp_2_smi_nSim_eb_40),
+  tar_read(sim_comp_2_smi_nSim_eb_80),
+  tar_read(sim_comp_2_smi_nSim_eb_160)
+)
+
+n_simulations <- length(simulation_data_list_14[[1]])
+
+pca_clr_rob_14 <- lapply(1:4, function(x) list(n_simulations))
+pca_clr_std_14 <- lapply(1:4, function(x) list(n_simulations))
+
+# calculate standard PCA for each simulation
+for(j in 1:4) {
+  simulation_data <- simulation_data_list_14[[j]]
+  for(i in 1:length(simulation_data)) {
+    sim <- simulation_data[[i]]
+    x_data_list <- sim$x_data
+    x_data <- do.call(rbind, x_data_list)
+    
+    pca_clr_std_14[[j]][[i]] <- prcomp(clr_transform(x_data, replace_zeros = "neutral"))
+    pca_clr_rob_14[[j]][[i]] <- pcaCoDa(x_data, method = "robust")
+  }
+}
+
+simulation_results_list_14 <- list(
+  tar_read(pca_sim1_2_20_eb),
+  tar_read(pca_sim1_2_40_eb),
+  tar_read(pca_sim1_2_80_eb),
+  tar_read(pca_sim1_2_160_eb)
+)
+
+diff_mean_14 <- lapply(1:4, function(x) list(n_simulations))
+diff_mean_std_clr_14 <- lapply(1:4, function(x) list(n_simulations))
+diff_mean_rob_clr_14 <- lapply(1:4, function(x) list(n_simulations))
+
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    diff_mean_14[[j]][[i]] <- sqrt(sum((true_v_14 - t(basis_matrix) %*% simulation_results_list_14[[j]][[i]]$pca$center)^2))
+    diff_mean_std_clr_14[[j]][[i]] <- sqrt(sum((true_v_14 - pca_clr_std_14[[j]][[i]]$center)^2))
+    diff_mean_rob_clr_14[[j]][[i]] <- sqrt(sum((true_v_14 - pca_clr_rob_14[[j]][[i]]$center)^2))
+  }
+}
+
+diff_mean = diff_mean_14
+diff_mean_std_clr = diff_mean_std_clr_14
+diff_mean_rob_clr = diff_mean_rob_clr_14
+```
+
+```{r boxplot simulation 14, eval=TRUE}
+# Daten in einen DataFrame zusammenführen
+diff_df_14 <- data.frame(
+  differences = c(
+    unlist(diff_mean_14[[1]]), unlist(diff_mean_14[[2]]), 
+    unlist(diff_mean_14[[3]]), unlist(diff_mean_14[[4]]),
+    unlist(diff_mean_std_clr_14[[1]]), unlist(diff_mean_std_clr_14[[2]]),
+    unlist(diff_mean_std_clr_14[[3]]), unlist(diff_mean_std_clr_14[[4]])
+    # unlist(diff_mean_rob_clr_all[[1]]), unlist(diff_mean_rob_clr_all[[2]]),
+    # unlist(diff_mean_rob_clr_all[[3]]), unlist(diff_mean_rob_clr_all[[4]])
+  ),
+  method = factor(rep(c("MCEM", "sample mean"), each = 4 * n_simulations)),
+  size = factor(rep(rep(c("20", "40", "80", "160"), 
+                         each = n_simulations), 2))
+)
+
+# define order of sequence
+diff_df_14$method <- factor(diff_df_14$method, 
+                        levels = c("MCEM", "sample mean"))
+
+diff_df_14$size <- factor(diff_df_14$size, 
+                        levels = c("20", "40", "80", "160"))
 
 ```
 
 
+```{r evaluation covariance 14, eval=TRUE, fig.width=12, fig.height=5}
+sigma_distances_14 <- lapply(1:4, function(x) list(n_simulations))
+sigma_distances_std_clr_14 <- lapply(1:4, function(x) list(n_simulations))
+sigma_distances_rob_clr_14 <- lapply(1:4, function(x) list(n_simulations))
+
+
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    # MCEM method
+    sigma_hat_mcem <- with(simulation_results_list_14[[j]][[i]]$pca,
+      t(basis_matrix) %*% rotation %*% diag(sdev^2) %*% t(rotation) %*% basis_matrix)
+    sigma_distances_14[[j]][[i]] <- norm(true_sigma_14 - sigma_hat_mcem, type = "F")
+    
+    # CLR method
+    sigma_hat_clr <- with(pca_clr_std_14[[j]][[i]],
+      rotation %*% diag(sdev^2) %*% t(rotation))
+    sigma_distances_std_clr_14[[j]][[i]] <- norm(true_sigma_14 - sigma_hat_clr, type = "F")
+    
+    # ILR method
+    sigma_hat_rob <- with(pca_clr_rob_14[[j]][[i]],
+    loadings %*% diag(eigenvalues) %*% t(loadings))
+    sigma_distances_rob_clr_14[[j]][[i]] <- norm(true_sigma_14 - sigma_hat_rob, type = "F")
+  }
+}
+
+sigma_diff_df_14 <- data.frame(
+  differences = c(
+    unlist(sigma_distances_14[[1]]), unlist(sigma_distances_14[[2]]), 
+    unlist(sigma_distances_14[[3]]), unlist(sigma_distances_14[[4]]),
+    unlist(sigma_distances_std_clr_14[[1]]), unlist(sigma_distances_std_clr_14[[2]]),
+    unlist(sigma_distances_std_clr_14[[3]]), unlist(sigma_distances_std_clr_14[[4]]),
+    unlist(sigma_distances_rob_clr_14[[1]]), unlist(sigma_distances_rob_clr_14[[2]]),
+    unlist(sigma_distances_rob_clr_14[[3]]), unlist(sigma_distances_rob_clr_14[[4]])
+  ),
+  method = factor(rep(c("MCEM", "standard", "robust"), each = 4 * n_simulations)),
+  size = factor(rep(rep(c("20", "40", "80", "160"), 
+                         each = n_simulations), 3))
+)
+
+# define order of sequence
+sigma_diff_df_14$method <- factor(sigma_diff_df_14$method, 
+                        levels = c("MCEM", "standard", "robust"))
+
+sigma_diff_df_14$size <- factor(sigma_diff_df_14$size, 
+                        levels = c("20", "40", "80", "160"))
+
+plot1 <- ggplot(diff_df_14, aes(x = size, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_grey() +
+  scale_fill_manual(values = set_1) + 
+  labs(y = "dist mean",
+       x = expression(m[i]),
+       fill = "method",
+       title = "Distance of true mean to estimated mean") +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5, size = 10))
+
+
+plot2 <- ggplot(sigma_diff_df_14, aes(x = size, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_grey() +
+  scale_fill_manual(values = set_1) + 
+  labs(y = "dist covariance",
+       x = expression(m[i]),
+       fill = "method",
+       title = "Distance of true covariance to estimated covariance") +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5, size = 10))
+
+grid.arrange(plot1, plot2, ncol = 2)
+
+```
+
+
+
+# base example
+
+
+
+```{r example, eval=TRUE}
+cts_data <- tar_read(data_kl15_comp)
+pca_cts <- pcaCoDa(cts_data)
+plot_pca_rotations(pca_cts$loadings, fixed = FALSE)
+```
+
+
 # test targets
+
+## test base simulations
+
+```{r test balanced simulation setting, eval=TRUE}
+V <- get_helmert(5)
+
+D <- 5
+basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+basis_matrix <- do.call(rbind, basis_vectors)
+
+mean_14 <- c(0, 0.2, 0.1, -0.2, -0.1)
+
+eigenvalues_14 <- c(0.6, 0.3, 0, 0)
+V_14 <- cbind(c(0, sqrt(1/2), -sqrt(1/2), 0, 0), c(-sqrt(1/2), 0, 0, sqrt(1/2), 0), c(0, 0, 0, 0, 0), c(0, 0, 0, 0, 0))
+true_sigma_14 <- V_14 %*% diag(eigenvalues_14) %*% t(V_14) 
+
+true_v_14 <- mean_14
+
+sim <- tar_read(sim_comp_2_smi_nSim_eb_160)
+sim_data <- sim[[1]]$x_data_matrix
+summary(sim_data)
+rotation_matrix <- V_14[1:4 , 1:2] 
+rotation_df <- as.data.frame(rotation_matrix) 
+rownames(rotation_df) <- paste0("Component ", 1:nrow(rotation_df))
+plot_pca_rotations(rotation_df, main = "PCA Rotation - Components 1 & 2", scale = 1, fixed = FALSE)
+```
+
+We have a base simulation with no zeros and easy covariance structure. 
+
+standard estimation:
+
+```{r test balanced simulation setting standard estimation 1, eval=TRUE}
+standard_estimation <- prcomp(clr(sim_data))
+plot_pca_rotations(standard_estimation$rotation, main = "PCA standard", scale = 1, fixed = FALSE)
+```
+
+
+Robust estimation:
+
+```{r test balanced simulation setting standard estimation 2, eval=TRUE}
+rob_estimation <- pcaCoDa(sim_data, method = "robust")
+plot_pca_rotations(rob_estimation$loadings, main = "PCA robust", scale = 1, fixed = FALSE)
+```
+
+MCEM
+
+```{r test balanced simulation setting standard estimation 3, eval=FALSE}
+set.seed(12)
+result <- fit_pca_ilr_vs_4(
+          sim_data, 
+          sc_factor = 1,
+          lambda = 1,
+          max_iter = 80,
+          eps = 0.02
+      )
+rotation_clr <- V %*% result$pca$rotation 
+plot_pca_rotations(rotation_clr, main = "PCA MCEM vs4", scale = 1, fixed = FALSE)
+# Compare new version fit_pca_clr_vs_4
+set.seed(12)
+result_2 <- fit_pca_clr_vs_4(
+          sim_data, 
+          sc_factor = 1,
+          lambda = 1,
+          max_iter = 80,
+          eps = 0.02
+      )
+rotation_clr <- result_2$pca$rotation 
+plot_pca_rotations(rotation_clr, main = "PCA MCEM vs4", scale = 1, fixed = FALSE)
+```
+
+```{r test balanced simulation setting standard estimation 4, eval=FALSE}
+result <- fit_pca_ilr_vs_5(
+          sim_data, 
+          sc_factor = 1,
+          lambda = 1,
+          max_iter = 80,
+          eps = 0.02
+      )
+# rotation_clr <- V %*% result$pca$rotation 
+plot_pca_rotations(result$pca$rotation , main = "PCA MCEM vs5", scale = 1, fixed = FALSE)
+```
+
+```{r test balanced simulation setting standard estimation 5, eval=TRUE}
+results_mcem <- tar_read(pca_sim1_2_160_eb)
+sim_test <- tar_read(pca_sim1_2_160_eb)
+rotation_1 <-results_mcem[[1]]$pca$rotation
+
+```
+
+
+The algorithm has an ESS of around 10% and needs 26 seconds.
+
+Numerical comparison:
+
+```{r numerical comparison, eval=FALSE}
+sigma_hat_mcem <- with(simulation_results_list_14[[j]][[i]]$pca,
+  t(basis_matrix) %*% rotation %*% diag(sdev^2) %*% t(rotation) %*% basis_matrix)
+sigma_distances_14[[j]][[i]] <- norm(true_sigma_14 - sigma_hat_mcem, type = "F")
+
+# CLR method
+sigma_hat_clr <- with(pca_clr_std_14[[j]][[i]],
+  rotation %*% diag(sdev^2) %*% t(rotation))
+sigma_distances_std_clr_14[[j]][[i]] <- norm(true_sigma_14 - sigma_hat_clr, type = "F")
+
+# ILR method
+sigma_hat_rob <- with(pca_clr_rob_14[[j]][[i]],
+loadings %*% diag(eigenvalues) %*% t(loadings))
+sigma_distances_rob_clr_14[[j]][[i]] <- norm(true_sigma_14 - sigma_hat_rob, type = "F")
+
+```
+
+## mcem versions performance
+
+1. 
+
+```{r algorithm performence, eval = TRUE}
+D <- 13
+basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+basis_matrix <- do.call(rbind, basis_vectors)
+
+test_1 <- tar_read(pca_count_ilr_vs1_1perc)
+
+print(paste("Performence version 1 with unrounded counts per milisecond, eps = 0.01"))
+print(paste("Time:", test_1$time))
+print(paste("Iteration:", test_1$iteration))
+print(paste("1st PC:", test_1$pca$rotation[,1] %*% basis_matrix))
+rotation_clr <- test_1$pca$rotation %*% basis_matrix
+sum(rotation_clr[,1])
+plot_pca_rotations(rotation_clr, fixed = TRUE)
+```
+
+2. 
+
+```{r algorithm performence 2, eval = TRUE}
+test_2 <- tar_read(pca_count_ilr_vs1_01)
+
+print(paste("Performence version 1 with unrounded counts per milisecond, eps = 0.02"))
+print(paste("Time:", test_2$time))
+print(paste("Iteration:", test_2$iteration))
+print(paste("1st PC:", test_2$pca$rotation[,1] %*% basis_matrix))
+```
+
+3. 
+
+```{r algorithm performence 3, eval = TRUE}
+test_3 <- tar_read(pca_count_ilr_vs1_0001)
+
+print(paste("Performence version 1 with unrounded counts per 0.001, eps = 0.02"))
+print(paste("Time:", test_3$time))
+print(paste("Iteration:", test_3$iteration))
+print(paste("1st PC:", test_3$pca$rotation[,1] %*% basis_matrix))
+```
+
+
+4. 
+
+```{r algorithm performence 4, eval = TRUE}
+test_4 <- tar_read(pca_count_ilr_vs2_sc)
+
+print(paste("Performence version 1 original scale, eps = 0.035, lambda = 0.8"))
+print(paste("Time:", test_4$time))
+print(paste("Iteration:", test_4$iteration))
+print(paste("1st PC:", test_4$pca$rotation[,1] %*% basis_matrix))
+```
+
+5. 
+
+```{r algorithm performence 5, eval = TRUE}
+test_5 <- tar_read(pca_count_ilr_vs5_sc01)
+
+print(paste("Performence version 5 unrounded counts in milisecs, eps = 0.03"))
+print(paste("Time:", test_5$time))
+print(paste("Iteration:", test_5$iteration))
+print(paste("1st PC:", test_5$pca$rotation[,1]))
+```
+
+
+6. 
+
+```{r algorithm performence 6, eval = TRUE}
+test_6 <- tar_read(pca_count_ilr_vs5)
+
+print(paste("Performence version 5 original scaler, eps = 0.03"))
+print(paste("Time:", test_6$time))
+print(paste("Iteration:", test_6$iteration))
+print(paste("1st PC:", test_6$pca$rotation[,1]))
+```
+
+7. 
+
+```{r algorithm performence 7, eval = TRUE}
+test_7 <- tar_read(pca_count_ilr_vs5_e06)
+
+print(paste("Performence version 5 original scale, eps = 0.06"))
+print(paste("Time:", test_7$time))
+print(paste("Iteration:", test_7$iteration))
+print(paste("ESS:", test_7$ESS))
+print(paste("1st PC:", test_7$pca$rotation[,1]))
+```
+
+8. 
+
+```{r algorithm performence 8, eval = TRUE}
+test_8 <- tar_read(pca_count_ilr_vs5_sc01_e06)
+
+print(paste("Performence version 5 milisecs, eps = 0.06"))
+print(paste("Time:", test_8$time))
+print(paste("Iteration:", test_8$iteration))
+print(paste("ESS:", test_8$ESS))
+print(paste("1st PC:", test_8$pca$rotation[,1]))
+```
+
+9. 
+
+```{r algorithm performence 9, eval = TRUE}
+test_9 <- tar_read(pca_count_ilr_vs5_sc01_noSign)
+
+print(paste("Performence version 5 milisecs, eps = 0.03, noSign"))
+print(paste("Time:", test_9$time))
+print(paste("Iteration:", test_9$iteration))
+print(paste("ESS:", test_9$ESS))
+print(paste("1st PC:", test_9$pca$rotation[,1]))
+```
+
+10. 
+
+```{r algorithm performence 10, eval = TRUE}
+test_10 <- tar_read(pca_count_ilr_vs5_sc01_r30)
+
+print(paste("Performence version 5 milisecs, eps = 0.03, r=30"))
+print(paste("Time:", test_10$time))
+print(paste("Iteration:", test_10$iteration))
+print(paste("ESS:", test_10$ESS))
+print(paste("1st PC:", test_10$pca$rotation[,1]))
+```
+
+11. 
+
+```{r algorithm performence 11, eval = TRUE}
+test_11 <- tar_read(pca_count_ilr_vs6_sc01)
+
+print(paste("Performence version 6 milisecs, eps = 0.03"))
+print(paste("Time:", test_11$time))
+print(paste("Iteration:", test_11$iteration))
+print(paste("ESS:", test_11$ESS))
+print(paste("1st PC:", test_11$pca$rotation[,1]))
+```
+
+12. 
+
+```{r algorithm performence 12, eval = TRUE}
+test_12 <- tar_read(pca_count_ilr_vs6_acomp)
+
+print(paste("Performence version 6 compistions, eps = 0.03"))
+print(paste("Time:", test_12$time))
+print(paste("Iteration:", test_12$iteration))
+print(paste("ESS:", test_12$ESS))
+print(paste("1st PC:", test_12$pca$rotation[,1]))
+```
+
 
 ## time evaluation
 
@@ -3706,6 +4159,7 @@ nah bei Null. Lässt sich ein ähnlicher Effekt mit lambda erzeugen? -> ja, teil
 
 ```{r test targets 3, eval=FALSE}  
 sim_list <- tar_read(sim_comp_1_smi_nSim)
+
 sim <- sim_list[[1]]
 x_data <- sim$x_data
 x_data[[1]]
@@ -3766,3 +4220,87 @@ clr-coordinates PCA1: 0.6108956 -0.2075434 0.08272231 0.08179075 0.2401847 0.237
 ## Vergleich Greven Algorithmus
 
 Eine Frage ist, wie sehr sich die print statements auswirken.
+
+# Synthetic Principal Component Decomposition
+
+For the synthetic principal component decomposition, we use the following settings:
+
+The clr-covariance matrix K can be constructed by the **singular value decomposition**:
+
+```{r svd K, eval=FALSE}
+D <- 3
+basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+basis_matrix <- do.call(rbind, basis_vectors)
+E <- get_helmert(3)
+
+mean_clr <- c(0, 1, 0.5) 
+eigenvalues <- c(0.6, 0.3, 0)
+eigenvalues_ilr <- c(0.6, 0.3)
+
+egv_clr <- cbind(c(0, sqrt(1/2), -sqrt(1/2)), c(-sqrt(1/2), sqrt(1/2), 0), c(0, 0, 0))
+K <- egv_clr %*% diag(eigenvalues) %*% t(egv_clr) 
+
+V <- egv_clr %*% E
+Vb <- egv_clr %*% t(basis_matrix) *(-1)
+Vc <- clr2ilr(egv_clr)
+
+# Sigma <- V %*% diag(eigenvalues_ilr) %*% t(V)
+# I <- matrix(c(1,0,0,
+#               0,1,0), nrow=3, ncol=2)
+
+# Sigma_true <- Sigma[1:2,1:2]
+# edc <- eigen(Sigma_true)
+# edc$vectors
+
+# egv_inv <- E %*% edc$vectors
+# egv_clr_inv <- cbind(egv_inv, 0)
+# K_inv <- egv_clr_inv %*% diag(eigenvalues) %*% t(egv_clr_inv) 
+
+# try single transformation
+V_1 <- egv_clr[,1] %*% E
+V_2 <- egv_clr[,2] %*% E
+V_b <- cbind(t(V_1),t(V_2))
+Sigma_true <- V_b %*% diag(eigenvalues_ilr) %*% t(V_b)
+edc_b <- eigen(Sigma_true)
+egv_ilr <- edc_b$values
+egv_ilr <- c(egv_ilr, 0)
+# egv_inv_b_1 <- E %*% edc_b$vectors[,1]
+# egv_inv_b_2 <- E %*% edc_b$vectors[,2]
+# IS EQUIVALENT to
+egv_inv_b <- E %*% edc_b$vectors
+
+
+egv_clr_inv_b <- cbind(egv_inv_b, 0)
+K_inv_b <- egv_clr_inv_b %*% diag(egv_ilr) %*% t(egv_clr_inv_b) 
+# that is correct now
+
+# Regain clr components is more complicated due to mathematical errors in eigen
+
+
+# Are the clr-scores and the ilr-scores identical
+# Can I directly switch between K and Sigma?
+K_test <- E %*% Sigma_b %*% t(E)
+Sigma_test <- t(E) %*% K %*% E
+
+pca_clr <- princomp(covmat=K)
+pca_ilr <- princomp(covmat=Sigma_true)
+pca_clr$scores 
+pca_ilr$scores
+library(mvtnorm)
+mean_ilr <- mean_clr %*% E
+draws_clr <- rmvnorm(n = 100, mean = mean_clr, sigma = K)
+draws_ilr <- draws_clr %*% E
+
+scores_clr <- scale(draws_clr, center=TRUE, scale = FALSE) %*% pca_clr$loadings 
+scores_ilr <- scale(draws_ilr, center=TRUE, scale = FALSE) %*% pca_ilr$loadings 
+
+# is K singular?
+det(K)
+det(Sigma_true)
+
+```
+
+
+
+TODO: from `princomp`: fix_sign	parameter:
+Should the signs of the loadings and scores be chosen so that the first element of each loading is non-negative?
