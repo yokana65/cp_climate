@@ -79,6 +79,14 @@ true_v_2 <- mean_2
 
 
 ```{r evaluation mean vector front, eval=TRUE}
+summary_stats <- function(x_data) {
+  data.frame(
+    mean = colMeans(x_data),
+    sd = apply(x_data, 2, sd),
+    min = apply(x_data, 2, min),
+    max = apply(x_data, 2, max)
+  )
+} 
 
 simulation_data_list_2 <- list(
   tar_read(sim_comp_2_smi_nSim_20),
@@ -127,6 +135,25 @@ for(j in 1:4) {
 diff_mean = diff_mean_2
 diff_mean_std_clr = diff_mean_std_clr_2
 diff_mean_rob_clr = diff_mean_rob_clr_2
+
+# Implementation in deiner Schleifenstruktur
+for(j in 1:4) {
+  simulation_data <- simulation_data_list_2[[j]]
+  
+  for(i in 1:length(simulation_data)) {
+    sim <- simulation_data[[i]]
+    x_data_list <- sim$x_data
+    x_data <- do.call(rbind, x_data_list)
+    
+    # Descriptive Statistiken
+    stats <- summary_stats(x_data)
+    print(paste("Scenario", j, "Simulation", i))
+    print(stats)
+    
+    # Optional: Zusätzliche Visualisierung
+    boxplot(x_data, main=paste("Scenario", j, "Simulation", i))
+  }
+}
 ```
 
 ```{r boxplot simulation front, eval=TRUE}
@@ -3653,6 +3680,25 @@ for(j in 1:4) {
 diff_mean = diff_mean_14
 diff_mean_std_clr = diff_mean_std_clr_14
 diff_mean_rob_clr = diff_mean_rob_clr_14
+
+
+
+# descriptives for each simulation
+for(j in 1:4) {
+  simulation_data <- simulation_data_list_14[[j]]
+  for(i in 1:length(simulation_data)) {
+    sim <- simulation_data[[i]]
+    x_data_list <- sim$x_data
+    x_data <- do.call(rbind, x_data_list)
+    
+    stats <- summary_stats(x_data)
+    print(paste("Scenario", j, "Simulation", i))
+    print(stats)
+    
+    # Optional: Zusätzliche Visualisierung
+    boxplot(x_data, main=paste("Scenario", j, "Simulation", i))
+  }
+}
 ```
 
 ```{r boxplot simulation 14, eval=TRUE}
