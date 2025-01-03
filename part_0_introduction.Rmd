@@ -145,7 +145,7 @@ Mit Hilfe dieser Vorüberlegungen kann der Grundraum aller möglichen Kompositio
 
 **Definition 3: sample space**
 The sample space of compositional data is the simplex,
-$\mathcal{S}^{D}=\left\{\boldsymbol{\pi} \in \mathbb{R}^{D} \mid \sum_{j=1}^{D} \pi_{j}=1, \pi_{j} \geq 0 \forall j=1, \ldots, D\right\}$.
+$\mathcal{S}^{D}=\left\{\boldsymbol{x} \in \mathbb{R}^{D} \mid \sum_{j=1}^{D} x_{j}=\kappa, x_{j} \geq 0 \forall j=1, \ldots, D\right\}$.
 
 Nachdem in der Einführung die Grundelemente in der Arbeit mit Kompositionsdaten vorgestellt wurden, wird im nächsten Schritt dagelegt, auf welchen Grundprinzipien eine statistisch 
 valide Arbeit mit Kompositionsdaten zu erfolgen hat. Dies ist notwendig, da die Anwendung von Standardmethoden der statistischen Analyse zu einer Reihe von Problemen führt.
@@ -231,6 +231,10 @@ Als erstes müssen wir feststellen, dass der im Umgang mit absoluten Werten gewo
 Mathematische Operationen auf dem Simplex erscheinen auf den ersten Blick nicht so einfach, wie im gewohnten reelen Raum. Aber auch auf dem Simplex ist es möglich einen Euklidischen Vektorraum 
 zu definieren. Dafür benötigen wir zwei Operationen, die Addition und Multiplikation im reelen Raum entsprechen und die angepassten Definitionen vom Skalarprodukt der Norm und der Distanz.
 
+First, it is important to recognize that the standard Euclidean space commonly used for absolute values, with its linear vector space structure and metric properties, is not suitable for analyzing compositional data. 
+At first glance, mathematical operations on the simplex appear quite different from the familar operations in real space. However, it is possible to define a Euclidean vector space on the simplex 
+as well. To accomplish this, two fundamental operations that correspond to addition and multiplication are needed.
+
 **Definition 4: Perturbation**
 For two compositional vectors $\boldsymbol{x}$ and $\boldsymbol{y}$ in $\mathcal{S}^{D}$ their perturbation is defined as:
 $$
@@ -243,7 +247,7 @@ $$
 \alpha \odot \mathbf{x}=\mathcal{C}\left[x_{1}^{\alpha}, x_{2}^{\alpha}, \ldots, x_{D}^{\alpha}\right] \in \mathcal{S}^{D}
 $$
 
-To complete vector space, the so called the Aitchison geomtry, we need to define a scalar product with its associated norm and distance (Pawloswky-Glahn et al. 2015, p. 26):
+To complete the vector space structure, the so called the Aitchison geomtry, we need to define a scalar product with its associated norm and distance (Pawloswky-Glahn et al. 2015, p. 26):
 **Definition 6: Aitchison inner product**
 Inner product of $\mathbf{x}, \mathbf{y} \in S^{D}$,
 $$
@@ -260,11 +264,25 @@ $$
 \mathrm{d}_{a}(\mathbf{x}, \mathbf{y})=\|\mathbf{x} \ominus \mathbf{y}\|_{a}=\sqrt{\frac{1}{2 D} \sum_{i=1}^{D} \sum_{j=1}^{D}\left(\ln \frac{x_{i}}{x_{j}}-\ln \frac{y_{i}}{y_{j}}\right)^{2}}
 $$
 
-Those operations define a whole vector space on the simplex (TODO: definition of a vector space). For historical reasons it is called the Aitchison geometry. But in mathematical terms it 
+The two operations on the simplex, perturbation and powering define an Euclidean linear vector space, that is usually called \emph{Aitchison geomtry on the simplex}, with its metrics the Aitchison 
+inner product, norm and distance.
+Those operations define a hilbert space on the simplex (TODO: definition of a vector space). For historical reasons it is called the Aitchison geometry. But in mathematical terms it 
 is also a real Euclidean space or a finite dimensional real Hilbert space.
 This allows now for the use of all statistical methods that are available for the standard Euclidean space. (TODO: umformulieren)
 
 ## Clr transformation (generating systems)
+
+Wie bereits erwähnt, folgt diese Arbeit dem Prinzip der Arbeit in Koordinaten. Das heißt, dass wir zunächst einmal die Kompositionen aus Definition [...] in Koordinatenform 
+darstellen müssen. Das Ziel ist es Kompositionen in einem orthogonalen Koordinatensystem darzustellen. Dafür sind eine Reihe von Schritten notwendig und im Folgenden werden zu 
+diesem Zweck die bekannten Transformationen von Kompositionsdaten, die clr-Transformation und die ilr-Transformation, vorgestellt. Typischerweise wird in diesem Zusammenhang 
+in der Regel noch die alr-Transformation vorgestellt, die historisch betrachtet als erstes entwickelt wurde. Im Kontext dieser Arbeit kann jedoch darauf verzichtet werden, weil 
+sie keinen notwendigen Beitrag zur Arbeit in Koordinaten leistet.
+
+As previously mentioned, this work is based on the \emph{principle of working on coordinates}, as outlined by \citet{Figueras2011}. This implies that we must first find a way to represent the compositions 
+from Definition [...] within an orthogonal system. Achieving this requires a series of steps, and to this end, two well-known transformations for compositional data, the centered log-ratio (clr) 
+transformation and the isometric log-ratio (ilr) transformation, will be introduced in the following. Typically, the additive log-ratio (alr) transformation is also presented in 
+this context, as it was historically the first to be developed. However, in the context of this work, it can be omitted because it does not make a necessary contribution to the 
+\emph{principle of working on coordinates}.
 
 Im Allgemeinen sind wir es gewohnt Vektoren anhand ihrer kanonischen Basis $\left\{\mathbf{e}_{1}, \mathbf{e}_{2}, \ldots, \mathbf{e}_{D}\right\}$ in $\mathcal{R}^D$ zu beschreiben. 
 Dies gilt auch für den Fall, dass der Vektor eine beobachtete Komposition $\boldsymbol{x}$ ist. In diesem Fall kann der Vektor $\boldsymbol{x}$ als Linearkombination der Basisvektoren
@@ -275,8 +293,20 @@ $$
 Das Problem ist, dass die Vektoren $\left\{\mathbf{e}_{1}, \mathbf{e}_{2}, \ldots, \mathbf{e}_{D}\right\}$ keine Basis in Bezug auf den Vektorraum des in [...] definierten Simplex sind. 
 Zum einen liegen nicht alle Linearkombinationen von Koeffizienten $x_i$ im Simplex (negative und Nullwerte sind nicht erlaubt). Zum anderen liegen die Vektoren $\boldsymbol{e}_{j}$ nicht 
 in $mathcal{S}^D$ (siehe Definition 1) (Cp. Pawloswky-Glahn et al. 2015, p. 33).
+
+In general, we are accustomed to describing vectors using their canonical basis $\left\{\mathbf{e}_{1}, \mathbf{e}_{2}, \ldots, \mathbf{e}_{D}\right\}$ in $\mathcal{R}^D$. 
+This also applies when the vector is an observed composition $\boldsymbol{x}$. In this case, the vector $\boldsymbol{x}$ can be represented as a linear combination of the basis vectors:
+\begin{equation}
+    \mathbf{x}=x_{1}[1,0, \ldots, 0]+x_{2}[0,1, \ldots, 0]+\ldots+x_{D}[0,0, \ldots, 1]=\sum_{j=1}^{D} x_{j} \cdot \mathbf{e}_{j} \tag{X}
+\end{equation}
+The problem with this representation is that the vectors $\left\{\mathbf{e}_{1}, \mathbf{e}_{2}, \ldots, \mathbf{e}_{D}\right\}$ do not form a basis with respect to the vector space of the 
+simplex defined in Definition \autoref{def:simplex}. Firstly, not all combinations of coefficients $x_i$ result in an element of $S^{D}$ (negative and zero values are not allowed). Secondly, 
+the basis vectors $\mathbf{e}_{j}$ do not lie in the simplex (cf. Definition \autoref{def:simplex}) \citep[p.~33]{PawlowskyGlahn2015a}.
+
+
+
 Zum Verständnis von Kompositionen ist es aber überaus hilfreich die Kompositionsteile $\left\{x_{1}, x_{2}, \ldots, x_{D}\right\}$ als Koordinaten in Bezug auf eine Basis zu beschreiben, 
-weswegen es äußerst hilfreich ist, einen statistisch validen Weg zu finden dies auch zu tun.
+weswegen es durchaus sinnvoll ist, einen statistisch validen Weg zu finden dies auch zu tun.
 Pawlowsky-Glahn et al. (2015) zeigen, dass die clr-Transformation ein wichtiger Schritt auf dem Weg zu einer solchen Basis ist. Zunächst einmal macht es für Kompositionsdaten Sinn ein 
 generatives System zu identifizieren, indem die kanonische Basis exponentiert wird. Dies resultiert in $\left\{\mathbf{w}_{1}, \mathbf{w}_{2}, \ldots, \mathbf{w}_{D}\right\}$ mit 
 $$
@@ -294,9 +324,30 @@ $$
 \mathrm{g}_{m}(\mathbf{x})=\left(\prod_{j=1}^{D} x_{j}\right)^{1 / D}=\exp \left(\frac{1}{D} \sum_{j=1}^{D} \ln x_{j}\right)
 $$
 den geometrischen Mittelwert der Komposition darstellt.
+
+Nevertheless, for understanding compositions, it would be very helpful to describe the compositional parts $\left\{x_{1}, x_{2}, \ldots, x_{D}\right\}$ as coordinates with respect to a basis. 
+Therefore, it is quite useful to find a statistically valid way to do this. \\
+\citet{PawlowskyGlahn2015a} show that the clr-transformation is an important step towards such a basis. As will be shown below, it is possible to use the clr-transformation for multivariate 
+data analysis as it is a valid one-to-one transformation from the simplex onto the real space. However, for the purpose of finding an orthonormal basis, the clr-transformation can be seen as an intermediate step. \\
+First, it makes sense to identify a generating system by exponentiating the canonical basis. This results in $\left\{\mathbf{w}_{1}, \mathbf{w}_{2}, \ldots, \mathbf{w}_{D}\right\}$ with
+\begin{equation}
+    \mathbf{w}_{j}=\mathcal{C}\left(\exp \left(\mathbf{e}_{j}\right)\right)=\mathcal{C}[1,1, \ldots, e, \ldots, 1], \quad j=1,2, \ldots, D. \tag{X}
+\end{equation}
+This generating system can be used to describe the compositional vector as a perturbation-linear combination of its log-transformed compositional parts \citep[p.~34]{PawlowskyGlahn2015a}:
+\begin{equation}
+    \mathbf{x} =\bigoplus_{j=1}^{D} \ln \frac{x_{j}}{\mathrm{~g}_{m}(\mathbf{x})} \odot \mathbf{w}_{j} 
+    =\ln \frac{x_{1}}{\mathrm{~g}_{m}(\mathbf{x})} \odot[e, 1, \ldots, 1] \oplus \ldots \oplus \ln \frac{x_{D}}{\mathrm{~g}_{m}(\mathbf{x})} \odot[1,1, \ldots, e], \tag{X}
+\end{equation}
+where
+\begin{equation}
+    \mathrm{g}_{m}(\mathbf{x})=\left(\prod_{j=1}^{D} x_{j}\right)^{1 / D}=\exp \left(\frac{1}{D} \sum_{j=1}^{D} \ln x_{j}\right)
+\end{equation}
+represents the geometric mean of the composition.
+
 Es ist ersichtlich, dass dies ausgehend von den formulierten Grundprinzipien (Chapter [..]) und der Aitchison-Geometrie ein kompositionelles Equivalent zu der kanonischen Basis ist. Darüber hinaus 
 entsprechen die Koefficienten in [.. ] den von Aitchison definierten Koefficienten der centered logratio Transformation (clr).  
 **Definition: clr-Transformation**
+$\boldsymbol{\rho}=\operatorname{clr}(\boldsymbol{\pi})=\left(\log \left(\pi_{1}\right)-\frac{1}{N} \sum_{k=1}^{N} \log \left(\pi_{k}\right), \ldots, \log \left(\pi_{N}\right)-\frac{1}{N} \sum_{k=1}^{N} \log \left(\pi_{k}\right)\right)$
 
 Die clr Koordinaten haben eine Reihe von Vorteilen. Insbesondere 
 gilt für eine Komposition $\boldsymbol{\boldsymbol{x}}_{j} \in \mathcal{S}^{D}$, dass durch die clr-Transformation eine eindeutige Beziehung zwischen den Operationen auf dem Simplex (chapter [...]) und dem 
@@ -306,6 +357,24 @@ Für realen konstanten $\alpha, \beta$ gilt für alle $j=1,2$:
 (b) $\left\langle\mathbf{x}_{1}, \mathbf{x}_{2}\right\rangle_{a}=\left\langle\operatorname{clr}\left(\mathbf{x}_{1}\right), \operatorname{clr}\left(\mathbf{x}_{2}\right)\right\rangle ;$  
 (c) $\left\|\mathbf{x}_{1}\right\|_{a}=\left\|\operatorname{clr}\left(\mathbf{x}_{1}\right)\right\|, \quad \mathrm{d}_{a}\left(\mathbf{x}_{1}, \mathbf{x}_{2}\right)=\mathrm{d}\left(\operatorname{clr}\left(\mathbf{x}_{1}\right), \operatorname{clr}\left(\mathbf{x}_{2}\right)\right)$.Die Eigenschaft (a) sagt uns, dass die clr-Transformation ein isomorphismus ist, d.h. die Operationen auf dem Simplex werden auf die entsprechenden Operationen im reellen Raum abgebildet. (b) und (c) kennzeichnen 
 eine Isometry (TODO: Quelle Mathebuch), d.h. die Metrik und das Skalarprodukt des Simplex bleiben auch noch der Transformation erhalten.
+
+Based on the fundamental principles in section \autoref{def:principles} and the properties of the Aitchison geometry, it is evident that this generating system represents a compositional link to the 
+canonical basis. Furthermore the coefficients in formular 1.1 correspond to the coefficients of the clr transformation as it was first defined by \citet{Aitchison1982}. 
+\begin{definition}[clr-transformation]
+$\boldsymbol{\rho}=\operatorname{clr}(\boldsymbol{\pi})=\left(\log \left(\pi_{1}\right)-\frac{1}{N} \sum_{k=1}^{N} \log \left(\pi_{k}\right), \ldots, \log \left(\pi_{N}\right)-\frac{1}{N} \sum_{k=1}^{N} \log \left(\pi_{k}\right)\right)$
+\end{definition}
+
+The clr coefficients offer several advantages. In particular, for a composition $\mathbf{x_{j}} \in S^{D}$, the clr-transformation establishes a unique relationship between the operations on the simplex (cf. Section \autoref{def:operations})  and the operations in real space. \\
+
+For real constants $\alpha, \beta$ and all $j=1,2$:
+
+\begin{enumerate}[label=(\alph*)]
+ \item $\operatorname{clr}\left(\alpha \odot \mathbf{x}_{1} \oplus \beta \odot \mathbf{x}_{2}\right)=\alpha \cdot \operatorname{clr}\left(\mathbf{x}_{1}\right)+\beta \cdot \operatorname{clr}\left(\mathbf{x}_{2}\right)$;  
+ \item $\left\langle\mathbf{x}_{1}, \mathbf{x}_{2}\right\rangle_{a}=\left\langle\operatorname{clr}\left(\mathbf{x}_{1}\right), \operatorname{clr}\left(\mathbf{x}_{2}\right)\right\rangle ;$  
+ \item $\left\|\mathbf{x}_{1}\right\|_{a}=\left\|\operatorname{clr}\left(\mathbf{x}_{1}\right)\right\|, \quad \mathrm{d}_{a}\left(\mathbf{x}_{1}, \mathbf{x}_{2}\right)=\mathrm{d}\left(\operatorname{clr}\left(\mathbf{x}_{1}\right), \operatorname{clr}\left(\mathbf{x}_{2}\right)\right)$.
+\end{enumerate}
+
+Property (a) indicates that the clr-transformation is an isomorphism, meaning that operations on the simplex are mapped to corresponding operations in real space. Properties (b) and (c) characterize an isometry, implying that the metric and inner product of the simplex are preserved under the transformation \citep[p.~35]{PawlowskyGlahn2015a}.
 
 
 TODO: pi or x? -> für theoretische Aussagen, können wir pi verwenden
@@ -317,6 +386,11 @@ Dies hat zur Folge, dass die Kovarianz Matrix von $\operatorname{clr}(\boldsymbo
 Kompositionen nicht subcompositionally coherent, da das geometrische Mittel von der Anzahl der Kompositionsteile abhängt.
 Auch wenn die von Aithcison eingeführten clr-Koefficienten einige Vorteile bieten, ist es hilfreich in einem weiteren Schritt die orthonormalen Koordinaten zu definieren.
 
+At this point, it is important to note that the clr coefficients are not coordinates with respect to a basis of the simplex. Furthermore, similar to the ot the original 
+compositional parts, they are subject to a constrain, since $\sum_{j=1}^D \operatorname{clr}({x}_j) = 0$. \\
+This implies that the covariance matrix of $\operatorname{clr}(\boldsymbol{x})$ is singular \citep[p.~46]{book}, which can be problematic for multivariate methods. Furthermore, clr-transformed compositions 
+are not subcompositionally coherent, since the geometric mean of the number of compositional parts depends on the number of compositional parts. \\
+As the clr coefficients introduced by Aitchison offer several advantages, it is helpful to define orthonormal coordinates in a further step.
 
 ## Orthonormal coordinates or Coordinate Representations (Cp. Filzmoser et al. 2019, p. 43ff, Egozcue 2003)
 
@@ -368,6 +442,9 @@ $$
 
 An dieser Stelle ist noch zu erwähnen, dass auch Hauptkomponenten orthogonale Basen sind, die nach dem Prinzip ausgerichtet sind die Richtung der maximalen Variablilität wiederzugeben (Pawlowsky-Glahn et al. 2015, p. 38).
 
+TODO: Vorsicht bei der Rücktransformation: Contrast Matrix hat keine Inverse!
+TODO: Helmert Matrix was used by Egozcue 2003
+TODO: the ilr-transformation induces the *Aitchison measure* on the simplex, which is analogous to the lebesgue measure (Boogart et al. 2013, p. 43)
 
 ## Balances
 
@@ -394,7 +471,14 @@ In weiteren Verlauf dieser Arbeit werden beide Varianten ausgiebig genutzt.
 
 ## Normality on the simplex
 
+## Zeros
+
+Anhand der Definition einer D-part composition wird bereits deutlich, dass Kompositionsteile strikt positiv sein müssen. In tatsächlichen Beobachtungen von Kompositionen ist aber durchaus möglich 
+und je nach Kontext auch nicht ungewöhnlich, dass Nullwerte für einzelne Kompositionsteile beobachtet werden.
+
 ## Descriptive statistics 
+
+TODO: geomatrisches Mean für Komposition und für Datensatz sind nicht identisch!
 
 Es wurde bereits herausgearbeitet, dass die üblichen Methoden einer auf absoluten Werten basierenden statistischen Analyse für Kompositionsdaten 
 nicht geeignet sind. Stattdessen sollten Methoden verwendet werden, die im Einklang mit der Aitchison Geometry (chapter [...]) stehen. Diese werden 

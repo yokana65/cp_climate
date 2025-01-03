@@ -235,7 +235,7 @@ equivalent to sampling from the conditional distribution of the scores $\boldsym
 \begin{align*}
 p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) & \propto p\left(\mathbf{x}_{i} \mid \mathbf{z}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right) p\left(\mathbf{z}_{i} \mid \boldsymbol{\Sigma}^{(h)}\right)
 & =p\left(\mathbf{x}_{i} \mid \boldsymbol{\theta}_{i}=\boldsymbol{V}^{(h)}{}^{T} \mathbf{z}_{i}+\boldsymbol{\nu}^{(h)}\right) \prod_{k=1}^{D-1} p\left(z_{i k} \mid \sigma_{k}^{2(h)}\right) \\
-& =\prod_{j=1}^{D} \operatorname{clr}^{-1}\left(\sum_{k=1}^{D-1} \nu_{k}^{(h)} \boldsymbol{e}_k+\boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} \boldsymbol{e}_k\right)\left(x_{i j}\right) \prod_{k=1}^{D-1} p\left(z_{i k} \mid \sigma_{k}^{2}{ }^{(h)}\right) \\
+& =\prod_{j=1}^{D} \operatorname{clr}^{-1}\left(\sum_{k=1}^{D-1} \nu_{k}^{(h)} \boldsymbol{e}_k+\boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} \boldsymbol{e}_k\right)^{x_{i j}} \prod_{k=1}^{D-1} p\left(z_{i k} \mid \sigma_{k}^{2}{ }^{(h)}\right) \\
 & =\frac{\exp \left(\sum_{j=1}^{D} x_{i j} \left(\mu^{(h)}\left(A_{j}\right)+\sum_{k=1}^{D-1} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} {e}_k\left(A_{j}\right)\right)\right)}{\left(\sum_{j=1}^{D} \exp \left(\mu^{(h)}(A_j)+\sum_{k=1}^{D-1} \boldsymbol{z}_{i}^{T} \boldsymbol{v}_{k}^{(h)} {e}_k(A_j)\right)\right)^{m_{i}}} \prod_{k=1}^{D-1} p\left(z_{i k} \mid \sigma_{k}^{2}{ }^{(h)}\right) \tag{9}
 \end{align*}
 

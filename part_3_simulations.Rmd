@@ -32,7 +32,8 @@ compositions $\boldsymbol{\pi_i}$ are simulated for 100 observation. The composi
 decomposition of the clr-coordinates $\boldsymbol{\rho_i}  \stackrel{i.i.d.}{\sim} \mathcal{N}(\boldsymbol{\mu}, \boldsymbol{K})$. Secondly, realistic count observations are drawn 
 from the associated multinomial distribution $\boldsymbol{X}_{i} {\sim} \text{Multinom}(m, \boldsymbol{\pi}_{i})$ where $m$ denotes a fixed sample size for all observations 
 $i=1,\ldots,100$.  
-The simulated dataset is then used to evaluate the performance of the MCEM algorithm. That is done by evaluating the MCEM algorithm's capability to identify the 
+
+The simulated dataset of count compositions is then used to evaluate the performance of the MCEM algorithm. That is done by evaluating the MCEM algorithm's capability to identify the 
 true mean vector $\boldsymbol{\mu}$ and covariance structure $\boldsymbol{K}$ of the latent compositions. For this purpose, the empirical mean vector is compared to the sample mean and the empirical 
 covariance structure derived from the principal component analysis is compared with the result of both a standardal and a robust PCA.  
 It is important to note that the MCEM algorithm operates directly on the simplex, while both standardal and robust PCA are performed on the transformed coordinates 
@@ -47,6 +48,7 @@ outliers (Filzmoser et al. 2019, p. 92).
 Since the sample for the latent compositions $\boldsymbol{\pi_i}$ are obtained as back transformations from the simulated clr-coordinates, the compositions can be 
 simulated by the principal component decomposition: $\boldsymbol{\pi}_{i}=\operatorname{clr}^{-1}\left({\sum_{k=1}^N z_{i k} \boldsymbol{\varphi}_{k}}\right)$ with N being the 
 number of principal components.  
+
 For a basic comparison a setting with five compositional parts and only two principal components and no no interaction effects (TODO: define?) is considered. Therefore the set of latent compositions 
 can be specified as $\boldsymbol{\pi}_i =  \operatorname{clr}^{-1}\left(\boldsymbol{\mu}+z_{i 1} \boldsymbol{\varphi}_{1}+z_{i 2} \boldsymbol{\varphi}_{2}\right)$ where 
 $z_{i 1} \stackrel{i . i . d .}{\sim} Z_{1}$ and $z_{i 2} \stackrel{i . i . d .}{\sim} Z_{2}$. The scores associated with the two principal components are normally distributed 
@@ -84,9 +86,10 @@ summary_stats <- function(x_data) {
     mean = colMeans(x_data),
     sd = apply(x_data, 2, sd),
     min = apply(x_data, 2, min),
-    max = apply(x_data, 2, max)
+    max = apply(x_data, 2, max),
+    n_zeros = apply(x_data, 2, function(x) sum(x == 0))
   )
-} 
+}
 
 simulation_data_list_2 <- list(
   tar_read(sim_comp_2_smi_nSim_20),
@@ -136,23 +139,25 @@ diff_mean = diff_mean_2
 diff_mean_std_clr = diff_mean_std_clr_2
 diff_mean_rob_clr = diff_mean_rob_clr_2
 
-# Implementation in deiner Schleifenstruktur
+scenario_stats <- list()
+
 for(j in 1:4) {
   simulation_data <- simulation_data_list_2[[j]]
+  # Sammle Statistiken aller Simulationen für Szenario j
+  all_stats <- lapply(simulation_data, function(sim) {
+    x_data <- do.call(rbind, sim$x_data)
+    summary_stats(x_data)
+  })
   
-  for(i in 1:length(simulation_data)) {
-    sim <- simulation_data[[i]]
-    x_data_list <- sim$x_data
-    x_data <- do.call(rbind, x_data_list)
-    
-    # Descriptive Statistiken
-    stats <- summary_stats(x_data)
-    print(paste("Scenario", j, "Simulation", i))
-    print(stats)
-    
-    # Optional: Zusätzliche Visualisierung
-    boxplot(x_data, main=paste("Scenario", j, "Simulation", i))
-  }
+  # Berechne Durchschnitt über alle Simulationen
+  avg_stats <- Reduce('+', all_stats) / length(all_stats)
+  
+  # Speichere Ergebnis
+  scenario_stats[[j]] <- avg_stats
+  
+  # Ausgabe
+  print(paste("Average Statistics for Scenario", j))
+  print(avg_stats)
 }
 ```
 
@@ -233,7 +238,7 @@ plot1 <- ggplot(diff_df_2, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist mean",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true mean to estimated mean") +
   theme(legend.position = "top",
@@ -245,7 +250,7 @@ plot2 <- ggplot(sigma_diff_df_2, aes(x = size, y = differences, fill = method)) 
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist covariance",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true covariance to estimated covariance") +
   theme(legend.position = "top",
@@ -531,6 +536,24 @@ data <- tar_read(data_kl15)
 data <- data * 0.01
 density_estimate <- density(data$aggregate)
 plot(density_estimate)
+```
+
+alternatively it would be possible to construct a normal density with the kl15 parameters:
+
+
+```{r density distribution normal, eval=TRUE}
+data <- tar_read(data_kl15)
+data <- data * 0.01
+mu <- mean(data$aggregate)
+sigma <- sd(data$aggregate)
+
+# Create normal density instead of kernel density
+x <- seq(min(data$aggregate), max(data$aggregate), length.out = 512)
+density_estimate_N <- list(
+    x = x,
+    y = dnorm(x, mean = mu, sd = sigma)
+)
+plot(density_estimate_N)
 ```
 
 The clr mean vector is set to `c(-1.257, -1.741, 1.713, -0.6, 1.07, -3.624, -1.254, 1.05, -0.9, 0.505, 4.0, -0.49)` 
@@ -1265,7 +1288,7 @@ ggplot(diff_df_1, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1[1:2]) + 
   labs(y = "dist mean",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of mean estimate to true mean: Setting 1") +
   theme(legend.position = "top",
@@ -1327,7 +1350,7 @@ ggplot(sigma_diff_df_1, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist covariance",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of covariance estimate to true covariance") +
   theme(legend.position = "top",
@@ -1502,7 +1525,7 @@ ggplot(diff_df_2, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist mean",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true mean to estimated mean") +
   theme(legend.position = "top",
@@ -1562,7 +1585,7 @@ ggplot(sigma_diff_df_2, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist covariance",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true covariance to estimated covariance") +
   theme(legend.position = "top",
@@ -1692,7 +1715,7 @@ ggplot(diff_df_3, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist mean",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true mean to estimated mean: Setting 3") +
   theme(legend.position = "top",
@@ -1752,7 +1775,7 @@ ggplot(sigma_diff_df_3, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist covariance",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true covariance to estimated covariance: Setting 3") +
   theme(legend.position = "top",
@@ -1885,7 +1908,7 @@ ggplot(diff_df_4, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist mean",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true mean to estimated mean: Setting 4") +
   theme(legend.position = "top",
@@ -1954,7 +1977,7 @@ ggplot(sigma_diff_df_4, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist covariance",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true covariance to estimated covariance") +
   theme(legend.position = "top",
@@ -2071,7 +2094,7 @@ ggplot(diff_df_5, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist mean",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true mean to estimated mean: Setting 4") +
   theme(legend.position = "top",
@@ -2135,7 +2158,7 @@ ggplot(sigma_diff_df_5, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist covariance",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true covariance to estimated covariance") +
   theme(legend.position = "top",
@@ -2255,7 +2278,7 @@ ggplot(diff_df_6, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist mean",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true mean to estimated mean: Setting 4") +
   theme(legend.position = "top",
@@ -2319,7 +2342,7 @@ ggplot(sigma_diff_df_6, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist covariance",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true covariance to estimated covariance") +
   theme(legend.position = "top",
@@ -2442,7 +2465,7 @@ ggplot(diff_df_7, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist mean",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true mean to estimated mean: Setting 4") +
   theme(legend.position = "top",
@@ -2506,7 +2529,7 @@ ggplot(sigma_diff_df_7, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist covariance",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true covariance to estimated covariance") +
   theme(legend.position = "top",
@@ -2800,7 +2823,7 @@ ggplot(diff_df_9, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist mean",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true mean to estimated mean") +
   theme(legend.position = "top",
@@ -2840,7 +2863,7 @@ ggplot(sigma_diff_df_9, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist covariance",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true covariance to estimated covariance") +
   theme(legend.position = "top",
@@ -3620,7 +3643,7 @@ D <- 5
 basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
 basis_matrix <- do.call(rbind, basis_vectors)
 
-mean_14 <- c(0, 0.2, 0.1, -0.2, -0.1)
+mean_14 <- c(0, 0.05, 0.1, -0.05, -0.1)
 
 eigenvalues_14 <- c(0.6, 0.3, 0, 0)
 V_14 <- cbind(c(0, sqrt(1/2), -sqrt(1/2), 0, 0), c(-sqrt(1/2), 0, 0, sqrt(1/2), 0), c(0, 0, 0, 0, 0), c(0, 0, 0, 0, 0))
@@ -3641,6 +3664,31 @@ simulation_data_list_14 <- list(
 )
 
 n_simulations <- length(simulation_data_list_14[[1]])
+
+simulation_data_list_14_pi <- list(
+  tar_read(sim_comp_2_smi_nSim_eb_20_pi),
+  tar_read(sim_comp_2_smi_nSim_eb_40_pi),
+  tar_read(sim_comp_2_smi_nSim_eb_80_pi),
+  tar_read(sim_comp_2_smi_nSim_eb_160_pi)
+)
+
+oracle_mean <- lapply(1:4, function(x) list(n_simulations))
+oracle_covar <- lapply(1:4, function(x) list(n_simulations))
+
+# calculate oracle estimates of the mean and the covariance given the simulated "true" compositions
+for(j in 1:4) {
+  simulation_data <- simulation_data_list_14_pi[[j]]
+  for(i in 1:length(simulation_data)) {
+    sim <- simulation_data[[i]]
+    comp_list <- sim$composition_list
+    comp_data <- do.call(rbind, comp_list)
+    
+    oracle_mean[[j]][[i]] <- colMeans(comp_data)
+    oracle_covar[[j]][[i]] <- cov(comp_data)
+  }
+}
+
+
 
 pca_clr_rob_14 <- lapply(1:4, function(x) list(n_simulations))
 pca_clr_std_14 <- lapply(1:4, function(x) list(n_simulations))
@@ -3669,6 +3717,10 @@ diff_mean_14 <- lapply(1:4, function(x) list(n_simulations))
 diff_mean_std_clr_14 <- lapply(1:4, function(x) list(n_simulations))
 diff_mean_rob_clr_14 <- lapply(1:4, function(x) list(n_simulations))
 
+diff_oracle_mean_14 <- lapply(1:4, function(x) list(n_simulations))
+diff_oracle_mean_std_clr_14 <- lapply(1:4, function(x) list(n_simulations))
+diff_oracle_mean_rob_clr_14 <- lapply(1:4, function(x) list(n_simulations))
+
 for(j in 1:4) {
   for(i in 1:n_simulations) {
     diff_mean_14[[j]][[i]] <- sqrt(sum((true_v_14 - t(basis_matrix) %*% simulation_results_list_14[[j]][[i]]$pca$center)^2))
@@ -3677,27 +3729,37 @@ for(j in 1:4) {
   }
 }
 
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    diff_oracle_mean_14[[j]][[i]] <- sqrt(sum((true_v_14 - t(basis_matrix) %*% simulation_results_list_14[[j]][[i]]$pca$center)^2))
+    diff_oracle_mean_std_clr_14[[j]][[i]] <- sqrt(sum((true_v_14 - pca_clr_std_14[[j]][[i]]$center)^2))
+    diff_oracle_mean_rob_clr_14[[j]][[i]] <- sqrt(sum((true_v_14 - pca_clr_rob_14[[j]][[i]]$center)^2))
+  }
+}
+
 diff_mean = diff_mean_14
 diff_mean_std_clr = diff_mean_std_clr_14
 diff_mean_rob_clr = diff_mean_rob_clr_14
 
+scenario_stats <- list()
 
-
-# descriptives for each simulation
 for(j in 1:4) {
-  simulation_data <- simulation_data_list_14[[j]]
-  for(i in 1:length(simulation_data)) {
-    sim <- simulation_data[[i]]
-    x_data_list <- sim$x_data
-    x_data <- do.call(rbind, x_data_list)
-    
-    stats <- summary_stats(x_data)
-    print(paste("Scenario", j, "Simulation", i))
-    print(stats)
-    
-    # Optional: Zusätzliche Visualisierung
-    boxplot(x_data, main=paste("Scenario", j, "Simulation", i))
-  }
+  simulation_data <- simulation_data_list_2[[j]]
+  # Sammle Statistiken aller Simulationen für Szenario j
+  all_stats <- lapply(simulation_data, function(sim) {
+    x_data <- do.call(rbind, sim$x_data)
+    summary_stats(x_data)
+  })
+  
+  # Berechne Durchschnitt über alle Simulationen
+  avg_stats <- Reduce('+', all_stats) / length(all_stats)
+  
+  # Speichere Ergebnis
+  scenario_stats[[j]] <- avg_stats
+  
+  # Ausgabe
+  print(paste("Average Statistics for Scenario", j))
+  print(avg_stats)
 }
 ```
 
@@ -3778,7 +3840,7 @@ plot1 <- ggplot(diff_df_14, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist mean",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true mean to estimated mean") +
   theme(legend.position = "top",
@@ -3790,7 +3852,7 @@ plot2 <- ggplot(sigma_diff_df_14, aes(x = size, y = differences, fill = method))
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist covariance",
-       x = expression(m[i]),
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true covariance to estimated covariance") +
   theme(legend.position = "top",
@@ -3871,6 +3933,7 @@ result <- fit_pca_ilr_vs_4(
       )
 rotation_clr <- V %*% result$pca$rotation 
 plot_pca_rotations(rotation_clr, main = "PCA MCEM vs4", scale = 1, fixed = FALSE)
+
 # Compare new version fit_pca_clr_vs_4
 set.seed(12)
 result_2 <- fit_pca_clr_vs_4(
@@ -3882,6 +3945,20 @@ result_2 <- fit_pca_clr_vs_4(
       )
 rotation_clr <- result_2$pca$rotation 
 plot_pca_rotations(rotation_clr, main = "PCA MCEM vs4", scale = 1, fixed = FALSE)
+
+# Check version with scores
+set.seed(12)
+result_3 <- fit_pca_ilr_vs_8(
+          sim_data, 
+          sc_factor = 1,
+          lambda = 1,
+          max_iter = 80,
+          eps = 0.02,
+          scores = TRUE,
+      )
+rotation_clr <- result_3$pca$rotation 
+plot_pca_rotations(rotation_clr, main = "PCA MCEM vs4", scale = 1, fixed = FALSE)
+
 ```
 
 ```{r test balanced simulation setting standard estimation 4, eval=FALSE}
