@@ -1,5 +1,5 @@
 name|type|data|command|depend|seed|path|time|size|bytes|format|repository|iteration|parent|children|seconds|warnings|error
-.Random.seed|object|21e7456b58b86043|||||||||||||||
+.Random.seed|object|f156f63b4c6c60f9|||||||||||||||
 bbootstrap_01|stem||a069b57ba93fafad|b2dff526a37c73d5|-279657161||t20069.4188963747s||0|rds|local|vector|||566.035|first element used of length.out argument|argument must be coercible to nonnegative integer
 bbootstrap_01_1|stem|8dd94158e2245385|3cc74ab32c36549d|67657d7ba65cdcdf|1241645465||t20073.8252657819s|0da2031449e0b3b5|120137|rds|local|vector|||22382.921||
 bbootstrap_01_2|stem|f20250420cee20ba|aebf879d3dd98c66|71665bd5476ccf85|-874779919||t20074.683304272s|783c33e545c64503|120136|rds|local|vector|||23334.645||
@@ -8,6 +8,7 @@ bbootstrap_pca_ts_par|function|8b2523e7bdbbec7a|||||||||||||||
 bbootstrap_pca_ts_par_vs2|function|f776fcfc77952bb0|||||||||||||||
 build_setting_2comp_5parts|function|7a1f2810ba7f6c2f|||||||||||||||
 build_setting_2comp_5parts_vs2|function|5a49acbb0bb453bd|||||||||||||||
+build_setting_2comp_5parts_vs7|function|9dfd6637da25750a|||||||||||||||
 build_setting_4comp_13parts_vs1|function|3dcaa8167126da91|||||||||||||||
 build_setting_4comp_13parts_vs2|function|dbe299c610f0af3a|||||||||||||||
 build_setting_4comp_5parts_vs2|function|d3e9c7b1fb2fd939|||||||||||||||
@@ -39,6 +40,7 @@ data_kl15_xrf|stem|7400bd9e830bb1d9|ff017879f19bde63|68cf5f3d0143e80b|-207223388
 data_odp_967_22|stem|d95cabacce2ed470|8f25258d2f1af2f3|68cf5f3d0143e80b|-203484793||t19873.6437716431s|85fbfe24e36aa5a3|10503|rds|local|vector|||0.116||
 density_pca|stem|1a1e13defaba222d|bb9dc7420be0ca8b|fb098d1331050d93|-994701616||t20020.3703583026s|3da8322027257327|24286|rds|local|vector|||11.879||
 dir|object|7659346086d868f6|||||||||||||||
+egv_clr2ilr|function|cba1494291291c9d|||||||||||||||
 fit_compositional_pca_ilr_sc|function|305a9d2a2811eef7|||||||||||||||
 fit_compositional_pca_vs1_0|function|a53c291e20c7e546|||||||||||||||
 fit_density_pca|function|be753c66a12ed451|||||||||||||||
@@ -110,10 +112,10 @@ pca_count_ilr_vs5_sc01_noSign|stem|e8550098b5703320|d9d4c8bcab187f9c|fdaddb32545
 pca_count_ilr_vs5_sc01_r30|stem|14b474427f66b112|67b43b9a2fc6dd1f|fdaddb32545da857|1497601036||t20086.3870494405s|3954fe4810fc1e7f|298600|rds|local|vector|||1752.307||
 pca_count_ilr_vs6_acomp|stem|33b45db68880b9cd|5d22ad4f7058886b|49b4beebc8d82d45|-376509517||t20086.3667677574s|2a2df8f7446a937f|417913|rds|local|vector|||3248.082|longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a mul|
 pca_count_ilr_vs6_sc01|stem|48c7a28394a9cba6|f3e7694ba33f8e58|49b4beebc8d82d45|-1047973829||t20086.4011012147s|b117e5e62e10efde|299047|rds|local|vector|||734.824|longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a multiple of shorter object length. longer object length is not a mul|
-pca_sim1_2_160_eb|stem|b60244afb2871b03|d6a127aad2acba52|00bd03a3226fb1b7|-1950917745||t20085.6832249829s|0c76b001d2ba0ee1|39898|rds|local|vector|||841.194||
-pca_sim1_2_20_eb|stem|e51307a1b2670be4|a0bde41b4cc8ba2f|eebfbeaeec61a5af|411858481||t20085.6734887994s|4204c5e72531b874|27893|rds|local|vector|||406.398||
-pca_sim1_2_40_eb|stem|dfec25f2e82d2b38|6ec2684c66469f5e|7d3ff4d1f8883550|587946741||t20085.6983792687s|b7e3aa9660ea11d6|32163|rds|local|vector|||567.001||
-pca_sim1_2_80_eb|stem|c3139f193db08277|5d9663e5271c0692|b223ed451e5e3ff6|-995650379||t20085.6918165663s|bb31b499b52e2664|37195|rds|local|vector|||742.298||
+pca_sim1_2_160_eb|stem|fd39426689d0525e|d6a127aad2acba52|661e50e6a97784e6|-1950917745||t20091.3852887526s|a8b959220c31f141|212494|rds|local|vector|||5637.829||
+pca_sim1_2_20_eb|stem|03d61e83b0ad47d2|a0bde41b4cc8ba2f|daf3ee8fcd7e1762|411858481||t20090.8084315728s|d2a46d20a361e6a0|144409|rds|local|vector|||2261.547||
+pca_sim1_2_40_eb|stem|2d059918453c2873|6ec2684c66469f5e|d126c59ed0927a08|587946741||t20091.4178588633s|09e6a9b0d0a731c4|160373|rds|local|vector|||2814.016||
+pca_sim1_2_80_eb|stem|1e4cfa40ffe89b00|5d9663e5271c0692|d484972c735c5db1|-995650379||t20090.8557143197s|66c902999568fbad|187829|rds|local|vector|||4085.192||
 pca_sim1_2_80_l06|stem|475f82171d6918cc|b6e9c8cce3253fc7|0b0020cbcd786c1d|-1008834060||t20061.653813278s|ee7969bd9250578d|192084|rds|local|vector|||16671.193||
 pca_sim1_2_80_l08|stem|02fe1637c75a11e9|e4737dc33ede7eec|0b0020cbcd786c1d|655833436||t20062.3343996178s|1f58ad4c119eca73|100658|rds|local|vector|||3661.339||
 pca_sim1_2_80_l12|stem|def21aea63975584|dd5072137ef59604|0b0020cbcd786c1d|-2089985645||t20061.4400747706s|918e29375c57fcf0|76488|rds|local|vector|||1631.894||
@@ -131,12 +133,12 @@ pca_sim1_ilr_StdPara_smi_nSim_2_120|stem|7d8c45d9fe62e7c3|5afa38db64792f0e|cc1c3
 pca_sim1_ilr_StdPara_smi_nSim_2_120_300|stem|c669e82a32ab4cae|d5c269779326d445|5dd472041827f253|1926516161||t20054.7661807621s|6d5c857cc6f722d8|67875|rds|local|vector|||2380.073||
 pca_sim1_ilr_StdPara_smi_nSim_2_120_300_e003|stem|1719036632704a3f|df1abf95b174e508|5dd472041827f253|-856599290||t20054.7832454412s|74d5313fcede872d|61526|rds|local|vector|||1474.375||
 pca_sim1_ilr_StdPara_smi_nSim_2_120_e003|stem|3092b9fecb5b8b66|8aa8acd377da5cab|cc1c38903065b975|-1600754919||t20054.714830319s|7703f5f12e4e4a3d|35496|rds|local|vector|||575.759||
-pca_sim1_ilr_StdPara_smi_nSim_2_160|stem|d80336ef5863e6f9|b65acb9193af204d|6871999f8ea76174|1670637907||t20054.7386334277s|9569af51ca84e61a|61459|rds|local|vector|||1027.117||
-pca_sim1_ilr_StdPara_smi_nSim_2_20|stem|80444f383950ac50|d294a0bfffd7aabe|c1e3208a31c93d0c|1089739670||t20054.694502468s|9b31d225b79823ac|52087|rds|local|vector|||646.561||
-pca_sim1_ilr_StdPara_smi_nSim_2_40|stem|cc7692f2c323342c|e045c86ba0072c9d|67afb17dfa3df7f1|1677688564||t20054.7081663453s|13998c46fc2ecde5|66647|rds|local|vector|||1180.547||
+pca_sim1_ilr_StdPara_smi_nSim_2_160|stem|b46e00855bf1ba6e|b65acb9193af204d|f624b0d6234d15e8|1670637907||t20090.4618071743s|87ae609aa9c8fab0|155676|rds|local|vector|||2856.242||
+pca_sim1_ilr_StdPara_smi_nSim_2_20|stem|92163b6aaaa7732e|d294a0bfffd7aabe|2ff095d5a9ca7c38|1089739670||t20090.5342534597s|3d81aa83678ba8c1|128253|rds|local|vector|||1598.93||
+pca_sim1_ilr_StdPara_smi_nSim_2_40|stem|db93d7f513beb8ae|e045c86ba0072c9d|737b0e748a3e19ee|1677688564||t20090.5157470597s|5164944de2efdfba|169227|rds|local|vector|||3213.797||
 pca_sim1_ilr_StdPara_smi_nSim_2_60|stem|553f95db38a5c7a0|ef18500ba1c4ffda|9e2d0f6d84444039|1680823126||t20054.6420872277s|25b783c2da06cb2f|36574|rds|local|vector|||745.521||
 pca_sim1_ilr_StdPara_smi_nSim_2_60_e003|stem|b0360930a114b8fe|fc11152dc51d1cc1|9e2d0f6d84444039|542286199||t20054.6458999631s|86ca50712c4609d7|28608|rds|local|vector|||329.413||
-pca_sim1_ilr_StdPara_smi_nSim_2_80|stem|c859a4226d114502|6e4665fb5e08641e|0b0020cbcd786c1d|1396819380||t20054.6673700875s|2a89aaa3f5b7d2ed|81048|rds|local|vector|||1855.007||
+pca_sim1_ilr_StdPara_smi_nSim_2_80|stem|baaa03691c5978b0|6e4665fb5e08641e|c1e959ff14ee8c6d|1396819380||t20090.585196551s|c2173f4cfbb79793|196703|rds|local|vector|||4401.442||
 pca_sim1_ilr_StdPara_smi_nSim_2_e003|stem|94ea3a700a2ab6b7|270fc76ab0df3a29|677d7c4e0968cd17|805055845||t20054.6708681798s|2ea6703a962bd8d7|26510|rds|local|vector|||302.229||
 pca_smi_nSim_3_120|stem|697212ff6648533c|7d7df6214bf9eb70|49ac0de82ac8d6a4|1139209576||t20049.0346237879s|901a3a7ab2ff2d7a|83698|rds|local|vector|||5890.272||
 pca_smi_nSim_3_160|stem|2bc218a09ccf0d45|ea381aad8cf7289f|63495613a48eaa36|-1260853316||t20050.9119465558s|1752e12a2c94eb8a|229341|rds|local|vector|||15580.094||
@@ -204,15 +206,19 @@ sim_comp_1_smi_nSim_90_300|stem|62e855c8535ec1a5|aea2f940ad6c74e3|383f394f8bbc4b
 sim_comp_2_smi_nSim|stem|d545bc82622f60b3|6b35e24fa2d181dd|0fd99f40a6574732|-682422006||t20054.633441425s|0c57251a00c3a92f|17847|rds|local|vector|||0.141||
 sim_comp_2_smi_nSim_120|stem|83ab86cfeaaf8c89|6e99231d2a1e1016|0fd99f40a6574732|-530767743||t20054.633449712s|cf704689574d46c4|25507|rds|local|vector|||0.14||
 sim_comp_2_smi_nSim_120_300|stem|9cc9465022fb7cfc|5bae3dcd007b77d0|0fd99f40a6574732|-993066531||t20054.6334582189s|5442018397a0ea4b|75039|rds|local|vector|||0.416||
-sim_comp_2_smi_nSim_160|stem|27e560b0aff5a918|dab2e45c0315f62a|0fd99f40a6574732|1433247150||t20054.6334531263s|980f2060b6bd21e7|54117|rds|local|vector|||0.278||
-sim_comp_2_smi_nSim_20|stem|6f8187c4d90d4712|9ac1f43c4c6b5ce0|0fd99f40a6574732|-1295047959||t20054.6334446426s|e70b6fbc6fed90ac|31510|rds|local|vector|||0.261||
-sim_comp_2_smi_nSim_40|stem|7a32725071121462|1c541e8fadf54759|0fd99f40a6574732|199025245||t20054.6334479296s|fe137662b3658c83|38367|rds|local|vector|||0.273||
+sim_comp_2_smi_nSim_160|stem|10475084a88468fd|44e31601db2aab97|0fd99f40a6574732|1433247150||t20090.4287258138s|265ee5a23d29d48b|134589|rds|local|vector|||0.644||
+sim_comp_2_smi_nSim_20|stem|cdcb0c789e5ee1c7|f583538a026634ed|0fd99f40a6574732|-1295047959||t20090.4287412072s|235b0305cc4a3e54|78373|rds|local|vector|||0.567||
+sim_comp_2_smi_nSim_40|stem|11df1104ca5d9d77|6910264fc59d2fbe|0fd99f40a6574732|199025245||t20090.4287482557s|42f3913a26759b16|95446|rds|local|vector|||0.578||
 sim_comp_2_smi_nSim_60|stem|cd80427e36c9ebd6|e868f91630cdc627|0fd99f40a6574732|954271956||t20054.633436182s|dfae9152a4346ee1|21549|rds|local|vector|||0.179||
-sim_comp_2_smi_nSim_80|stem|7a9543c3a695bbf9|27620f5f92b2eb81|0fd99f40a6574732|-1630790699||t20054.6334396542s|e60187ce2a5c64ee|46143|rds|local|vector|||0.277||
-sim_comp_2_smi_nSim_eb_160|stem|cb0d83c085e30600|cd97778086749805|0fd99f40a6574732|2084298794||t20085.6687815917s|4246ccf55c5d510c|26085|rds|local|vector|||0.125||
-sim_comp_2_smi_nSim_eb_20|stem|6d3f3c02614cb53c|9bb3ba2b0a0734aa|0fd99f40a6574732|557844771||t20085.6687799598s|481002f535c29447|15656|rds|local|vector|||0.143||
-sim_comp_2_smi_nSim_eb_40|stem|a495b3077484d8ab|c53a035a849bc004|0fd99f40a6574732|64727590||t20085.6687847745s|8b976652129a7309|18502|rds|local|vector|||0.128||
-sim_comp_2_smi_nSim_eb_80|stem|959fb0d77d309ea6|de30363f155c91c6|0fd99f40a6574732|-2085672865||t20085.668783131s|ff7f0431dedae9e2|22097|rds|local|vector|||0.121||
+sim_comp_2_smi_nSim_80|stem|e9b5f397d1f01f95|9d7114bcc106cf1e|0fd99f40a6574732|-1630790699||t20090.4287343901s|ee214b1a6f193bcd|114766|rds|local|vector|||0.71||
+sim_comp_2_smi_nSim_eb_160|stem|17dffc6f029a3224|9f7e23adf5087ef5|0fd99f40a6574732|2084298794||t20090.7822488875s|24f94fe633beb7bf|128035|rds|local|vector|||0.598||
+sim_comp_2_smi_nSim_eb_160_pi|stem|d3697f9cc5d33b5e|88aaf31255944e1f|40fe0200f2556b0f|-1871881055||t20091.4180429101s|1819fefe2682c02a|555594|rds|local|vector|||0.696||
+sim_comp_2_smi_nSim_eb_20|stem|120912825efd5d38|7bab6271e5ae541f|0fd99f40a6574732|557844771||t20090.7822328575s|036abc48431e2320|76901|rds|local|vector|||0.628||
+sim_comp_2_smi_nSim_eb_20_pi|stem|b9ee0075ef38f32e|0c0585084cef4356|40fe0200f2556b0f|-1769768393||t20091.4180338941s|4b3059fea78b4baa|497998|rds|local|vector|||0.63||
+sim_comp_2_smi_nSim_eb_40|stem|215d74ac5c89339a|2bcbb3f485044cd3|0fd99f40a6574732|64727590||t20090.782255936s|c5b809de17221dbd|90504|rds|local|vector|||0.579||
+sim_comp_2_smi_nSim_eb_40_pi|stem|df61b63f505a1ce3|f0172660061e48f8|40fe0200f2556b0f|57478654||t20091.4180499701s|9c4d158a0f995bdb|515101|rds|local|vector|||0.566||
+sim_comp_2_smi_nSim_eb_80|stem|161c6a31ffc429d4|50eb0fd87294939a|0fd99f40a6574732|-2085672865||t20090.7822415727s|098b094b3a8c3b9c|108405|rds|local|vector|||0.716||
+sim_comp_2_smi_nSim_eb_80_pi|stem|95f0c088a781c554|48ba33b90685568f|40fe0200f2556b0f|-398496056||t20091.4180572963s|4bd6afbc5483f9ba|536052|rds|local|vector|||0.577||
 simulate_composition_1|function|00748b1a8611dc17|||||||||||||||
 simulate_densities_greven|function|7ed1ad54989d43d2|||||||||||||||
 simulation_composition_1|stem|2ad9e515c179a53e|45827a76f5fd8023|1fc507d71e7271c0|-2061480610||t20026.5915061269s|1ddfb407bad9e90c|43080|rds|local|vector|||0.047||
