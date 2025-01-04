@@ -2615,6 +2615,32 @@ tar_target(pca_sim1_2_20_ebT, {
                        sc_factor = 1,
                        sum_exp = TRUE)
   }),
+  tar_target(pca_count_ilr_vs1_1perc_ep03, {
+    x_data <- data_kl15_comp
+    x_data <- x_data * 0.01
+    set.seed(12)
+    pca_results_ilr_std <-
+      fit_pca_ilr_vs_2(x_data,
+                       max_iter = 50,
+                       r = 10,
+                       lambda = 1,
+                       eps = 0.03,
+                       sc_factor = 1,
+                       sum_exp = TRUE)
+  }),
+  tar_target(pca_count_ilr_vs1_1perc_ep04, {
+    x_data <- data_kl15_comp
+    x_data <- x_data * 0.01
+    set.seed(12)
+    pca_results_ilr_std <-
+      fit_pca_ilr_vs_2(x_data,
+                       max_iter = 50,
+                       r = 10,
+                       lambda = 1,
+                       eps = 0.04,
+                       sc_factor = 1,
+                       sum_exp = TRUE)
+  }),
   tar_target(pca_count_ilr_vs1_01, {
     x_data <- data_kl15_comp
     x_data <- x_data * 0.1
@@ -2808,7 +2834,7 @@ tar_target(pca_sim1_2_20_ebT, {
                         replicates = 100,
                         reference_pca = reference_pca,
                         scale = 0.01,
-                        eps = 0.03,
+                        eps = 0.04,
                         workers = 10)
   })
   # tar_target(bbootstrap_01_2, {
