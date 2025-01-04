@@ -3688,8 +3688,6 @@ for(j in 1:4) {
   }
 }
 
-
-
 pca_clr_rob_14 <- lapply(1:4, function(x) list(n_simulations))
 pca_clr_std_14 <- lapply(1:4, function(x) list(n_simulations))
 
@@ -3731,20 +3729,16 @@ for(j in 1:4) {
 
 for(j in 1:4) {
   for(i in 1:n_simulations) {
-    diff_oracle_mean_14[[j]][[i]] <- sqrt(sum((true_v_14 - t(basis_matrix) %*% simulation_results_list_14[[j]][[i]]$pca$center)^2))
-    diff_oracle_mean_std_clr_14[[j]][[i]] <- sqrt(sum((true_v_14 - pca_clr_std_14[[j]][[i]]$center)^2))
-    diff_oracle_mean_rob_clr_14[[j]][[i]] <- sqrt(sum((true_v_14 - pca_clr_rob_14[[j]][[i]]$center)^2))
+    diff_oracle_mean_14[[j]][[i]] <- sqrt(sum((oracle_mean[[j]][[i]] - t(basis_matrix) %*% simulation_results_list_14[[j]][[i]]$pca$center)^2))
+    diff_oracle_mean_std_clr_14[[j]][[i]] <- sqrt(sum((oracle_mean[[j]][[i]] - pca_clr_std_14[[j]][[i]]$center)^2))
+    diff_oracle_mean_rob_clr_14[[j]][[i]] <- sqrt(sum((oracle_mean[[j]][[i]] - pca_clr_rob_14[[j]][[i]]$center)^2))
   }
 }
-
-diff_mean = diff_mean_14
-diff_mean_std_clr = diff_mean_std_clr_14
-diff_mean_rob_clr = diff_mean_rob_clr_14
 
 scenario_stats <- list()
 
 for(j in 1:4) {
-  simulation_data <- simulation_data_list_2[[j]]
+  simulation_data <- simulation_data_list_14[[j]]
   # Sammle Statistiken aller Simulationen für Szenario j
   all_stats <- lapply(simulation_data, function(sim) {
     x_data <- do.call(rbind, sim$x_data)
@@ -3788,6 +3782,30 @@ diff_df_14$size <- factor(diff_df_14$size,
 
 ```
 
+```{r boxplot simulation oracle 14, eval=TRUE}
+# Daten in einen DataFrame zusammenführen
+diff_oracle_df_14 <- data.frame(
+  differences = c(
+    unlist(diff_oracle_mean_14[[1]]), unlist(diff_oracle_mean_14[[2]]), 
+    unlist(diff_oracle_mean_14[[3]]), unlist(diff_oracle_mean_14[[4]]),
+    unlist(diff_oracle_mean_std_clr_14[[1]]), unlist(diff_oracle_mean_std_clr_14[[2]]),
+    unlist(diff_oracle_mean_std_clr_14[[3]]), unlist(diff_oracle_mean_std_clr_14[[4]])
+    # unlist(diff_mean_rob_clr_all[[1]]), unlist(diff_mean_rob_clr_all[[2]]),
+    # unlist(diff_mean_rob_clr_all[[3]]), unlist(diff_mean_rob_clr_all[[4]])
+  ),
+  method = factor(rep(c("MCEM", "sample mean"), each = 4 * n_simulations)),
+  size = factor(rep(rep(c("20", "40", "80", "160"), 
+                         each = n_simulations), 2))
+)
+
+# define order of sequence
+diff_oracle_df_14$method <- factor(diff_oracle_df_14$method, 
+                        levels = c("MCEM", "sample mean"))
+
+diff_oracle_df_14$size <- factor(diff_oracle_df_14$size, 
+                        levels = c("20", "40", "80", "160"))
+
+```
 
 ```{r evaluation covariance 14, eval=TRUE, fig.width=12, fig.height=5}
 sigma_distances_14 <- lapply(1:4, function(x) list(n_simulations))
@@ -3814,6 +3832,31 @@ for(j in 1:4) {
   }
 }
 
+# with oracle estimates
+for(j in 1:4) {
+  for(i in 1:n_simulations) {
+    # MCEM method
+    comp_pca <- simulation_results_list_14[[j]][[i]]$pca
+    comp <- predict_latent_compositions_clr(comp_pca, basis_matrix = basis_matrix, sc_factor = 1)
+    list <- comp$compositions
+    if(length(list) != n_simulations) {
+      stop("Error: The list is not correct.")
+    }
+    df <- do.call(rbind, list)
+    est_covar <- cov(df)
+    sigma_distances_14[[j]][[i]] <- norm(oracle_covar - est_covar, type = "F")
+    
+    # CLR method
+    sigma_hat_clr <- with(pca_clr_std_14[[j]][[i]],
+      rotation %*% diag(sdev^2) %*% t(rotation))
+    sigma_distances_std_clr_14[[j]][[i]] <- norm(true_sigma_14 - sigma_hat_clr, type = "F")
+    
+    # ILR method
+    sigma_hat_rob <- with(pca_clr_rob_14[[j]][[i]],
+    loadings %*% diag(eigenvalues) %*% t(loadings))
+    sigma_distances_rob_clr_14[[j]][[i]] <- norm(true_sigma_14 - sigma_hat_rob, type = "F")
+  }
+}
 sigma_diff_df_14 <- data.frame(
   differences = c(
     unlist(sigma_distances_14[[1]]), unlist(sigma_distances_14[[2]]), 
@@ -3834,6 +3877,11 @@ sigma_diff_df_14$method <- factor(sigma_diff_df_14$method,
 
 sigma_diff_df_14$size <- factor(sigma_diff_df_14$size, 
                         levels = c("20", "40", "80", "160"))
+
+### oracle estimation
+
+
+###
 
 plot1 <- ggplot(diff_df_14, aes(x = size, y = differences, fill = method)) +
   geom_boxplot() +

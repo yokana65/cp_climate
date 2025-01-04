@@ -2491,3 +2491,173 @@ clr_x <- ilr_x %*% t(V)
 clr_x_2 <- ilr_x %*% V_inv
 clr_x_3 <- V %*% ilr_x 
 ```
+
+# predict compositions with gradient descent
+
+```{r predict compositions, eval=FALSE}
+predict_latent_compositions_clr <- function(comp_pca, basis_matrix, sc_factor){
+  predicted_scores <- sapply(seq_along(comp_pca$x_data), function(i){
+    optim_result <- optim(rep(0, length = length(comp_pca$pca$sdev)), conditional_scores_log_ilr , gr = gradient_cslc_vs1,
+                          x_data_i = comp_pca$x_data[[i]], pca = comp_pca$pca,
+                          basis_matrix = basis_matrix,
+                          sc_factor = sc_factor,
+                          control = list(fnscale = -1), method = "BFGS")
+    as.vector(optim_result$par)
+  })
+  
+  compositions_list <- vector("list", ncol(predicted_scores))
+
+  for(i in 1:ncol(predicted_scores)) {
+      # Extract current score vector
+      current_scores <- predicted_scores[,i]
+
+      # Transform to CLR space
+      ilr_center <- as.vector(comp_pca$pca$center)
+      clr_center <- ilr_center %*% basis_matrix
+      clr_rotation <- t(basis_matrix) %*% comp_pca$pca$rotation
+      clr_composition <- clr_center + as.vector(clr_rotation %*% current_scores)
+
+      # Transform to composition
+      compositions_list[[i]] <- clrInv(clr_composition)
+  }
+  return(list("predicted_scores" = predicted_scores, "compositions" = compositions_list))
+}
+
+predict_latent_compositions_ilr <- function(comp_pca){
+  predicted_scores <- sapply(seq_along(comp_pca$x_data), function(i){
+    optim_result <- optim(rep(0, length = length(comp_pca$pca$sdev)), conditional_scores_log_ilr , gr = gradient_cslc_vs1,
+                          x_data_i = comp_pca$x_data[[i]], pca = comp_pca$pca,
+                          basis_matrix = basis_matrix,
+                          sc_factor = sc_factor,
+                          control = list(fnscale = -1), method = "BFGS")
+    as.vector(optim_result$par)
+  })
+  clr_rotation <- t(basis_matrix) %*% comp_pca$rotation %*% basis_matrix
+  clr_center <- t(basis_matrix) %*% simulation_results_list_2[[j]][[i]]$pca$center
+  clr_compositions <- clr_center + comp_pca$pca$rotation%*%predicted_scores
+  compositions <- clrInv(clr_compositions)
+  return(list("clr_compositions" = clr_densities, "predicted_scores" = predicted_scores, "compositions" = compositions))
+}
+
+
+# example with sparsely sampled data
+sim <- tar_read(sim_comp_2_smi_nSim_ebT_80_pi)
+# observed data
+x_df <- sim[[1]]$x_data_matrix
+head(x_df)
+head(acomp(x_df))
+colMeans(acomp(x_df))
+pi_ls <- sim[[1]]$composition_list
+pi_df <- do.call(rbind, pi_ls)
+
+D <- 5
+basis_vectors <- lapply(1:(D - 1), generate_orthonormal_basis, D)
+basis_matrix <- do.call(rbind, basis_vectors)
+
+comp_pca_ls <- tar_read(pca_sim1_2_80_ebT)
+comp_pca <- comp_pca_ls[[1]]
+
+plot_pca_rotations(comp_pca$pca$rotation , main = "PCA MCEM", scale = 1, fixed = FALSE)
+# test with one observation
+optim_result <- optim(rep(0, length = length(comp_pca$pca$sdev)), conditional_scores_log_ilr , gr = gradient_cslc_vs1,
+                          x_data_i = comp_pca$x_data[[1]], pca = comp_pca$pca,
+                          basis_matrix = basis_matrix,
+                          sc_factor = sc_factor,
+                          control = list(fnscale = -1), method = "BFGS")
+predicted_scores <- as.vector(optim_result$par)
+ilr_center <- as.vector(comp_pca$pca$center)
+clr_center <- ilr_center %*% basis_matrix
+clr_rotation <- t(basis_matrix) %*% comp_pca$pca$rotation
+clr_composition <- clr_center + as.vector(clr_rotation%*%predicted_scores)
+(composition <- clrInv(clr_composition))
+pi_df[1,]
+sqrt(sum((pi_df[1,] - composition)^2))
+
+# numerische alternative
+optim_result <- optim(rep(0, length = length(comp_pca$pca$sdev)), 
+                      conditional_scores_log_ilr,
+                      x_data_i = comp_pca$x_data[[1]], 
+                      pca = comp_pca$pca,
+                      basis_matrix = basis_matrix,
+                      sc_factor = sc_factor,
+                      control = list(fnscale = -1), 
+                      method = "Nelder-Mead")
+predicted_scores <- as.vector(optim_result$par)
+ilr_center <- as.vector(comp_pca$pca$center)
+clr_center <- ilr_center %*% basis_matrix
+clr_rotation <- t(basis_matrix) %*% comp_pca$pca$rotation
+clr_composition <- clr_center + as.vector(clr_rotation%*%predicted_scores)
+(composition <- clrInv(clr_composition))
+pi_df[1,]
+sqrt(sum((pi_df[1,] - composition)^2))
+# is actually a bit better but that might depend on individual observation
+
+# computation over eigendecomposition
+ilr_center <- as.vector(comp_pca$pca$center)
+clr_center <- ilr_center %*% basis_matrix
+clr_rotation <- t(basis_matrix) %*% comp_pca$pca$rotation
+predicted_scores <- comp_pca$pca$rotation %*% (ilr(pi_df[1,]) - ilr_center)
+clr_composition <- clr_center + as.vector(clr_rotation%*%predicted_scores)
+(composition <- clrInv(clr_composition))
+pi_df[1,]
+sqrt(sum((pi_df[1,] - composition)^2))
+# thats very close to the first estimate
+
+## final test
+test <- predict_latent_compositions_clr(comp_pca, basis_matrix = basis_matrix, sc_factor = 1)
+list <- test$compositions
+length(list)
+df <- do.call(rbind, list)
+colMeans(df)
+colMeans(pi_df)
+cov(df)
+cov(pi_df)
+norm(cov(pi_df) - cov(df), type = "F")
+# compare to standard and robust results
+pca_clr_std <- prcomp(clr_transform(x_df, replace_zeros = "neutral"))
+pca_clr_rob <- pcaCoDa(x_df, method = "robust")
+clr_scores_std <- pca_clr_std$rotation %*% (clr(x_df - pca_clr_std$center))
+compositions_std_list <- vector("list", nrow(clr_scores_std))
+for(i in 1:nrow(clr_scores_std)) {
+      # Extract current score vector
+      current_scores <- clr_scores_std[i,]
+
+      clr_composition <- pca_clr_std$center + as.vector(pca_clr_std$rotation  %*% current_scores)
+
+      # Transform to composition
+      compositions_std_list[[i]] <- clrInv(clr_composition)
+  }
+list <- compositions_std_list
+length(list)
+df <- do.call(rbind, list)
+colMeans(df)
+colMeans(pi_df)
+cov(df)
+cov(pi_df)
+norm(cov(pi_df) - cov(df), type = "F")
+
+clr_scores_rob <- pca_clr_rob$scores
+rob_center <- pca_clr_std$center
+compositions_rob_list <- vector("list", nrow(clr_scores_rob))
+for(i in 1:nrow(clr_scores_rob)) {
+      # Extract current score vector
+      current_scores <- clr_scores_rob[i,]
+
+      clr_composition <- rob_center + as.vector(pca_clr_rob$loadings  %*% current_scores)
+
+      # Transform to composition
+      compositions_rob_list[[i]] <- clrInv(clr_composition)
+  }
+list <- compositions_rob_list
+length(list)
+df <- do.call(rbind, list)
+colMeans(df)
+colMeans(pi_df)
+cov(df)
+cov(pi_df)
+norm(cov(pi_df) - cov(df), type = "F")
+# TODO: clean pca structure in mcem algorithm (scale and x)
+# TODO: implement vector structure instead of matrix for the whole algorithm
+# TODO: backtransform the principal components
+# TODO: check scores calculation in pcaCoDa
+```

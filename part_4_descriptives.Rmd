@@ -19,6 +19,16 @@ library(gridExtra)
 
 # Core KL15 data
 
+Für den Anwendungsteil der Masterarbeit wird der Datensatz des Marinekerns KL15 vom Gulf of Aden (WGS 84 Coordinates: 12.85738 Grad North, 47.41707
+Grad East) genutzt. Dies geschah in Zusammenarbeit mit der working group
+“paleoclimate dynamics” of the geoscientific institute of the University of Potsdam, welche die Arbeit mit den Sedimentdaten fachlich betreute. 
+The core was already extracted in 1987, but new advantages in the
+field of X-ray fluorescence (XRF) scanning caused a renewed interest in the sediment data recently.
+In general the XRF scanning method produces counts of elements from the core that can be used as proxies
+for for climate relevant processes, like marine productivity, calcium carbonate
+deposition and dust deposition (Smol 2015).
+
+
 The dataset contains 2157 observations of counts for 13 elements. Each observation covers a depth of 1 cm and is dated by an age model. Age control was provided by AMS 14C dating for the upper 3 m of the core and stable oxygen isotopes 
 for the lower 19 m of the core. The oldest observation is dated 546,000 years BP (before present). The count data for each element are derived from XRF scans of the marine sediment resulting in a compositional representation of elements for each 
 observation. **The data is rescaled to counts per centisecond** (TODO: explain) Each observation can be formalized as a compositional vector: 
