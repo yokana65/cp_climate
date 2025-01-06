@@ -58,6 +58,7 @@ plot_pca_rotation <- function(rotation, scale = 1, main = "PCA - clr") {
   abline(h = 0, v = 0, lty = 2, col = "gray")
 }
 
+
 plot_pca_rotations <- function(rotation, components = c(1,2), scale = 1, main = "PCA - clr", fixed = FALSE) {
     # Set up the plot with optional fixed axes
     if (fixed) {
@@ -65,8 +66,8 @@ plot_pca_rotations <- function(rotation, components = c(1,2), scale = 1, main = 
              xlab = paste0("PC", components[1]),
              ylab = paste0("PC", components[2]),
              main = main,
-             xlim = c(-0.6, 0.6),
-             ylim = c(-0.6, 0.6))
+             xlim = c(-0.7, 0.7),
+             ylim = c(-0.7, 0.7))
     } else {
         plot(rotation[, components[1]], rotation[, components[2]],
              xlab = paste0("PC", components[1]),
@@ -319,4 +320,30 @@ egv_clr2ilr <- function(egv_clr, E) {
   return(result)
 }
 
+predict_latent_compositions_clr <- function(comp_pca, basis_matrix, sc_factor){
+  predicted_scores <- sapply(seq_along(comp_pca$x_data), function(i){
+    optim_result <- optim(rep(0, length = length(comp_pca$pca$sdev)), conditional_scores_log_ilr , gr = gradient_cslc_vs1,
+                          x_data_i = comp_pca$x_data[[i]], pca = comp_pca$pca,
+                          basis_matrix = basis_matrix,
+                          sc_factor = sc_factor,
+                          control = list(fnscale = -1), method = "BFGS")
+    as.vector(optim_result$par)
+  })
+  
+  compositions_list <- vector("list", ncol(predicted_scores))
 
+  for(i in 1:ncol(predicted_scores)) {
+      # Extract current score vector
+      current_scores <- predicted_scores[,i]
+
+      # Transform to CLR space
+      ilr_center <- as.vector(comp_pca$pca$center)
+      clr_center <- ilr_center %*% basis_matrix
+      clr_rotation <- t(basis_matrix) %*% comp_pca$pca$rotation
+      clr_composition <- clr_center + as.vector(clr_rotation %*% current_scores)
+
+      # Transform to composition
+      compositions_list[[i]] <- clrInv(clr_composition)
+  }
+  return(list("predicted_scores" = predicted_scores, "compositions" = compositions_list))
+}
