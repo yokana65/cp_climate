@@ -12,6 +12,7 @@ output:
 ```{r libraries, eval=TRUE, include=FALSE}
 library(targets)
 library(compositions)
+library(robCompositions)
 library(gridExtra)
 library(ggplot2)
 library(mgcv)
@@ -34,6 +35,8 @@ TODO: implement the differentiation between *strcutural* zeros and *rounding* ze
 
 ```{r load data, eval=TRUE}
 pca_count <- tar_read(pca_count_ilr_vs1_1perc)
+# pca_count <- tar_read(pca_count_ilr_vs1_1perc_ep04)
+# pca_count <- tar_read(pca_count_ilr_vs1_1perc_ep03)
 pca <- pca_count$pca
 count_data <- pca_count$x_data
 count_matrix <- do.call(rbind, count_data)
@@ -614,3 +617,306 @@ results in bigger CIs.
 
 
 TODO: build test that check the clr restictons (orthogonality and sum zero for all clr coordinates)
+
+# Robust PCA
+
+See Filzmoser et al. 2019, p.131ff
+
+```{r robust PCA, eval=TRUE}
+x_count <- tar_read(data_kl15)
+x_clr <- tar_read(data_kl15_comp_clr)
+
+x_count_sel <- x_count[4:ncol(x_count)-1]
+x_acomp <- acomp(x_count_sel)
+# pca_classic <- princomp(x_acomp)
+pca_rob <- pcaCoDa(x_count_sel)
+
+plot_pca_rotations(pca_rob$loadings, components = c(1,2), main = "PC1 vs. PC2", fixed=TRUE)
+pca_rob$loadings
+```
+
+```{r screeplot 2, eval=TRUE}
+plot(pca_rob)
+
+# sum(pca$sdev[1:2]^2)/sum(pca$sdev^2)
+```
+
+<!-- We can calculate the percentage of explained variance by the principal components with the **variation matrix**: -->
+The first two components explain `r sum(pca$sdev[1:2]^2)/sum(pca$sdev^2) * 100` % of the total variance.  
+The first four components explain `r sum(pca$sdev[1:4]^2)/sum(pca$sdev^2) * 100` % of the total variance.  
+The first component explains `r pca$sdev[1]^2/sum(pca$sdev^2) * 100` % of the total variance.  
+The second component explains `r pca$sdev[2]^2/sum(pca$sdev^2) * 100` % of the total variance.  
+The third component explains `r pca$sdev[3]^2/sum(pca$sdev^2) * 100` % of the total variance.  
+The fourth component explains `r pca$sdev[4]^2/sum(pca$sdev^2) * 100` % of the total variance.  
+
+
+```{r principal components rob, eval=TRUE, fig.width=12, fig.height=5}
+center_clr <- mean(x_acomp)
+pca_rotation_clr <- pca_rob$loadings
+
+# Create data frame for plotting
+mean_comp_1 <- data.frame(
+  component = 1:13,
+  mean_value = 0,
+  pc1_plus = pca_rotation_clr[,1] * sqrt(pca_rob$eigenvalues[1]),
+  pc1_minus = - pca_rotation_clr[,1] * sqrt(pca_rob$eigenvalues[1])
+)
+
+mean_comp_2 <- data.frame(
+  component = 1:13,
+  mean_value = 0,
+  pc1_plus = pca_rotation_clr[,2] * sqrt(pca_rob$eigenvalues[2]),
+  pc1_minus =  - pca_rotation_clr[,2] * sqrt(pca_rob$eigenvalues[2])
+)
+
+mean_comp_3 <- data.frame(
+  component = 1:13,
+  mean_value = 0,
+  pc1_plus = + pca_rotation_clr[,3] * sqrt(pca_rob$eigenvalues[3]),
+  pc1_minus = - pca_rotation_clr[,3] * sqrt(pca_rob$eigenvalues[3])
+)
+
+mean_comp_4 <- data.frame(
+  component = 1:13,
+  mean_value = 0,
+  pc1_plus = + pca_rotation_clr[,4] * sqrt(pca_rob$eigenvalues[4]),
+  pc1_minus = - pca_rotation_clr[,4] * sqrt(pca_rob$eigenvalues[4])
+)
+
+
+# Add component names if available
+mean_comp_1$names <- colnames(count_matrix)
+mean_comp_2$names <- colnames(count_matrix)
+mean_comp_3$names <- colnames(count_matrix)
+mean_comp_4$names <- colnames(count_matrix)
+
+plot1 <- ggplot(mean_comp_1) +
+    geom_bar(aes(x = names, y = pc1_plus, color = "Factor 0.35"), 
+             stat = "identity", fill = NA) +
+    # geom_bar(aes(x = names, y = pc1_minus, color = "Factor -0.35"), 
+    #          stat = "identity", fill = NA) +
+    geom_bar(aes(x = names, y = mean_value), 
+             stat = "identity", fill = NA, color = "black") +
+    scale_color_manual(values = c("Factor 0.35" = "#9ebcda", "Factor -0.35" = "blue"),
+                      name = "PC1",
+                      breaks = c("Factor 0.35", "Factor -0.35")) +
+    labs(x = "Component", y = "clr value",
+         title = "PC1 variations: 59%") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          legend.position = "top") +
+    ylim(-0.15,0.25)
+
+plot2 <- ggplot(mean_comp_2) +
+    geom_bar(aes(x = names, y = pc1_plus, color = "Factor 0.27"), 
+             stat = "identity", fill = NA) +
+    # geom_bar(aes(x = names, y = pc1_minus, color = "Factor -0.23"), 
+    #          stat = "identity", fill = NA) +
+    geom_bar(aes(x = names, y = mean_value), 
+             stat = "identity", fill = NA, color = "black") +
+    scale_color_manual(values = c("Factor 0.27" = "#9ebcda", "Factor -0.23" = "blue"),
+                      name = "PC2",
+                      breaks = c("Factor 0.27", "Factor -0.23")) +
+    labs(x = "Component", y = "clr value",
+         title = "PC2 variations: 24%") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          legend.position = "top")+
+    ylim(-0.15,0.25)
+
+
+plot3 <- ggplot(mean_comp_3) +
+    geom_bar(aes(x = names, y = pc1_plus, color = "Factor 0.18"), 
+             stat = "identity", fill = NA) +
+    # geom_bar(aes(x = names, y = pc1_minus, color = "Factor -0.11"), 
+    #          stat = "identity", fill = NA) +
+    geom_bar(aes(x = names, y = mean_value), 
+             stat = "identity", fill = NA, color = "black") +
+    scale_color_manual(values = c("Factor 0.18" = "#9ebcda", "Factor -0.11" = "blue"),
+                      name = "PC3",
+                      breaks = c("Factor 0.18", "Factor -0.11")) +
+    labs(x = "Component", y = "clr value",
+         title = "PC3 variations: 6%") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          legend.position = "top") +
+    ylim(-0.15, 0.25)
+
+plot4 <- ggplot(mean_comp_4) +
+    geom_bar(aes(x = names, y = pc1_plus, color = "Factor 0.15"), 
+             stat = "identity", fill = NA) +
+    # geom_bar(aes(x = names, y = pc1_minus, color = "Factor -0.09"), 
+    #          stat = "identity", fill = NA) +
+    geom_bar(aes(x = names, y = mean_value), 
+             stat = "identity", fill = NA, color = "black") +
+    scale_color_manual(values = c("Factor 0.15" = "#9ebcda", "Factor -0.09" = "blue"),
+                      name = "PC4",
+                      breaks = c("Factor 0.09", "Factor -0.09")) +
+    labs(x = "Component", y = "clr value",
+         title = "PC4 variations: 4%") +
+    # theme_grey() +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          legend.position = "top") 
+
+grid.arrange(plot1,plot2,plot3, ncol = 3)
+# factor represents the standard deviation of each component
+
+```
+
+
+```{r scores robust, eval=TRUE, warning=FALSE, fig.width=12, fig.height=5}
+# TODO: make a package function
+calculate_pc_scores <- function(data, pca, pc_number) {
+    # Center the data
+    centered_data <- scale(data, center = TRUE, scale = FALSE)
+    
+    # Calculate scores for specified PC
+    scores <- centered_data %*% pca_rotation_clr[, pc_number]
+    
+    return(scores)
+}
+# TODO: the function above does not use the rotation vectors directly. It only works because they are calculated before 
+
+# Create data frame with scores and age
+pc1_time_data <- data.frame(
+    age = x_count$age,
+    score = calculate_pc_scores(x_clr, pca, 1)
+)
+
+pc2_time_data <- data.frame(
+    age = x_count$age,
+    score = calculate_pc_scores(x_clr, pca, 2)
+)
+
+pc3_time_data <- data.frame(
+    age = x_count$age,
+    score = calculate_pc_scores(x_clr, pca, 3)
+)
+pc4_time_data <- data.frame(
+    age = x_count$age,
+    score = calculate_pc_scores(x_clr, pca, 4)
+)
+
+# Fit GAM model
+gam_fit1 <- gam(score ~ s(age, k=120, bs="cr"), data=pc1_time_data)
+
+# Create prediction data
+pred_data <- data.frame(age = seq(min(pc1_time_data$age), 
+                                 max(pc1_time_data$age), 
+                                 length.out=200))
+pred_data$fit <- predict(gam_fit1, pred_data)
+
+# PC2
+gam_fit2 <- gam(score ~ s(age, k=120, bs="cr"), data=pc2_time_data)
+
+# Create prediction data
+pred_data_2 <- data.frame(age = seq(min(pc2_time_data$age), 
+                                 max(pc2_time_data$age), 
+                                 length.out=200))
+pred_data_2$fit <- predict(gam_fit2, pred_data_2)
+
+# Calculate confidence intervals
+pred_se <- predict(gam_fit1, pred_data, se.fit=TRUE)
+pred_data$upper <- pred_data$fit + 1.96 * pred_se$se.fit
+pred_data$lower <- pred_data$fit - 1.96 * pred_se$se.fit
+
+pred_se_2 <- predict(gam_fit2, pred_data_2, se.fit=TRUE)
+pred_data_2$upper <- pred_data_2$fit + 1.96 * pred_se_2$se.fit
+pred_data_2$lower <- pred_data_2$fit - 1.96 * pred_se_2$se.fit
+
+# Updated plot with GAM
+plot1 <- ggplot(pc1_time_data, aes(x = age, y = score)) +
+    geom_point(alpha=0.5) +
+    geom_line(data=pred_data, aes(y=fit), color="blue", size=1) +
+    geom_ribbon(data=pred_data, aes(y=fit, ymin=lower, ymax=upper), 
+                alpha=0.2) +
+    labs(x = "Age (ka)", 
+         y = "PC1 Score",
+         title = "PC1 Scores over Time") +
+    theme_minimal() +
+    ylim(-1.5,1.5)
+
+plot2 <- ggplot(pc2_time_data, aes(x = age, y = score)) +
+    geom_point(alpha=0.5) +
+    geom_line(data=pred_data_2, aes(y=fit), color="blue", size=1) +
+    geom_ribbon(data=pred_data_2, aes(y=fit, ymin=lower, ymax=upper), 
+                alpha=0.2) +
+    labs(x = "Age (ka)", 
+         y = "PC2 Score",
+         title = "PC2 Scores over Time") +
+    theme_minimal() +
+    ylim(-1.5,1.5)
+
+grid.arrange(plot1, plot2, ncol = 1)
+summary(gam_fit1)
+gam.check(gam_fit1)
+
+```
+
+```{r block_bootstrap_pca corrected sampling robust, eval=FALSE}
+block_bootstrap_pca <- function(data, block_length = 50, R = 1000, reference_pca = NULL) {
+  n <- nrow(data)
+  results <- list()
+  
+  # Calculate reference PCA if not provided
+  if (is.null(reference_pca)) {
+    reference_pca <- pcaCoDa(data, scale. = TRUE)
+  }
+  
+  for(i in 1:R) {
+    # Generate blocks
+    blocks <- ceiling(n/block_length)
+    start_points <- sample(1:(n - block_length + 1), blocks, replace = TRUE)
+    
+    # Create bootstrap sample
+    boot_indices <- unlist(lapply(start_points, function(x) x:(x + block_length - 1)))
+    boot_indices <- boot_indices[boot_indices <= n][1:n]
+    
+    # Perform PCA on bootstrap sample
+    boot_data <- data[boot_indices, ]
+    boot_pca <- pcaCoDa(boot_data, scale. = FALSE)
+    
+    # Align signs with reference PCA
+    for(j in 1:ncol(boot_pca$loadings)) {
+      # Calculate correlation with reference
+      cor_sign <- sign(sum(boot_pca$loadings[,j] * reference_pca$loadings[,j]))
+      # Flip sign if negative correlation
+      if(cor_sign < 0) {
+        boot_pca$loadings[,j] <- -boot_pca$loadings[,j]
+        boot_pca$x[,j] <- -boot_pca$x[,j]
+      }
+    }
+    
+    results[[i]] <- list(
+      rotation = boot_pca$loadings,
+      sdev = sqrt(boot_pca$eigenvalues)
+    )
+  }
+  
+  return(results)
+}
+
+# Anwendung:
+bootstrap_results <- block_bootstrap_pca(data, 
+                                       block_length = 50, 
+                                       R = 1000, 
+                                       reference_pca = pca_rob)
+
+# Calculate confidence intervals for loadings
+loading_ci <- apply(simplify2array(lapply(bootstrap_results, function(x) x$rotation)), 1:2, 
+                   quantile, probs = c(0.025, 0.975))
+
+loading_df <- data.frame(
+  Variable = rownames(pca_classic$rotation),
+  Loading = pca_classic$rotation[,1],
+  Lower = loading_ci[1,,1],
+  Upper = loading_ci[2,,1]
+)
+
+ggplot(loading_df, aes(x = Variable, y = Loading)) +
+  geom_point() +
+  geom_errorbar(aes(ymin = Lower, ymax = Upper)) +
+  coord_flip() +
+  labs(title = "PC1 Loadings with Bootstrap CI")
+```

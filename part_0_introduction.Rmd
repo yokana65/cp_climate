@@ -481,7 +481,11 @@ und je nach Kontext auch nicht ungewöhnlich, dass Nullwerte für einzelne Kompo
 TODO: geomatrisches Mean für Komposition und für Datensatz sind nicht identisch!
 
 Es wurde bereits herausgearbeitet, dass die üblichen Methoden einer auf absoluten Werten basierenden statistischen Analyse für Kompositionsdaten 
-nicht geeignet sind. Stattdessen sollten Methoden verwendet werden, die im Einklang mit der Aitchison Geometry (chapter [...]) stehen. Diese werden 
+nicht geeignet sind. Im Besonderen gilt dies auch für die typischen deskriptiven Schätzer, wie dem arithmetrischen Durchschnitt und der Varianz, 
+die nicht mit der Aitchison Geometry vereinbar sind (Vgl. Pawlowsky-Glahn, p. 66ff). 
+
+Stattdessen sollten Methoden für die Einschätzung von Lokalität und Variabilität (Spread) der Daten verwendet werden, die im Einklang mit den Grundlagen der 
+Kompositionsdatenanalyse stehen. Diese werden 
 im Folgenden aufgeführt und im kapitel [...] am praktischen Datensatz umgesetzt. The observed data matrix $\boldsymbol{x_i} = (x_{i 1}, \ldots, x_{i D})$ with $i = 1, \ldots, n$ contains *n* rows of observed 
 compositions with *D* columns for the compositional parts. 
 

@@ -297,3 +297,16 @@ The likelhihood function must be calculated as log-likelihood since the power of
 Die Logik des Algorithmus besteht darin, dass x_i in mit Hilfe der clr-Transformation, der orthonormalen Basenzerlegung und der principal component decomposition
 in Abhängigkeit der scores dargestellt werden kann: 
 $\theta_i = \nu + V^T z_i$ und $x_i = \exp(\rho_i)$ und $\xi_i = \rho_i E$.
+
+# Computational steps MCEM
+
+1.  set $\boldsymbol{\nu}^{(0)}=\mathbf{0} \in \mathbb{R}^{D-1} \text { and } \boldsymbol{\Sigma}^{(0)}=\mathbb{I} \in \mathbb{R}^{(D-1) \times(D-1)}$
+2. compute the eigencomposition of $\boldsymbol{\Sigma}^{(0)}$ with $\boldsymbol{\Sigma}^{(0)} = \boldsymbol{V}^{(0)} \boldsymbol{\Lambda}^{(0)} \boldsymbol{V}^{(0) T}$ to get the principal components 
+as columns of $\boldsymbol{V}^{(0)}$ and the eigenvalues $\sigma_1^{(0)}, \ldots, \lambda_{D-1}^{(0)}$ as diagonal elements of $\boldsymbol{\Lambda}^{(0)}$.
+3. **Expectation step**: for $i=1, \ldots, n$ and $t=1, \ldots, r$
+  a. calculate the mode from the conditional distribution of scores in Formel (1) as  $\mathbf{z}_{i}^{*}=\operatorname{argmax}_{\mathbf{z}_{i} \in \mathbb{R}^{N}} p\left(\mathbf{z}_{i} \mid \boldsymbol{x}_{i}, \boldsymbol{\nu}^{(h)}, \boldsymbol{\Sigma}^{(h)}\right)$ 
+  b. sample proposal scores $\mathbf{z}_{i t}$ from the auxiliary distribution $\mathcal{N}\left(\boldsymbol{z}_{i}^{*}, \operatorname{diag}\left(\sigma_{1}^{2(h)}, \ldots, \sigma_{N}^{2}{ }^{(h)}\right)\right)$
+  c. get samples $\boldsymbol{\theta}_{i}^{(t)}$ from  as $\boldsymbol{\theta}_{i}^{(t)}=\boldsymbol{\nu}^{(h)}+\boldsymbol{V}^{(h) T} \mathbf{z}_{i t}$
+  d. calculate the weights $\omega_{i t}$
+4. **Maximization step**: Maximize the approximated complete-data log-likelihood (10) to get the updated parameters $\boldsymbol{\nu}^{(h+1)}$ and $\boldsymbol{\Sigma}^{(h+1)}$
+5. repeat steps 2 to 4 until convergence for  $\left\|\boldsymbol{\nu}^{(h+1)}-\boldsymbol{\nu}^{(h)}\right\|<\epsilon$ and $\left\|\boldsymbol{\Sigma}^{(h+1)}-\boldsymbol{\Sigma}^{(h)}\right\|<\epsilon$ for a threshold $\epsilon>0$ is reached.

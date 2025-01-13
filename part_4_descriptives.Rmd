@@ -52,9 +52,48 @@ sampling errors, which negatively affect the estimation of principal components 
 
 Following the sample size $m_i$ is plotted over time: TODO
 
+## Element counts as proxies
+
+Im Fachbereich der geowissenschaftlichen Paleoklimatischen Forschung ist es ein ausgewiesenes Ziel, die klimatologischen Prozesse in der Vergangenheit zu verstehen. Dafür werden u.a. Elemente oder Mineralien, die 
+in Sedimenten gefunden werden, als Proxies für klimatologische Prozesse verwendet. In diesem Kapitel soll kurz erläutert werden, welche klimatologischen Prozesse bei der Betrachtung von marinen Sedimenten relevant sind 
+und welche Elemente in der Forschung als Proxies für diese Prozesse verwendet werden.
+
+In the field of geoscientific research that focuses on paleoclimatic phases, understanding climatic processes of the past is a well-established objective. For this purpose, elements or minerals found in marine sediments 
+can be used as proxies for those processes. This section briefly explains which climatological processes are most relevant when examining marine sediments and which elements are commonly used as proxies for these processes 
+in current research.
+
+Im Folgenden sollen die für die Analyse von marinen Sedimenten relevanten Prozesse kurz erläutert werden. Diese können mit klimatologischen Prozessen, wie den Glazial-Interglazial Zyklen also den Veränderungen zwischen Eiszeiten und Warmzeiten, in Verbindung stehen, wobei 
+die Verknüpfung nicht Teil dieser Arbeit ist. Wichtig für die Interpretation des Datensatzes ist lediglich, welche Elemente in der Forschung bisher als besonders relavant herausgestellt wurden.
+Zu den relevanten Prozessen zählen biogene Produktivität, terrestrischer Eintrag und organische Produktion. In bisher erschienen Studien mariner Sedimente wurde insbesonder Calcium als Proxy für 
+marine Produktivität herausgearbeitet. Im Gegensatz zur biogenischen Produktivität, also der Produktivität im Meer die insbesonder zu Ablagerungen von Calciumcarbonat im Meeresboden führt, wird oft der 
+terrestrische Eintrag untersucht. Dieser beschreibt die Menge an terrestrischem Material, welches in den Ozean eingetragen wird. Für den Golf von Aden sind hierfür besonders Saharawinde verantwortlich, 
+für die oft Eisen oder auch Titanium als Proxy verwendet werden. Bei der Dimension terrestrischer Eintrag wird darüber hinaus auch zwischen fluvialem und eolian Input unterschieden. Dafür wird im speziellen Fall die ratio von Eisen und Titanium 
+als Proxy herangezogen. 
+
+
+Darüber hinaus gibt es Studien, die Silicium und Kalium als Proxy für terrigenen Eintrag untersuchen. 
+Calcium, Eisen und Titan zählen zu den am häufigsten untersuchten Proxies und sind in der Forschung auch die Elemente, welche am stärksten mit den Galzial-Interglazialen Zyklen in Verbindung gesetzt werden. 
+Als weiteres wichtiges Element in der Zusammensetzung mariner Sedimente ist Bromium, das mit der Produktion von organischem Material in Verbindung gebracht wird. 
+Es ist anzumerken, dass die Verbindung von Elementen und Proxies im Fachbereich ausführlich diskutiert wird und das sich hinter den hier aufgeführten Zusammenhängen eine hohe Komplexität von inhaltlichen Argumenten, sowie 
+geologischen und chemischen Prozessen verbirgt. Zum Beispiel ist anzumerken, dass alle Element diagenitischen Prozessen der Zersetzung unterliegen, die selbst Bestandteil laufender Forschung sind. 
+Als Orientierung für die explorative Analyse des Datensatzes ist es jedoch erforderlich einen kurzen Überblick über grundlegende, und weitesgehend akzeptierte Zusammenhänge 
+zu geben. 
+
 ## Descriptive statistics
 
-Im Folgenden werden für den kompositionalen Datensatz die deskriptiven Statistiken berechnet und erläutert. 
+Im Folgenden werden für den kompositionalen Datensatz die deskriptiven Statistiken berechnet und erläutert. Das Ziel dabei ist einen Überblick über die Kompositionsanteile und ihr 
+Verhältnis zueinander zu erhalten. Dies soll im Hinblick darauf geschehen, dass sowohl einzelne als auch Gruppen von Elementen als Proxies für klimatologische Prozesse angesehen werden 
+können. Um die Variation dieser Prozesse besser verstehen zu können, ist es wichtig das Verhalten der vermeintlichen Proxies im Zusammenhang zu betrachten, d.h. als Komposition relativer 
+Anteile. 
+
+In the following section, descriptive statistics for the compositional dataset are calculated and explained. The aim is to obtain an overview of the compositional parts and their relationships 
+to each other. This analysis is particularly relevant as both individual elements and groups of elements can serve as proxies for climatological processes. TODO: explain climatogical processes earlier (in count compositions) 
+To better understand the variation of these processes, it is crucial to examine the behavior of the presumed proxies in context, that is, as a composition of relative proportions.
+
+Der von der Forschungsgruppe "paleoclimatic dynamics" der Universität Potsdam frei zur Verfügung gestellte Datensatz enthält die Zähldaten von 13 Elemente, die in Fugure [..] aufgelistet werden. Dazu ist jede 
+Beobachtung mit der Variable "Tiefe" und "Alter" versehen. Für ein grundlegendes Verständnis der relativen Bezüge der Elemente ist es wichtig den Kompositionsdatensatz descriptiv zu erfassen. Dafür werden 
+im folgenden die bereits von Aitchison vorgeschlagenen Schätzungen (Vgl. Kapitel [...] für center, variation matrix und total variation berechnet.
+
 
 ```{r load data, eval=TRUE}
 data <- tar_read(data_kl15)
@@ -126,11 +165,12 @@ TODO: Do I want to inlcude that? We can see that the transformed coordinates are
 
 ```{r center of composition, eval=TRUE}
 row <- mean(data_acomp)
+row
 df_row <- data.frame(name = names(row), value = as.vector(row))
 
 # Create the bar plot
 ggplot(df_row, aes(x = name, y = value)) +
-  geom_bar(stat = "identity", fill = "blue") +
+  geom_bar(stat = "identity") +
   labs(x = "Element", y = "Value", title = "Sample Center") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
@@ -148,6 +188,47 @@ other releationships.But since we work in a compositional framework, we can use 
 The ilr-mean (true) is 
  [1] -0.3422397  2.6225870 -0.1486677  1.3785359 -3.1594463 -0.4760258
  [7]  1.7429442 -0.3013453  1.0633686  4.2942048 -0.3787930  1.5942359
+
+ ### Compositional mean
+
+ See Boogart et al. 2013, p. 74:
+
+\begin{equation*}
+\overline{\mathbf{x}}=\frac{1}{N} \odot \bigoplus_{n=1}^{N} \mathbf{x}_{n}=\operatorname{clr}^{-1}\left(\frac{1}{N} \sum_{n=1}^{N} \operatorname{clr}\left(\mathbf{x}_{n}\right)\right)=\mathscr{C}\left[\exp \left(\frac{1}{N} \sum_{n=1}^{N} \ln \left(\mathbf{x}_{n}\right)\right)\right], \tag{4.1}
+\end{equation*}
+
+```{r compositional mean, eval=TRUE}
+data <- tar_read(data_kl15)
+data_sel <- data[4:ncol(data)-1]
+x <- acomp(data_sel)
+x_m <- mean(x)
+# non compositional mean
+colMeans(data_sel)
+acomp(colMeans(data_sel))
+
+df_row <- data.frame(name = names(x_m), value = as.vector(x_m))
+
+# Create the bar plot
+plot1 <- ggplot(df_row, aes(x = name, y = value)) +
+  geom_bar(stat = "identity", fill = "#9ebcda") +
+  labs(x = "Element", y = "Percentage", title = "Compositional mean") +
+  theme_minimal() +
+  # theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  coord_flip() +
+  theme(plot.title = element_text(hjust = 0.5))
+
+# over time
+plot2 <- ggplot(data, aes(x = age, y = aggregate)) +
+  geom_line(color = "#9ebcda") +
+  geom_point(color = "#9ebcda") +
+  theme_minimal() +
+  labs(x = "Age", y = "Sample size", title = "Sample size per observation over time") +
+  theme(plot.title = element_text(hjust = 0.5))
+
+grid.arrange(plot1,plot2, ncol = 2)
+
+summary(data)
+```
 
 #### Centering, scaling and standardization
 
