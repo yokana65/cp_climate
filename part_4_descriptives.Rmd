@@ -189,33 +189,60 @@ The ilr-mean (true) is
  [1] -0.3422397  2.6225870 -0.1486677  1.3785359 -3.1594463 -0.4760258
  [7]  1.7429442 -0.3013453  1.0633686  4.2942048 -0.3787930  1.5942359
 
- ### Compositional mean
+### Compositional mean
 
  See Boogart et al. 2013, p. 74:
 
-\begin{equation*}
+\begin{equation}
+\overline{\mathbf{x}}=\frac{1}{N} \odot \bigoplus_{n=1}^{N} \mathbf{x}_{n}=\operatorname{clr}^{-1}\left(\frac{1}{N} \sum_{n=1}^{N} \operatorname{clr}\left(\mathbf{x}_{n}\right)\right)=\mathscr{C}\left[\exp \left(\frac{1}{N} \sum_{n=1}^{N} \ln \left(\mathbf{x}_{n}\right)\right)\right]
+\label{def:mean}
+\end{equation}
+
+citet[~p.74]{vandenBoogaart2013AnalyzingCD}
+
+$$
 \overline{\mathbf{x}}=\frac{1}{N} \odot \bigoplus_{n=1}^{N} \mathbf{x}_{n}=\operatorname{clr}^{-1}\left(\frac{1}{N} \sum_{n=1}^{N} \operatorname{clr}\left(\mathbf{x}_{n}\right)\right)=\mathscr{C}\left[\exp \left(\frac{1}{N} \sum_{n=1}^{N} \ln \left(\mathbf{x}_{n}\right)\right)\right], \tag{4.1}
-\end{equation*}
+$$
 
 ```{r compositional mean, eval=TRUE}
 data <- tar_read(data_kl15)
 data_sel <- data[4:ncol(data)-1]
+colnames(data_sel) <- gsub("_cts", "", colnames(data_sel))
 x <- acomp(data_sel)
 x_m <- mean(x)
+x_m_clr <- mean(clr(x))
 # non compositional mean
 colMeans(data_sel)
 acomp(colMeans(data_sel))
 
-df_row <- data.frame(name = names(x_m), value = as.vector(x_m))
+df_row <- data.frame(name = names(x_m), value = as.vector(x_m), value_clr = as.vector(x_m_clr))
 
 # Create the bar plot
 plot1 <- ggplot(df_row, aes(x = name, y = value)) +
   geom_bar(stat = "identity", fill = "#9ebcda") +
-  labs(x = "Element", y = "Percentage", title = "Compositional mean") +
-  theme_minimal() +
+  labs(x = "Element", y = "Percentage") +
+  theme_grey() +
   # theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-  coord_flip() +
-  theme(plot.title = element_text(hjust = 0.5))
+  # coord_flip() +
+  theme(plot.title = element_text(hjust = 0.5),
+  axis.text.x = element_text(angle = 45, hjust = 1, , color = "black"),
+    axis.text.y = element_text(color = "black"),
+    axis.title.x = element_text(color = "black"),
+    axis.title.y = element_text(color = "black"))
+
+# Create the bar plot
+plot3 <- ggplot(df_row, aes(x = name, y = value_clr)) +
+  geom_bar(stat = "identity", fill = "#9ebcda") +
+  labs(x = "Element", y = "clr-coefficients") +
+  theme_grey() +
+  # theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  # coord_flip() +
+  theme(plot.title = element_text(hjust = 0.5),
+  axis.text.x = element_text(angle = 45, hjust = 1, , color = "black"),
+    axis.text.y = element_text(color = "black"),
+    axis.title.x = element_text(color = "black"),
+    axis.title.y = element_text(color = "black"))
+
 
 # over time
 plot2 <- ggplot(data, aes(x = age, y = aggregate)) +
@@ -225,9 +252,22 @@ plot2 <- ggplot(data, aes(x = age, y = aggregate)) +
   labs(x = "Age", y = "Sample size", title = "Sample size per observation over time") +
   theme(plot.title = element_text(hjust = 0.5))
 
-grid.arrange(plot1,plot2, ncol = 2)
+grid.arrange(plot1,plot3, ncol = 2)
 
 summary(data)
+```
+
+
+```{r variation matrix, eval=TRUE}
+var_matrix <- variation(x)
+norm_var_matrix <- 1/sqrt(2) * var_matrix
+tau_var_matrix <- exp(- norm_var_matrix)
+
+# total variance
+mvar(x)
+
+xi_matrix <- (norm_var_matrix / (ncol(x) * mvar(x))) * (ncol(x)*(ncol(x)-1))
+test <- (norm_var_matrix / mvar(x)) *(ncol(x)-1)
 ```
 
 #### Centering, scaling and standardization

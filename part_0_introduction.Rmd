@@ -421,7 +421,14 @@ $$
 $$
 wobei $\boldsymbol{x}^*$ der Vektor der Koordinaten in Bezug auf die ausgewählte Basis ist.
 
+Wir können nun die clr-Transformation als eine Abbildung $\operatorname{clr}: \mathcal{S}^{D} \rightarrow \mathbb{R}^{D-1}$ definieren, 
+die jeder Komposition $\mathbf{x} \in \mathcal{S}^{D}$ die Koordinaten in Bezug auf die orthonormale Basis $\left\{\mathbf{e}_{1}, \mathbf{e}_{2}, \ldots, \mathbf{e}_{D-1}\right\}$ zuordnet.
+
+
 In diesem Sinne lässt sich die ilr-Transformation wie folgt definieren:
+TODO: muss noch
+
+
 Property 4.5 Consider $\mathbf{x}_{k} \in \mathcal{S}^{D}, k=1,2$, and real constants $\alpha, \beta$; then  
 
 (a) $\operatorname{ilr}\left(\alpha \odot \mathbf{x}_{1} \oplus \beta \odot \mathbf{x}_{2}\right)=\alpha \cdot \operatorname{ilr}\left(\mathbf{x}_{1}\right)+\beta \cdot \operatorname{ilr}\left(\mathbf{x}_{2}\right)=\alpha \cdot \mathbf{x}_{1}^{*}+\beta \cdot \mathbf{x}_{2}^{*}$;
@@ -468,6 +475,23 @@ sowohl auf dem Simplex als auch in ihren Koordinaten dargestellt und analysiert 
 In der Regel ist der Simplex geeignet um die Daten im Kontext der real beobachteten Kompositionen zu interpretieren, während (ilr) Koordinaten mit einer beliebigen orthonormalen Basis 
 insbesondere für die Anwendung multivariater Methoden geeignet sind.
 In weiteren Verlauf dieser Arbeit werden beide Varianten ausgiebig genutzt.
+
+Balances are built upon another specific form of orthonormal bases, whose primary goal is to capture the structural relationships among the components of a composition, thereby enabling 
+a direct interpretation of their associated coordinates. In this case, the basis vectors are called \emph{balancing elements} and can represent theoretically and empirically founded relationships 
+between the compositional parts. The coordinates that result from the application of such a basis are called \emph{balances} \citet[~p.38]{Pawlowsky-Glahn2015a}.
+
+As the last relevant principle for introducing work with compositional data, the principle of working in coordinates should be mentioned here. As already evident, we speak of coordinates 
+in connection with a system of orthonormal bases. In this sense, in the context of the clr-transformation, we refer to clr-coefficients, and in the ilr-transformation, which is based on the application of orthonormal bases, we speak of ilr-coordinates.
+
+The fundamental idea behind this principle is that coordinates associated with an orthonormal basis obey certain standardized operational rules. These include, in particular, the shared properties of perturbation and addition, as well as powering and multiplication:
+
+$$ \operatorname{ilr}(\mathbf{x} \oplus \mathbf{y}) = \operatorname{ilr}(\mathbf{x}) + \operatorname{ilr}(\mathbf{y}) = \mathbf{x}^{} + \mathbf{y}^{}, \quad \operatorname{ilr}(\alpha \odot \mathbf{x}) = \alpha \cdot \operatorname{ilr}(\mathbf{x}) = \alpha \cdot \mathbf{x}^{*} \tag{X} $$
+
+In general, it can be stated that in the analysis of compositional data, results obtained with the original compositions using Aitchison geometry and results based on ilr-coordinates using standard Euclidean geometry are identical. This results in a "duality" in the representation of compositional data, which can be presented and analyzed both on the simplex and in their coordinate form (Pawlowsky-Glahn et al. 2015, p.43).
+
+Typically, the simplex is suitable for interpreting the data in the context of the real observed compositions, while (ilr) coordinates with an arbitrary orthonormal basis are particularly suitable for the application of multivariate methods.
+
+In the further course of this work, both variants will be used extensively.
 
 ## Normality on the simplex
 

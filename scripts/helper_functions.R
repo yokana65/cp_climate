@@ -59,7 +59,7 @@ plot_pca_rotation <- function(rotation, scale = 1, main = "PCA - clr") {
 }
 
 
-plot_pca_rotations <- function(rotation, components = c(1,2), scale = 1, main = "PCA - clr", fixed = FALSE) {
+plot_pca_rotations <- function(rotation, components = c(1,2), scale = 1, main = "PCA - clr", fixed = FALSE, pos_vector = NULL) {
     # Set up the plot with optional fixed axes
     if (fixed) {
         plot(rotation[, components[1]], rotation[, components[2]],
@@ -83,9 +83,20 @@ plot_pca_rotations <- function(rotation, components = c(1,2), scale = 1, main = 
     labels <- if (!is.null(rownames(rotation))) rownames(rotation)
               else seq_len(nrow(rotation))
     
+    default_pos_vector <- ifelse(rotation[, components[1]] < 0, 2, 4)
+
+    if (is.null(pos_vector)) {
+      pos_vector <- default_pos_vector
+    } else {
+      if (length(pos_vector) != length(labels)) {
+        warning("Length of 'pos_vector' does not match the number of labels. Using default positions for all labels.")
+        pos_vector <- default_pos_vector
+      }
+    }
+
     text(rotation[, components[1]], rotation[, components[2]],
          labels = labels,
-         pos = 4,
+         pos = pos_vector,
          cex = 0.8)
     
     abline(h = 0, v = 0, lty = 2, col = "gray")
