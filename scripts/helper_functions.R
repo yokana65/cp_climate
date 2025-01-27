@@ -127,15 +127,8 @@ plot_marginal_scores <- function(proposal_scores, weights, iteration) {
   par(mfrow = c(1,1))
 }
 
-clrInv_long <- function(clr_coords) {
-    # Exponentiate the clr coordinates
-    exp_coords <- exp(clr_coords)
-    
-    # Calculate the geometric mean normalization constant
-    norm_const <- sum(exp_coords)
-    
-    # Return normalized compositions
-    exp_coords / norm_const
+clrInverse <- function(clr_coords) {
+    exp(clr_coords) / sum(exp(clr_coords))
 }
 
 sample_from_density <- function(n, density_estimate) {
@@ -158,7 +151,7 @@ get_helmert <- function(D) {
     for (i in 1:ncol(V)) {
       V[1:i, i] <- 1/i
       V[i + 1, i] <- (-1)
-      V[, i] <- V[, i] * sqrt(i/(i + 1))
+      V[, i] <- V[, i] * sqrt(i/(i + 1)) * (-1)
     }
   return(V)
 }
@@ -272,11 +265,6 @@ ilr_transform <- function(x) {
 }
 
 inv_ilr <- function(ilr_x, use_transpose = FALSE) {
-  # Überprüfen, ob ilr_x eine Matrix oder eine Liste ist
-  if (!is.matrix(ilr_x) && !is.list(ilr_x)) {
-    stop("Input must be a matrix or a list")
-  }
-  
   # Anzahl der Komponenten bestimmen
   if (is.matrix(ilr_x)) {
     D <- ncol(ilr_x) + 1
@@ -358,3 +346,24 @@ predict_latent_compositions_clr <- function(comp_pca, basis_matrix, sc_factor){
   }
   return(list("predicted_scores" = predicted_scores, "compositions" = compositions_list))
 }
+
+predict_coordinates <- function(comp_pca, x_df, basis_matrix){
+  predicted_scores <- sapply(seq_along(comp_pca$x_data), function(i){
+    optim_result <- optim(rep(0, length = length(comp_pca$pca$sdev)), conditional_scores_log_ilr_vs3b , gr = gradient_cslc_vs1c,
+                          x_data_i = x_df[i, ], pca = comp_pca$pca,
+                          basis_matrix = basis_matrix,
+                          control = list(fnscale = -1), method = "BFGS")
+    as.vector(optim_result$par)
+  })
+  
+  coordinates_list <- vector("list", ncol(predicted_scores))
+
+  for(i in 1:ncol(predicted_scores)) {
+      current_scores <- predicted_scores[,i]
+
+      coordinates_list[[i]] <- comp_pca$pca$center + as.vector(comp_pca$pca$rotation %*% current_scores)
+  }
+  return(list("predicted_scores" = predicted_scores, "coordinates" = coordinates_list))
+}
+
+### Refactor MCEM
