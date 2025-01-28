@@ -10,7 +10,7 @@ source("scripts/fit_density_pca.R")
 source("scripts/fit_composition_pca.R")
 source("scripts/fit_composition_pca_ilr.R")
 source("scripts/fit_pca_ilr.R")
-source("scripts/fit_pca_clr.R")
+source("scripts/fit_compositional_pca.R")
 source("scripts/fit_pca_ilr_2.R")
 source("scripts/conditional_scores_function.R")
 source("scripts/gradient.R")
@@ -555,7 +555,6 @@ list(
     }
     sim_composition_2_results
   }),
-
   tar_target(sim_comp_2_smi_nSim_ebT_20_pi, {
     n_simulations <- 100
     n_observations <- 100
@@ -2691,124 +2690,124 @@ tar_target(pca_sim1_2_20_ebT, {
                        sc_factor = 1, 
                        sum_exp = TRUE)
   }),
-  tar_target(pca_count_ilr_vs5_sc01, {
-    x_data <- data_kl15_comp
-    x_data <- x_data * 0.01
-    set.seed(12)
-    pca_results_ilr_std <-
-      fit_pca_vs_5(x_data,
-                   max_iter = 50,
-                   r = 10,
-                   lambda = 1,
-                   eps = 0.03,
-                   sc_factor = 1,
-                   scores = TRUE,
-                   sum_exp = TRUE,
-                   fix_sign = TRUE)
- }),
-  tar_target(pca_count_ilr_vs5, {
-    x_data <- data_kl15_comp
-    set.seed(12)
-    pca_results_ilr_std <-
-      fit_pca_vs_5(x_data,
-                   max_iter = 50,
-                   r = 10,
-                   lambda = 1,
-                   eps = 0.03,
-                   sc_factor = 1,
-                   scores = TRUE,
-                   sum_exp = TRUE,
-                   fix_sign = TRUE)
- }),
-  tar_target(pca_count_ilr_vs5_e06, {
-    x_data <- data_kl15_comp
-    set.seed(12)
-    pca_results_ilr_std <-
-      fit_pca_vs_5(x_data,
-                   max_iter = 50,
-                   r = 10,
-                   lambda = 1,
-                   eps = 0.06,
-                   sc_factor = 1,
-                   scores = TRUE,
-                   sum_exp = TRUE,
-                   fix_sign = TRUE)
- }),
-  tar_target(pca_count_ilr_vs5_sc01_e06, {
-    x_data <- data_kl15_comp
-    x_data <- x_data * 0.01
-    set.seed(12)
-    pca_results_ilr_std <-
-      fit_pca_vs_5(x_data,
-                   max_iter = 50,
-                   r = 10,
-                   lambda = 1,
-                   eps = 0.06,
-                   sc_factor = 1,
-                   scores = TRUE,
-                   sum_exp = TRUE,
-                   fix_sign = TRUE)
- }),
-  tar_target(pca_count_ilr_vs5_sc01_noSign, {
-    x_data <- data_kl15_comp
-    x_data <- x_data * 0.01
-    set.seed(12)
-    pca_results_ilr_std <-
-      fit_pca_vs_5(x_data,
-                   max_iter = 50,
-                   r = 10,
-                   lambda = 1,
-                   eps = 0.03,
-                   sc_factor = 1,
-                   scores = TRUE,
-                   sum_exp = TRUE,
-                   fix_sign = FALSE)
- }),
-  tar_target(pca_count_ilr_vs5_sc01_r30, {
-    x_data <- data_kl15_comp
-    x_data <- x_data * 0.01
-    set.seed(12)
-    pca_results_ilr_std <-
-      fit_pca_vs_5(x_data,
-                   max_iter = 50,
-                   r = 30,
-                   lambda = 1,
-                   eps = 0.03,
-                   sc_factor = 1,
-                   scores = TRUE,
-                   sum_exp = TRUE,
-                   fix_sign = TRUE)
- }),
-  tar_target(pca_count_ilr_vs6_sc01, {
-    x_data <- data_kl15_comp
-    x_data <- x_data * 0.01
-    set.seed(12)
-    pca_results_ilr_std <-
-      fit_pca_vs_6(x_data,
-                   max_iter = 50,
-                   r = 10,
-                   lambda = 1,
-                   eps = 0.03,
-                   sc_factor = 1,
-                   scores = TRUE,
-                   sum_exp = TRUE,
-                   fix_sign = TRUE)
- }),
-  tar_target(pca_count_ilr_vs6_acomp, {
-    x_data <- data_kl15_comp
-    x_data <- acomp(x_data)
-    set.seed(12)
-    pca_results_ilr_std <-
-      fit_pca_vs_6(x_data,
-                   max_iter = 50,
-                   r = 10,
-                   lambda = 1,
-                   eps = 0.03,
-                   sc_factor = 1,
-                   scores = TRUE,
-                   sum_exp = TRUE,
-                   fix_sign = TRUE)
- }),
+#   tar_target(pca_count_ilr_vs5_sc01, {
+#     x_data <- data_kl15_comp
+#     x_data <- x_data * 0.01
+#     set.seed(12)
+#     pca_results_ilr_std <-
+#       fit_pca_vs_5(x_data,
+#                    max_iter = 50,
+#                    r = 10,
+#                    lambda = 1,
+#                    eps = 0.03,
+#                    sc_factor = 1,
+#                    scores = TRUE,
+#                    sum_exp = TRUE,
+#                    fix_sign = TRUE)
+#  }),
+#   tar_target(pca_count_ilr_vs5, {
+#     x_data <- data_kl15_comp
+#     set.seed(12)
+#     pca_results_ilr_std <-
+#       fit_pca_vs_5(x_data,
+#                    max_iter = 50,
+#                    r = 10,
+#                    lambda = 1,
+#                    eps = 0.03,
+#                    sc_factor = 1,
+#                    scores = TRUE,
+#                    sum_exp = TRUE,
+#                    fix_sign = TRUE)
+#  }),
+#   tar_target(pca_count_ilr_vs5_e06, {
+#     x_data <- data_kl15_comp
+#     set.seed(12)
+#     pca_results_ilr_std <-
+#       fit_pca_vs_5(x_data,
+#                    max_iter = 50,
+#                    r = 10,
+#                    lambda = 1,
+#                    eps = 0.06,
+#                    sc_factor = 1,
+#                    scores = TRUE,
+#                    sum_exp = TRUE,
+#                    fix_sign = TRUE)
+#  }),
+#   tar_target(pca_count_ilr_vs5_sc01_e06, {
+#     x_data <- data_kl15_comp
+#     x_data <- x_data * 0.01
+#     set.seed(12)
+#     pca_results_ilr_std <-
+#       fit_pca_vs_5(x_data,
+#                    max_iter = 50,
+#                    r = 10,
+#                    lambda = 1,
+#                    eps = 0.06,
+#                    sc_factor = 1,
+#                    scores = TRUE,
+#                    sum_exp = TRUE,
+#                    fix_sign = TRUE)
+#  }),
+#   tar_target(pca_count_ilr_vs5_sc01_noSign, {
+#     x_data <- data_kl15_comp
+#     x_data <- x_data * 0.01
+#     set.seed(12)
+#     pca_results_ilr_std <-
+#       fit_pca_vs_5(x_data,
+#                    max_iter = 50,
+#                    r = 10,
+#                    lambda = 1,
+#                    eps = 0.03,
+#                    sc_factor = 1,
+#                    scores = TRUE,
+#                    sum_exp = TRUE,
+#                    fix_sign = FALSE)
+#  }),
+#   tar_target(pca_count_ilr_vs5_sc01_r30, {
+#     x_data <- data_kl15_comp
+#     x_data <- x_data * 0.01
+#     set.seed(12)
+#     pca_results_ilr_std <-
+#       fit_pca_vs_5(x_data,
+#                    max_iter = 50,
+#                    r = 30,
+#                    lambda = 1,
+#                    eps = 0.03,
+#                    sc_factor = 1,
+#                    scores = TRUE,
+#                    sum_exp = TRUE,
+#                    fix_sign = TRUE)
+#  }),
+#   tar_target(pca_count_ilr_vs6_sc01, {
+#     x_data <- data_kl15_comp
+#     x_data <- x_data * 0.01
+#     set.seed(12)
+#     pca_results_ilr_std <-
+#       fit_pca_vs_6(x_data,
+#                    max_iter = 50,
+#                    r = 10,
+#                    lambda = 1,
+#                    eps = 0.03,
+#                    sc_factor = 1,
+#                    scores = TRUE,
+#                    sum_exp = TRUE,
+#                    fix_sign = TRUE)
+#  }),
+#   tar_target(pca_count_ilr_vs6_acomp, {
+#     x_data <- data_kl15_comp
+#     x_data <- acomp(x_data)
+#     set.seed(12)
+#     pca_results_ilr_std <-
+#       fit_pca_vs_6(x_data,
+#                    max_iter = 50,
+#                    r = 10,
+#                    lambda = 1,
+#                    eps = 0.03,
+#                    sc_factor = 1,
+#                    scores = TRUE,
+#                    sum_exp = TRUE,
+#                    fix_sign = TRUE)
+#  }),
   tar_target(bbootstrap_01_1, {
     x_data <- data_kl15_comp
     results_mcem <- pca_count_ilr_vs1_1perc
@@ -2836,6 +2835,362 @@ tar_target(pca_sim1_2_20_ebT, {
                         scale = 0.01,
                         eps = 0.04,
                         workers = 10)
+  }),
+  ######################################################################
+  ##### Thesis Plots ################################################
+  ##*********Section 4.2**********#
+  tar_target(sim_balanced_m20, {
+    n_simulations <- 100
+    n_observations <- 100
+    eigenvalues <- c(0.7, 0.3)
+    mean <- c(0, 0.01, 0.02, -0.02, -0.01) 
+    n_counts <- 20
+    sim_composition_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(i)
+      sim_composition_results[[i]] <-
+        balanced_setting(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_results
+  }),
+  tar_target(sim_balanced_m40, {
+    n_simulations <- 100
+    n_observations <- 100
+    eigenvalues <- c(0.7, 0.3)
+    mean <- c(0, 0.01, 0.02, -0.02, -0.01) 
+    n_counts <- 40
+    sim_composition_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(i)
+      sim_composition_results[[i]] <-
+        balanced_setting(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_results
+  }),
+  tar_target(sim_balanced_m80, {
+    n_simulations <- 100
+    n_observations <- 100
+    eigenvalues <- c(0.7, 0.3)
+    mean <- c(0, 0.01, 0.02, -0.02, -0.01) 
+    n_counts <- 80
+    sim_composition_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(i)
+      sim_composition_results[[i]] <-
+        balanced_setting(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_results
+  }),
+  tar_target(sim_balanced_m160, {
+    n_simulations <- 100
+    n_observations <- 100
+    eigenvalues <- c(0.7, 0.3)
+    mean <- c(0, 0.01, 0.02, -0.02, -0.01) 
+    n_counts <- 160
+    sim_composition_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(i)
+      sim_composition_results[[i]] <-
+        balanced_setting(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_results
+  }),
+tar_target(sim_unbalanced_m20, {
+    n_simulations <- 100
+    n_observations <- 100
+    eigenvalues <- c(0.7, 0.3)
+    mean <- c(0, 1, 0.5, -1, -0.5) 
+    n_counts <- 20
+    sim_composition_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(i)
+      sim_composition_results[[i]] <-
+        balanced_setting(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_results
+  }),
+  tar_target(sim_unbalanced_m40, {
+    n_simulations <- 100
+    n_observations <- 100
+    eigenvalues <- c(0.7, 0.3)
+    mean <- c(0, 1, 0.5, -1, -0.5)
+    n_counts <- 40
+    sim_composition_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(i)
+      sim_composition_results[[i]] <-
+        balanced_setting(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_results
+  }),
+  tar_target(sim_unbalanced_m80, {
+    n_simulations <- 100
+    n_observations <- 100
+    eigenvalues <- c(0.7, 0.3)
+    mean <- c(0, 1, 0.5, -1, -0.5)
+    n_counts <- 80
+    sim_composition_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(i)
+      sim_composition_results[[i]] <-
+        balanced_setting(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_results
+  }),
+  tar_target(sim_unbalanced_m160, {
+    n_simulations <- 100
+    n_observations <- 100
+    eigenvalues <- c(0.7, 0.3)
+    mean <- c(0, 1, 0.5, -1, -0.5)
+    n_counts <- 160
+    sim_composition_results <- list(length(n_simulations))
+    
+    for (i in 1:n_simulations) {
+      set.seed(i)
+      sim_composition_results[[i]] <-
+        balanced_setting(n_observations,
+                                 eigenvalues,
+                                 mean,
+                                 n_counts)
+    }
+    sim_composition_results
+  }),
+  tar_target(results_balanced_m20, {
+    pca_results_list <- list(length(sim_balanced_m20))
+    for  (l in 1:length(sim_balanced_m20)) {
+      sim <-  sim_balanced_m20[[l]]
+      x_data <- sim$x_data
+      cat("Iteration sim_balanced_m20", l, "\n")
+
+      set.seed(l)
+      result <- co_pca_mcem(
+          x_data, 
+          lambda = 1,
+          max_iter = 40,
+          eps = 0.02,
+          sum_exp = FALSE
+      )
+      pca_results_list[[l]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(results_balanced_m20_num, {
+    pca_results_list <- list(length(sim_balanced_m20))
+    for  (l in 1:length(sim_balanced_m20)) {
+      sim <-  sim_balanced_m20[[l]]
+      x_data <- sim$x_data
+      cat("Iteration sim_balanced_m20", l, "\n")
+
+      set.seed(l)
+      result <- co_pca_mcem_nograd(
+          x_data, 
+          lambda = 1,
+          max_iter = 40,
+          eps = 0.02,
+          sum_exp = FALSE
+      )
+      pca_results_list[[l]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(results_balanced_m40, {
+    pca_results_list <- list(length(sim_balanced_m40))
+    for  (l in 1:length(sim_balanced_m40)) {
+      sim <-  sim_balanced_m40[[l]]
+      x_data <- sim$x_data
+      cat("Iteration sim_balanced_m40", l, "\n")
+
+      set.seed(l)
+      result <- co_pca_mcem(
+          x_data, 
+          lambda = 1,
+          max_iter = 40,
+          eps = 0.02,
+          sum_exp = FALSE
+      )
+      pca_results_list[[l]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(results_balanced_m40_num, {
+    pca_results_list <- list(length(sim_balanced_m40))
+    for  (l in 1:length(sim_balanced_m40)) {
+      sim <-  sim_balanced_m40[[l]]
+      x_data <- sim$x_data
+      cat("Iteration sim_balanced_m40_num", l, "\n")
+
+      set.seed(l)
+      result <- co_pca_mcem_nograd(
+          x_data, 
+          lambda = 1,
+          max_iter = 40,
+          eps = 0.02,
+          sum_exp = FALSE
+      )
+      pca_results_list[[l]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(results_balanced_m80, {
+    pca_results_list <- list(length(sim_balanced_m80))
+    for  (l in 1:length(sim_balanced_m80)) {
+      sim <-  sim_balanced_m80[[l]]
+      x_data <- sim$x_data
+      cat("Iteration sim_balanced_m80", l, "\n")
+
+      set.seed(l)
+      result <- co_pca_mcem(
+          x_data, 
+          lambda = 1,
+          max_iter = 40,
+          eps = 0.02,
+          sum_exp = FALSE
+      )
+      pca_results_list[[l]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(results_balanced_m80_num, {
+    pca_results_list <- list(length(sim_balanced_m80))
+    for  (l in 1:length(sim_balanced_m80)) {
+      sim <-  sim_balanced_m80[[l]]
+      x_data <- sim$x_data
+      cat("Iteration sim_balanced_m80_num", l, "\n")
+
+      set.seed(l)
+      result <- co_pca_mcem_nograd(
+          x_data, 
+          lambda = 1,
+          max_iter = 40,
+          eps = 0.02,
+          sum_exp = FALSE
+      )
+      pca_results_list[[l]] <- result
+    }
+    pca_results_list
+  }),
+  # tar_target(results_balanced_m160, {
+  #   pca_results_list <- list(length(sim_balanced_m160))
+  #   for  (l in 1:length(sim_balanced_m160)) {
+  #     sim <-  sim_balanced_m160[[l]]
+  #     x_data <- sim$x_data
+  #     cat("Iteration sim_balanced_m160", l, "\n")
+
+  #     set.seed(l)
+  #     result <- co_pca_mcem(
+  #         x_data, 
+  #         lambda = 1,
+  #         max_iter = 40,
+  #         eps = 0.02,
+  #         sum_exp = FALSE
+  #     )
+  #     pca_results_list[[l]] <- result
+  #   }
+  #   pca_results_list
+  # }),
+  tar_target(results_balanced_m160_num, {
+    pca_results_list <- list(length(sim_balanced_m160))
+    for  (l in 1:length(sim_balanced_m160)) {
+      sim <-  sim_balanced_m160[[l]]
+      x_data <- sim$x_data
+      cat("Iteration sim_balanced_m160_num", l, "\n")
+
+      set.seed(l)
+      result <- co_pca_mcem_nograd(
+          x_data, 
+          lambda = 1,
+          max_iter = 40,
+          eps = 0.02,
+          sum_exp = FALSE
+      )
+      pca_results_list[[l]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(results_balanced_m20_expSum, {
+    pca_results_list <- list(length(sim_balanced_m20))
+    for  (l in 1:length(sim_balanced_m20)) {
+      sim <-  sim_balanced_m20[[l]]
+      x_data <- sim$x_data
+      cat("Iteration sim_balanced_m20", l, "\n")
+
+      set.seed(l)
+      result <- co_pca_mcem(
+          x_data, 
+          lambda = 1,
+          max_iter = 40,
+          eps = 0.02,
+          sum_exp = TRUE
+      )
+      pca_results_list[[l]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(results_balanced_m20_newGrad, {
+    pca_results_list <- list(length(sim_balanced_m20))
+    for  (l in 1:length(sim_balanced_m20)) {
+      sim <-  sim_balanced_m20[[l]]
+      x_data <- sim$x_data
+      cat("Iteration sim_balanced_m20", l, "\n")
+
+      set.seed(l)
+      result <- co_pca_mcem_newGrad(
+          x_data, 
+          lambda = 1,
+          max_iter = 40,
+          eps = 0.02,
+          sum_exp = TRUE
+      )
+      pca_results_list[[l]] <- result
+    }
+    pca_results_list
+  }),
+  tar_target(results_balanced_m20_e05, {
+    pca_results_list <- list(length(sim_balanced_m20))
+    for  (l in 1:length(sim_balanced_m20)) {
+      sim <-  sim_balanced_m20[[l]]
+      x_data <- sim$x_data
+      cat("Iteration sim_balanced_m20_e05", l, "\n")
+
+      set.seed(l)
+      result <- co_pca_mcem_newGrad(
+          x_data, 
+          lambda = 1,
+          max_iter = 40,
+          eps = 0.05,
+          sum_exp = TRUE
+      )
+      pca_results_list[[l]] <- result
+    }
+    pca_results_list
   })
   # tar_target(bbootstrap_01_2, {
   #   x_data <- data_kl15_comp
@@ -2851,4 +3206,5 @@ tar_target(pca_sim1_2_20_ebT, {
   #                       eps = 0.03,
   #                       workers = 10)
   # })
+
 )
