@@ -86,17 +86,18 @@ conditional_scores_log_ilr_vs4 <- function(scores,
 }
 
 log_conditional_scores <- function(scores,
-                                        x_data_i,
-                                        pca,
-                                        basis_matrix) {
-  ilr_comp <- as.vector(pca$center + pca$rotation %*% scores)
-  clr_comp <- ilr2clr(ilr_comp)
-  norm_constant <- sum(exp(clr_comp))
+                                   x_data_i,
+                                   pca,
+                                   basis_matrix) {
+  clr_coef <- as.vector(
+                        basis_matrix %*% pca$center +
+                          basis_matrix %*% pca$rotation %*% scores)
+  norm_constant <- sum(exp(clr_coef))
 
-  # Compute scaled log likelihood
-  log_likelihood <- sum(x_data_i * clr_comp) - sum(x_data_i) * log(norm_constant)
+  log_likelihood <- sum(
+                        x_data_i * clr_coef) -
+                          sum(x_data_i) * log(norm_constant)
 
-  # Prior remains unchanged as it's already well-scaled
   log_prior <- - sum(0.5 * scores^2 / (pca$sdev^2))
 
   return(log_likelihood + log_prior)

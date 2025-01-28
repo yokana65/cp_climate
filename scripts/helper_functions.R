@@ -1,3 +1,56 @@
+validate_dimensions <- function(x_data) {
+  lengths <- unique(sapply(x_data, length))
+  if (length(lengths) != 1) {
+    stop("All observations must have the same number of components")
+  }
+
+  D <- lengths[1]
+
+  return(D)
+}
+
+prepare_data <- function(x_data) {
+  if (!is.list(x_data) && !is.matrix(x_data)) {
+    stop("Input x_data must be a list or a matrix")
+  }
+
+  if (is.data.frame(x_data) || is.matrix(x_data)) {
+    x_data <- apply(x_data, 1, function(x) x, simplify = FALSE)
+  }
+
+  D <- validate_dimensions(x_data)    
+  H <- get_helmert(D)
+
+  list(
+    x_data = x_data,
+    H = H,
+    D = D
+  )
+}
+
+finalize_pca <- function(pca, prepared_data, x_data, weights, start_time) {
+
+  pca$rotation_ilr <- pca$rotation
+  pca$rotation <- prepared_data$H %*% pca$rotation_ilr
+  pca$center <- as.vector(prepared_data$H %*% pca$center)
+  pca$sdev <- pca$sdev / sum(pca$sdev)
+
+  rownames(pca$rotation) <- names(x_data[[1L]])
+  cn <- paste0("Comp.", seq_len(ncol(pca$rotation)))
+  colnames(pca$rotation) <- cn
+
+  ess <- sapply(weights, function(w) 1 / sum(w^2))
+  end_time <- Sys.time()
+  elapsed_time <- end_time - start_time
+
+  return(list(
+    pca          = pca,
+    ess          = ess,
+    elapsed_time = elapsed_time
+  ))
+}
+
+
 stabilize_weights <- function(log_weights) {
   max_log_weight <- max(log_weights)
 

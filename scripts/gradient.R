@@ -189,22 +189,23 @@ gradient_lcs <- function(scores,
                               pca,
                               basis_matrix) {
   m_i <- sum(x_data_i)
-  ilr_comp <- as.vector(pca$center + pca$rotation %*% scores)
-  clr_comp <- ilr2clr(ilr_comp)
-  composition <- clrInv_long(clr_comp)
+  clr_comp <- as.vector(
+                        basis_matrix %*% pca$center +
+                          basis_matrix %*%  pca$rotation %*% scores)
+  composition <- clrInverse(clr_comp)
 
 
   grad_vecs <- sapply(seq_along(scores), function(k) {
-    e_k <- basis_matrix[k, ]
+    e_k <- basis_matrix[, k]
     v_k <- pca$rotation[, k]
     term1 <- sum(x_data_i * e_k)
     term2 <- m_i * sum(composition * e_k)
 
-    grad_k <- v_k * (term1 - term2) 
+    grad_k <- v_k * (term1 - term2)
 
     return(grad_k)
   })
-  grad <- rowSums(grad_vecs) # TODO: shouldnt be colSums?
+  grad <- rowSums(grad_vecs)
 
   grad <- grad - scores / (pca$sdev^2)
 
