@@ -1,4 +1,4 @@
-source("scripts/helper_functions.R")
+
 
 fit_compositional_pca_ilr_sc <- function(x_data,
                                          max_iter = 50,

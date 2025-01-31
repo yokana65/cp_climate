@@ -2660,4 +2660,54 @@ norm(cov(pi_df) - cov(df), type = "F")
 # TODO: implement vector structure instead of matrix for the whole algorithm
 # TODO: backtransform the principal components
 # TODO: check scores calculation in pcaCoDa
+
+
+optim_result <- optim(rep(0, length = length(comp_pca$pca$sdev)), conditional_scores_log_ilr_vs3 , gr = gradient_cslc_vs1,
+                          x_data_i = comp_pca$x_data[[1]], pca = comp_pca$pca,
+                          basis_matrix = t(V),
+                          control = list(fnscale = -1), method = "BFGS")
+# Expectation step
+r <- 10
+k <- 1
+lambda <- 1
+proposal_scores <- list(length(prepared_data$x_data))
+weights <- list(length(prepared_data$x_data))
+sum_exp <- TRUE
+
+      for (i in seq_along(prepared_data$x_data)){
+        optim_result <- optim(rep(0L, length = length(pca$sdev)),
+                              conditional_scores_log_ilr_vs3b,
+                              gr = gradient_cslc_vs1,
+                              x_data_i = prepared_data$x_data[[i]],
+                              pca = pca,
+                              basis_matrix = t(prepared_data$H),
+                              control = list(fnscale = -1),
+                              method = "BFGS")
+    
+        scores_median <- as.vector(optim_result$par)
+        proposal_scores[[i]] <- sapply(1L:(r * k), function(t) {
+          matrix(rnorm(length(scores_median),
+                       mean = scores_median,
+                       sd = lambda * pca$sdev))
+        })
+
+        log_weights <- apply(proposal_scores[[i]], 2L, function(scores) {
+          conditional_scores_log_ilr_vs3b(scores,
+                                          prepared_data$x_data[[i]],
+                                          pca,
+                                          t(prepared_data$H)) -
+            sum(dnorm(scores,
+                      mean = scores_median,
+                      sd = lambda * pca$sdev,
+                      log = TRUE))
+        })
+        if (sum_exp == TRUE) {
+          weights[[i]] <- stabilize_weights(log_weights)
+        } else {
+          max_log_weight <- max(log_weights)
+          weights <- exp(log_weights - max_log_weight)
+          normalized_weights <- weights / sum(weights)
+        }
+      }
+
 ```

@@ -23,6 +23,12 @@ gehören unter anderem auch die geowissenschaftliche Analyse von Sedimentdaten. 
 Der Grund hierfür liegt darin, dass die intuitive Anwendung von standardmäßig etablierten Methoden der multivariaten Datenanalyse auf Kompositionsdaten zu Fehlinterpretationen und Paradoxien
 führen kann. Dafür sollen zwei kurze Beispiele angeführt werden, um die Problematik praktisch zu verdeutlichen (Vgl. Pawloswki et al., 2015, p. 1ff):
 
+The field of compositional data spans across a variety of scientific disciplines. It becomes relevant wherever the analysis of relative proportions of a whole is concerned. This includes, 
+among other areas, the geoscientific analysis of sediment data. Why is it relevant and necessary to specifically address these data as compositional?
+
+The reason lies in the fact that the standard application of traditionally established methods of multivariate data analysis to compositional data can lead to misinterpretations and paradoxes. 
+To practically illustrate these methodological challenges, two brief examples will be presented (cf. Pawlowsky et al., 2015, p. 1ff):
+
 **Example 1: The scale of proportions**
 
 Relative Daten verhalten sich anders als absolute Daten. Dies wird besonders deutlich, wenn prozentuale Veränderungen betrachtet werden. Stellen Sie sich vor Sie untersuchen zwei 
@@ -33,6 +39,13 @@ ersten untersuchten Sedimentschicht. Beim Vergleich mit der zweiten Schicht wird
 um 100% verstärkt hat und der Prozess der marinen Produktivität lediglich um 5%. In diesem Fall erscheint die Veränderung für den Staubeintrag deutlich relevanter zu sein als für die 
 marine Produktivität. Beide Aussagen erscheinen zunächst einmal widersprüchlich und verdeutlichen, dass in einer sauberen Analyse die relative Bedeutung von Veränderungen erfasst werden 
 muss. 
+
+Relative data behave fundamentally different from absolute data. This becomes particularly evident when examining relative changes in percentages. Consider a scenario where two marine sediment 
+layers are analyzed to draw conclusions about dust input and marine productivity processes. Illite serves as a proxy for dust input, while the mineral calcite indicates marine productivity. 
+Due to the natural composition of the sediment, illite constitutes 0.1\% of the sediment, while calcite makes up 20\% in the first examined sediment layer. Comparison with the second layer 
+reveals that both minerals increased by 0.1\%, resulting in 0.2\% for illite and 20.1\% for calcite. While the absolute increase of 0.1\% is identical for both processes, this same change can alternatively 
+be interpreted on a relative dimension as a 100\% increase in dust input versus merely a 5\% increase in marine productivity. In this case, the change in dust input appears far more significant than the change in marine 
+productivity. These seemingly contradictory interpretations highlight the necessity of capturing the relative significance of changes in a rigorous analysis.
 
 **Example 2: spurious correlation**
 
@@ -58,6 +71,29 @@ realen geowissenschaftlichen Datensatzes angewandt, um die Mächtigkeit des Ansa
 
 "add statistical rigor to the existing empirical analysis..."
 
+Similarly confounding consequences can arise from spurious correlation. A phenomenon first described by Karl Pearson in 1897 as a direct consequence of the definition of compositional data as 
+consisting of parts of a whole. 
+For instance, in a three-part composition, if two components show positive correlation, the third component must exhibit negative correlation, even if it is inherently independent of the others. 
+This can be illustrated using the previous example of dust input and marine productivity. These processes can be assumed to be independent - Saharan dust blown into the sea has no inherent connection to 
+marine productivity. However, since both are parts of a whole, spurious correlation can emerge when dust input becomes so dominant that it replaces marine productivity in the sediment, resulting in the 
+measurement of a non-existent negative correlation between these processes.
+
+The challenges of compositional data have been recognized for over a century. First warnings that standard multivariate techniques lead to missleading results were issued in the fields of geology and biology 
+in the 60s. In the 1980s, John Aitchison introduced a methodology capable of addressing the problems arising from the 
+constraints in the sample space of compositional data - the simplex. The key innovation was the introduction of log-ratios to capture the relative relationships between compositional parts and preserving scale invariance. 
+Indeed, log-ratio transformations enable the application of multivariate statistics to compositional data, as they identify a one-to-one relationship between the sample space of compositional data 
+and the real space. The additive log-ratio and centered log-ratio transformations emerged as the most significant transformations at that time.
+
+Building on Aitchison's work, several scientists (Egozcue, Pawlowski, Mateu-Figueras) developed an algebraic-geometric structure for the sample space of compositional data in the early 2000s. 
+The recognition of an Euclidean vector space on the simplex and the development of the isometric log-ratio (ilr) transformation enabled the implementation of more complex multivariate methods.
+One of the advantages of this approach was ability to define random compositions on the simplex, which allowed the utilization of advanced statistical tools, like maximum likelihood estimation methods 
+ for calculating parameters of latent models. As a practical application, 
+this work will adapt the method of Steyer and Greven (2023) for conducting Principal Component Analysis with sparsely observed densities using a Monte-Carlo Expectation-Maximization (MCEM) algorithm to 
+an application with count compositions.
+
+To achieve this, it is first necessary to define the structure of the fundamental space of compositional data. Building on this foundation, the adaptation of Steyer and Greven's MCEM algorithm 
+will be implemented as an example of applying complex multivariate methods. The implementation will be evaluated using simulated data and applied to a real geoscientific dataset to demonstrate 
+the power of this approach.
 
 # Basic principles of Compositional Data analysis
 

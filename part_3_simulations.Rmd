@@ -13,12 +13,14 @@ output:
 ```{r libraries, eval=TRUE , echo=FALSE, include=FALSE}
 library(targets)
 library(compositions)
+library(zCompositions)
 library(mvtnorm)
 library(ggplot2)
 library(future.apply)
 library(robCompositions)
 library(gridExtra)
 library(ggnewscale)
+library(grid)
 
 source("scripts/helper_functions.R")
 source("scripts/fit_pca_ilr.R")
@@ -4211,11 +4213,11 @@ plot1 <- ggplot(diff_df_16, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist mean",
-       x = "Scale",
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true mean to estimated mean") +
   theme(legend.position = "top",
-        plot.title = element_text(hjust = 0.5, size = 10))
+        plot.title = element_text(hjust = 0.5, size = 16))
 ```
 
 And for the Kovarianzmatrix:
@@ -4271,11 +4273,11 @@ plot2 <- ggplot(sigma_diff_df_16, aes(x = size, y = differences, fill = method))
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist covariance",
-       x = "Scale",
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true covariance to estimated covariance") +
   theme(legend.position = "top",
-        plot.title = element_text(hjust = 0.5, size = 10))
+        plot.title = element_text(hjust = 0.5, size = 16))
 
 grid.arrange(plot1, plot2, ncol = 2)
 ```
@@ -4340,10 +4342,15 @@ for(j in 1:4) {
     sim <- simulation_data[[i]]
     x_data_list <- sim$x_data
     x_data <- do.call(rbind, x_data_list)
+    if (any(x_data == 0)) {
+      x_data_repl <- cmultRepl(x_data, method = "CZM", suppress.print=TRUE)
+    } else {
+      x_data_repl <- x_data
+    }
     
-    pca_clr_std_17[[j]][[i]] <- prcomp(clr_transform(x_data, replace_zeros = "fraction"))
-    x_data_repl <- x_data[x_data == 0] <- 0.65 * 0.5/1
-    pca_clr_rob_17[[j]][[i]] <- pcaCoDa(x_data, method = "robust")
+
+    pca_clr_std_17[[j]][[i]] <- prcomp(clr(x_data_repl))
+    pca_clr_rob_17[[j]][[i]] <- pcaCoDa(x_data_repl, method = "robust")
   }
 }
 
@@ -4398,11 +4405,11 @@ plot1 <- ggplot(diff_df_17, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist mean",
-       x = "Scale",
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true mean to estimated mean") +
   theme(legend.position = "top",
-        plot.title = element_text(hjust = 0.5, size = 10))
+        plot.title = element_text(hjust = 0.5, size = 16))
 ```
 
 And for the Kovarianzmatrix:
@@ -4458,11 +4465,11 @@ plot2 <- ggplot(sigma_diff_df_17, aes(x = size, y = differences, fill = method))
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist covariance",
-       x = "Scale",
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true covariance to estimated covariance") +
   theme(legend.position = "top",
-        plot.title = element_text(hjust = 0.5, size = 10))
+        plot.title = element_text(hjust = 0.5, size = 16))
 
 grid.arrange(plot1, plot2, ncol = 2)
 ```
@@ -4491,8 +4498,32 @@ for(j in 1:4) {
 
 ```
 
+```{r ess, fig.width=12, fig.height=5, eval=TRUE}
+ess_data <- data.frame(
+  ESS = c(
+    simulation_results_list_17[[1]][[1]]$ESS,
+    simulation_results_list_17[[2]][[1]]$ESS,
+    simulation_results_list_17[[3]][[1]]$ESS,
+    simulation_results_list_17[[4]][[1]]$ESS
+  ),
+  size = factor(rep(c("20", "40", "80", "160"), each = 100))
+)
 
-## Simulation Setting 18: final balanced plot + zero replacement + princomp
+ess_data$size <- factor(ess_data$size, 
+                        levels = c("20", "40", "80", "160"))
+
+ggplot(ess_data, aes(x = ESS, fill = size)) +
+  geom_density(alpha = 0.5) +
+  scale_fill_brewer(palette = "Set1") +
+  theme_grey() +
+  labs(
+    title = "Distribution of sample sizes for important sampling",
+    x = "Effective sample size",
+    y = "Distribution"
+  )
+```
+
+## Simulation Setting 18: final balanced plot + zero replacement
 
 
 ```{r latent parameters 18, eval=TRUE}
@@ -4528,10 +4559,14 @@ for(j in 1:4) {
     sim <- simulation_data[[i]]
     x_data_list <- sim$x_data
     x_data <- do.call(rbind, x_data_list)
-    
-    pca_clr_std_18[[j]][[i]] <- princomp(clr_transform(x_data, replace_zeros = "fraction"))
-    x_data_repl <- x_data[x_data == 0] <- 0.65 * 0.5/1
-    pca_clr_rob_18[[j]][[i]] <- pcaCoDa(x_data, method = "robust")
+    if (any(x_data == 0)) {
+      x_data_repl <- cmultRepl(x_data, method = "CZM", suppress.print=TRUE)
+    } else {
+      x_data_repl <- x_data
+    }
+
+    pca_clr_std_18[[j]][[i]] <- prcomp(clr(x_data_repl))
+    pca_clr_rob_18[[j]][[i]] <- pcaCoDa(x_data_repl, method = "robust")
   }
 }
 
@@ -4586,11 +4621,11 @@ plot1 <- ggplot(diff_df_18, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist mean",
-       x = "Scale",
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true mean to estimated mean") +
   theme(legend.position = "top",
-        plot.title = element_text(hjust = 0.5, size = 10))
+        plot.title = element_text(hjust = 0.5, size = 16))
 ```
 
 And for the Kovarianzmatrix:
@@ -4608,7 +4643,7 @@ for(j in 1:4) {
     sigma_distances_18[[j]][[i]] <- norm(true_sigma_18 - sigma_hat_mcem, type = "F")
     
     sigma_hat_clr <- with(pca_clr_std_18[[j]][[i]],
-      loadings %*% diag(sdev^2) %*% t(loadings))
+      rotation %*% diag(sdev^2) %*% t(rotation))
     sigma_distances_std_clr_18[[j]][[i]] <- norm(true_sigma_18 - sigma_hat_clr, type = "F")
     
     sigma_hat_rob <- with(pca_clr_rob_18[[j]][[i]],
@@ -4646,11 +4681,11 @@ plot2 <- ggplot(sigma_diff_df_18, aes(x = size, y = differences, fill = method))
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist covariance",
-       x = "Scale",
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true covariance to estimated covariance") +
   theme(legend.position = "top",
-        plot.title = element_text(hjust = 0.5, size = 10))
+        plot.title = element_text(hjust = 0.5, size = 16))
 
 grid.arrange(plot1, plot2, ncol = 2)
 ```
@@ -4714,9 +4749,13 @@ for(j in 1:4) {
     sim <- simulation_data[[i]]
     x_data_list <- sim$x_data
     x_data <- do.call(rbind, x_data_list)
-    
-    pca_clr_std_19[[j]][[i]] <- prcomp(clr_transform(x_data, replace_zeros = "fraction"))
-    x_data_repl <- x_data[x_data == 0] <- 0.65 * 0.5/1
+    if (any(x_data == 0)) {
+      x_data_repl <- cmultRepl(x_data, method = "CZM", suppress.print=TRUE)
+    } else {
+      x_data_repl <- x_data
+    }
+
+    pca_clr_std_19[[j]][[i]] <- prcomp(clr(x_data_repl))
     pca_clr_rob_19[[j]][[i]] <- pcaCoDa(x_data_repl, method = "robust")
   }
 }
@@ -4772,11 +4811,11 @@ plot1 <- ggplot(diff_df_19, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist mean",
-       x = "Scale",
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true mean to estimated mean") +
   theme(legend.position = "top",
-        plot.title = element_text(hjust = 0.5, size = 10))
+        plot.title = element_text(hjust = 0.5, size = 16))
 ```
 
 And for the Kovarianzmatrix:
@@ -4832,11 +4871,11 @@ plot2 <- ggplot(sigma_diff_df_19, aes(x = size, y = differences, fill = method))
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist covariance",
-       x = "Scale",
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true covariance to estimated covariance") +
   theme(legend.position = "top",
-        plot.title = element_text(hjust = 0.5, size = 10))
+        plot.title = element_text(hjust = 0.5, size = 16))
 
 grid.arrange(plot1, plot2, ncol = 2)
 ```
@@ -4903,9 +4942,13 @@ for(j in 1:4) {
     sim <- simulation_data[[i]]
     x_data_list <- sim$x_data
     x_data <- do.call(rbind, x_data_list)
-    
-    pca_clr_std_20[[j]][[i]] <- prcomp(clr_transform(x_data, replace_zeros = "fraction"))
-    x_data_repl <- x_data[x_data == 0] <- 0.65 * 0.5/1
+    if (any(x_data == 0)) {
+      x_data_repl <- cmultRepl(x_data, method = "CZM", suppress.print=TRUE)
+    } else {
+      x_data_repl <- x_data
+    }
+
+    pca_clr_std_20[[j]][[i]] <- prcomp(clr(x_data_repl))
     pca_clr_rob_20[[j]][[i]] <- pcaCoDa(x_data_repl, method = "robust")
   }
 }
@@ -4961,11 +5004,11 @@ plot1 <- ggplot(diff_df_20, aes(x = size, y = differences, fill = method)) +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist mean",
-       x = "Scale",
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true mean to estimated mean") +
   theme(legend.position = "top",
-        plot.title = element_text(hjust = 0.5, size = 10))
+        plot.title = element_text(hjust = 0.5, size = 16))
 ```
 
 And for the Kovarianzmatrix:
@@ -5021,11 +5064,11 @@ plot2 <- ggplot(sigma_diff_df_20, aes(x = size, y = differences, fill = method))
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist covariance",
-       x = "Scale",
+       x = expression(m[j]),
        fill = "method",
        title = "Distance of true covariance to estimated covariance") +
   theme(legend.position = "top",
-        plot.title = element_text(hjust = 0.5, size = 10))
+        plot.title = element_text(hjust = 0.5, size = 16))
 
 grid.arrange(plot1, plot2, ncol = 2)
 ```
@@ -5054,7 +5097,7 @@ for(j in 1:4) {
 
 ```
 
-## Simulation Setting 21: complex with n=2119
+## Simulation Setting 21: complex with n=100
 
 ```{r latent parameters 21, eval=TRUE}
 n_simulations <- 100
@@ -5103,15 +5146,19 @@ pca_clr_rob_21 <- lapply(1:4, function(x) list(n_simulations))
 pca_clr_std_21 <- lapply(1:4, function(x) list(n_simulations))
 
 # calculate standard PCA for each simulation
-for(j in 1:4) {
+for(j in 1:3) {
   simulation_data <- simulation_data_list_21[[j]]
   for(i in 1:length(simulation_data)) {
     sim <- simulation_data[[i]]
     x_data_list <- sim$x_data
     x_data <- do.call(rbind, x_data_list)
-    
-    pca_clr_std_21[[j]][[i]] <- prcomp(clr_transform(x_data, replace_zeros = "fraction"))
-    x_data_repl <- x_data[x_data == 0] <- 0.65 * 0.5/1
+    if (any(x_data == 0)) {
+      x_data_repl <- cmultRepl(x_data, method = "CZM", suppress.print=TRUE)
+    } else {
+      x_data_repl <- x_data
+    }
+
+    pca_clr_std_21[[j]][[i]] <- prcomp(clr(x_data_repl))
     pca_clr_rob_21[[j]][[i]] <- pcaCoDa(x_data_repl, method = "robust")
   }
 }
@@ -5126,7 +5173,7 @@ simulation_results_list_21 <- list(
 diff_mean_21 <- lapply(1:4, function(x) list(n_simulations))
 diff_mean_std_clr_21 <- lapply(1:4, function(x) list(n_simulations))
 
-for(j in 1:4) {
+for(j in 1:3) {
   for(i in 1:n_simulations) {
     diff_mean_21[[j]][[i]] <- sqrt(sum((true_v_21 - simulation_results_list_21[[j]][[i]]$pca$center)^2))
     diff_mean_std_clr_21[[j]][[i]] <- sqrt(sum((true_v_21 - pca_clr_std_21[[j]][[i]]$center)^2))
@@ -5145,14 +5192,14 @@ Let's visualize the results with boxplots for each case.
 diff_df_21 <- data.frame(
   differences = c(
     unlist(diff_mean_21[[1]]), unlist(diff_mean_21[[2]]), 
-    unlist(diff_mean_21[[3]]), unlist(diff_mean_21[[4]]),
+    unlist(diff_mean_21[[3]]),
     unlist(diff_mean_std_clr_21[[1]]), unlist(diff_mean_std_clr_21[[2]]),
-    unlist(diff_mean_std_clr_21[[3]]), unlist(diff_mean_std_clr_21[[4]])
+    unlist(diff_mean_std_clr_21[[3]])
     # unlist(diff_mean_rob_clr_21[[1]]), unlist(diff_mean_rob_clr_21[[2]]),
     # unlist(diff_mean_rob_clr_21[[3]]), unlist(diff_mean_rob_clr_21[[4]])
   ),
-  method = factor(rep(c("MCEM", "sample mean"), each = 4 * n_simulations)),
-  size = factor(rep(rep(c("cts per sec", "cts per dsec", "cts per csec", "cts per msec"), 
+  method = factor(rep(c("MCEM", "sample mean"), each = 3 * n_simulations)),
+  size = factor(rep(rep(c("cts per sec", "cts per dsec", "cts per csec"), 
                          each = n_simulations), 2))
 )
 
@@ -5160,9 +5207,9 @@ diff_df_21$method <- factor(diff_df_21$method,
                         levels = c("MCEM", "sample mean"))
 
 diff_df_21$size <- factor(diff_df_21$size, 
-                        levels = c("cts per sec", "cts per dsec", "cts per csec", "cts per msec"))
+                        levels = c("cts per sec", "cts per dsec", "cts per csec"))
 
-plot1 <- ggplot(diff_df_21, aes(x = size, y = differences, fill = method)) +
+plot1_cplx <- ggplot(diff_df_21, aes(x = size, y = differences, fill = method)) +
   geom_boxplot() +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
@@ -5171,7 +5218,7 @@ plot1 <- ggplot(diff_df_21, aes(x = size, y = differences, fill = method)) +
        fill = "method",
        title = "Distance of true mean to estimated mean") +
   theme(legend.position = "top",
-        plot.title = element_text(hjust = 0.5, size = 10))
+        plot.title = element_text(hjust = 0.5, size = 16))
 ```
 
 And for the Kovarianzmatrix:
@@ -5182,7 +5229,7 @@ sigma_distances_std_clr_21 <- lapply(1:4, function(x) list(n_simulations))
 sigma_distances_rob_clr_21 <- lapply(1:4, function(x) list(n_simulations))
 
 
-for(j in 1:4) {
+for(j in 1:3) {
   for(i in 1:n_simulations) {
     sigma_hat_mcem <- with(simulation_results_list_21[[j]][[i]]$pca,
       rotation %*% diag(eigenvalues) %*% t(rotation))
@@ -5200,19 +5247,19 @@ for(j in 1:4) {
 
 ```
 
-```{r visualize covariances 21, eval=TRUE}
+```{r visualize covariances 21, fig.width=12, fig.height=5, eval=TRUE}
 sigma_diff_df_21 <- data.frame(
   differences = c(
     unlist(sigma_distances_21[[1]]), unlist(sigma_distances_21[[2]]), 
-    unlist(sigma_distances_21[[3]]), unlist(sigma_distances_21[[4]]),
+    unlist(sigma_distances_21[[3]]),
     unlist(sigma_distances_std_clr_21[[1]]), unlist(sigma_distances_std_clr_21[[2]]),
-    unlist(sigma_distances_std_clr_21[[3]]), unlist(sigma_distances_std_clr_21[[4]]),
+    unlist(sigma_distances_std_clr_21[[3]]),
     unlist(sigma_distances_rob_clr_21[[1]]), unlist(sigma_distances_rob_clr_21[[2]]),
-    unlist(sigma_distances_rob_clr_21[[3]]), unlist(sigma_distances_rob_clr_21[[4]])
+    unlist(sigma_distances_rob_clr_21[[3]])
   ),
-  method = factor(rep(c("MCEM", "standard","robust"), each = 4 * n_simulations)),
-  size = factor(rep(rep(c("cts per sec", "cts per dsec", "cts per csec", "cts per msec"), 
-                         each = n_simulations), 2))
+  method = factor(rep(c("MCEM", "standard","robust"), each = 3 * n_simulations)),
+  size = factor(rep(rep(c("cts per sec", "cts per dsec", "cts per csec"), 
+                         each = n_simulations), 3))
 )
 
 # define order of sequence
@@ -5220,20 +5267,19 @@ sigma_diff_df_21$method <- factor(sigma_diff_df_21$method,
                         levels = c("MCEM", "standard", "robust"))
 
 sigma_diff_df_21$size <- factor(sigma_diff_df_21$size, 
-                        levels = c("cts per sec", "cts per dsec", "cts per csec", "cts per msec"))
+                        levels = c("cts per sec", "cts per dsec", "cts per csec"))
 
-plot2 <- ggplot(sigma_diff_df_21, aes(x = size, y = differences, fill = method)) +
+plot2_cplx <- ggplot(sigma_diff_df_21, aes(x = size, y = differences, fill = method)) +
   geom_boxplot() +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist covariance",
        x = "Scale",
-       fill = "method",
-       title = "Distance of true covariance to estimated covariance") +
+       fill = "method") +
   theme(legend.position = "top",
-        plot.title = element_text(hjust = 0.5, size = 10))
+        plot.title = element_text(hjust = 0.5, size = 16))
 
-grid.arrange(plot1, plot2, ncol = 2)
+grid.arrange(plot1_cplx, plot2_cplx, ncol = 2)
 ```
 
 ```{r stats 21, eval=TRUE}
@@ -5256,7 +5302,7 @@ for(j in 1:4) {
 
 ```
 
-## Simulation Setting 22: complex with n=2119 + autocorrelation
+## Simulation Setting 22: complex with n=100 + autocorrelation
 
 ```{r latent parameters 22, eval=TRUE}
 n_simulations <- 100
@@ -5294,10 +5340,10 @@ true_sigma_22
 ```{r evaluation mean vector 22, eval=TRUE}
 
 simulation_data_list_22 <- list(
-  tar_read(sim_complex_sec),
-  tar_read(sim_complex_dsec),
-  tar_read(sim_complex_csec),
-  tar_read(sim_complex_msec)  
+  tar_read(sim_complex_sec_auto),
+  tar_read(sim_complex_dsec_auto),
+  tar_read(sim_complex_csec_auto),
+  tar_read(sim_complex_msec_auto)  
   )
 
 # calculate standard PCA for each simulation
@@ -5305,30 +5351,34 @@ pca_clr_rob_22 <- lapply(1:4, function(x) list(n_simulations))
 pca_clr_std_22 <- lapply(1:4, function(x) list(n_simulations))
 
 # calculate standard PCA for each simulation
-for(j in 1:4) {
+for(j in 1:3) {
   simulation_data <- simulation_data_list_22[[j]]
   for(i in 1:length(simulation_data)) {
     sim <- simulation_data[[i]]
     x_data_list <- sim$x_data
     x_data <- do.call(rbind, x_data_list)
-    
-    pca_clr_std_22[[j]][[i]] <- prcomp(clr_transform(x_data, replace_zeros = "fraction"))
-    x_data_repl <- x_data[x_data == 0] <- 0.65 * 0.5/1
+    if (any(x_data == 0)) {
+      x_data_repl <- cmultRepl(x_data, method = "CZM", suppress.print=TRUE)
+    } else {
+      x_data_repl <- x_data
+    }
+
+    pca_clr_std_22[[j]][[i]] <- prcomp(clr(x_data_repl))
     pca_clr_rob_22[[j]][[i]] <- pcaCoDa(x_data_repl, method = "robust")
   }
 }
 
 simulation_results_list_22 <- list(
-  tar_read(results_complex_sec),
-  tar_read(results_complex_dsec),
-  tar_read(results_complex_csec),
-  tar_read(results_complex_msec)
+  tar_read(results_complex_sec_auto),
+  tar_read(results_complex_dsec_auto),
+  tar_read(results_complex_csec_auto),
+  tar_read(results_complex_msec_auto)
 )
 
 diff_mean_22 <- lapply(1:4, function(x) list(n_simulations))
 diff_mean_std_clr_22 <- lapply(1:4, function(x) list(n_simulations))
 
-for(j in 1:4) {
+for(j in 1:3) {
   for(i in 1:n_simulations) {
     diff_mean_22[[j]][[i]] <- sqrt(sum((true_v_22 - simulation_results_list_22[[j]][[i]]$pca$center)^2))
     diff_mean_std_clr_22[[j]][[i]] <- sqrt(sum((true_v_22 - pca_clr_std_22[[j]][[i]]$center)^2))
@@ -5347,14 +5397,14 @@ Let's visualize the results with boxplots for each case.
 diff_df_22 <- data.frame(
   differences = c(
     unlist(diff_mean_22[[1]]), unlist(diff_mean_22[[2]]), 
-    unlist(diff_mean_22[[3]]), unlist(diff_mean_22[[4]]),
+    unlist(diff_mean_22[[3]]),
     unlist(diff_mean_std_clr_22[[1]]), unlist(diff_mean_std_clr_22[[2]]),
-    unlist(diff_mean_std_clr_22[[3]]), unlist(diff_mean_std_clr_22[[4]])
+    unlist(diff_mean_std_clr_22[[3]])
     # unlist(diff_mean_rob_clr_22[[1]]), unlist(diff_mean_rob_clr_22[[2]]),
     # unlist(diff_mean_rob_clr_22[[3]]), unlist(diff_mean_rob_clr_22[[4]])
   ),
-  method = factor(rep(c("MCEM", "sample mean"), each = 4 * n_simulations)),
-  size = factor(rep(rep(c("cts per sec", "cts per dsec", "cts per csec", "cts per msec"), 
+  method = factor(rep(c("MCEM", "sample mean"), each = 3 * n_simulations)),
+  size = factor(rep(rep(c("cts per sec", "cts per dsec", "cts per csec"), 
                          each = n_simulations), 2))
 )
 
@@ -5362,9 +5412,9 @@ diff_df_22$method <- factor(diff_df_22$method,
                         levels = c("MCEM", "sample mean"))
 
 diff_df_22$size <- factor(diff_df_22$size, 
-                        levels = c("cts per sec", "cts per dsec", "cts per csec", "cts per msec"))
+                        levels = c("cts per sec", "cts per dsec", "cts per csec"))
 
-plot1 <- ggplot(diff_df_22, aes(x = size, y = differences, fill = method)) +
+plot1_cplx_auto <- ggplot(diff_df_22, aes(x = size, y = differences, fill = method)) +
   geom_boxplot() +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
@@ -5373,7 +5423,7 @@ plot1 <- ggplot(diff_df_22, aes(x = size, y = differences, fill = method)) +
        fill = "method",
        title = "Distance of true mean to estimated mean") +
   theme(legend.position = "top",
-        plot.title = element_text(hjust = 0.5, size = 10))
+        plot.title = element_text(hjust = 0.5, size = 16))
 ```
 
 And for the Kovarianzmatrix:
@@ -5384,7 +5434,7 @@ sigma_distances_std_clr_22 <- lapply(1:4, function(x) list(n_simulations))
 sigma_distances_rob_clr_22 <- lapply(1:4, function(x) list(n_simulations))
 
 
-for(j in 1:4) {
+for(j in 1:3) {
   for(i in 1:n_simulations) {
     sigma_hat_mcem <- with(simulation_results_list_22[[j]][[i]]$pca,
       rotation %*% diag(eigenvalues) %*% t(rotation))
@@ -5402,19 +5452,19 @@ for(j in 1:4) {
 
 ```
 
-```{r visualize covariances 22, eval=TRUE}
+```{r visualize covariances 22, , fig.width=12, fig.height=5, eval=TRUE}
 sigma_diff_df_22 <- data.frame(
   differences = c(
     unlist(sigma_distances_22[[1]]), unlist(sigma_distances_22[[2]]), 
-    unlist(sigma_distances_22[[3]]), unlist(sigma_distances_22[[4]]),
+    unlist(sigma_distances_22[[3]]),
     unlist(sigma_distances_std_clr_22[[1]]), unlist(sigma_distances_std_clr_22[[2]]),
-    unlist(sigma_distances_std_clr_22[[3]]), unlist(sigma_distances_std_clr_22[[4]]),
+    unlist(sigma_distances_std_clr_22[[3]]), 
     unlist(sigma_distances_rob_clr_22[[1]]), unlist(sigma_distances_rob_clr_22[[2]]),
-    unlist(sigma_distances_rob_clr_22[[3]]), unlist(sigma_distances_rob_clr_22[[4]])
+    unlist(sigma_distances_rob_clr_22[[3]])
   ),
-  method = factor(rep(c("MCEM", "standard","robust"), each = 4 * n_simulations)),
-  size = factor(rep(rep(c("cts per sec", "cts per dsec", "cts per csec", "cts per msec"), 
-                         each = n_simulations), 2))
+  method = factor(rep(c("MCEM", "standard","robust"), each = 3 * n_simulations)),
+  size = factor(rep(rep(c("cts per sec", "cts per dsec", "cts per csec"), 
+                         each = n_simulations), 3))
 )
 
 # define order of sequence
@@ -5422,20 +5472,19 @@ sigma_diff_df_22$method <- factor(sigma_diff_df_22$method,
                         levels = c("MCEM", "standard", "robust"))
 
 sigma_diff_df_22$size <- factor(sigma_diff_df_22$size, 
-                        levels = c("cts per sec", "cts per dsec", "cts per csec", "cts per msec"))
+                        levels = c("cts per sec", "cts per dsec", "cts per csec"))
 
-plot2 <- ggplot(sigma_diff_df_22, aes(x = size, y = differences, fill = method)) +
+plot2_cplx_auto <- ggplot(sigma_diff_df_22, aes(x = size, y = differences, fill = method)) +
   geom_boxplot() +
   theme_grey() +
   scale_fill_manual(values = set_1) + 
   labs(y = "dist covariance",
        x = "Scale",
-       fill = "method",
-       title = "Distance of true covariance to estimated covariance") +
+       fill = "method") +
   theme(legend.position = "top",
-        plot.title = element_text(hjust = 0.5, size = 10))
+        plot.title = element_text(hjust = 0.5, size = 16))
 
-grid.arrange(plot1, plot2, ncol = 2)
+grid.arrange(plot1_cplx_auto, plot2_cplx_auto, ncol = 2)
 ```
 
 ```{r stats 22, eval=TRUE}
@@ -5458,7 +5507,10 @@ for(j in 1:4) {
 
 ```
 
-
+```{r plot covariances, eval=TRUE}
+grid.arrange(plot2_cplx, plot2_cplx_auto, ncol = 2, top = textGrob("Distance of true covariance to estimated covariance", gp = gpar(fontsize = 16))
+)
+```
 
 # base example
 

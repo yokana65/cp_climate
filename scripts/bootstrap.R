@@ -86,13 +86,11 @@ bbootstrap_pca_ts_par <- function(data,
       boot_indices <- boot_indices[boot_indices <= n][1:n]
       
       boot_data <- data[boot_indices, ]
-      boot_results <- fit_pca_ilr_vs_4(boot_data,
+      boot_results <- co_pca_mcem(boot_data,
                                       max_iter = 50,
                                       r = 10,
                                       lambda = 1,
-                                      eps = eps,
-                                      sc_factor = 1,
-                                      sum_exp = TRUE)
+                                      eps = eps)
       boot_pca <- boot_results$pca
       
       for(j in seq_len(ncol(boot_pca$rotation))) {

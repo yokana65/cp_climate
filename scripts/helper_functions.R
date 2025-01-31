@@ -33,6 +33,7 @@ finalize_pca <- function(pca, prepared_data, x_data, weights, start_time) {
   pca$rotation_ilr <- pca$rotation
   pca$rotation <- prepared_data$H %*% pca$rotation_ilr
   pca$center <- as.vector(prepared_data$H %*% pca$center)
+  pca$eigenvalues <- pca$sdev^2
   pca$sdev <- pca$sdev / sum(pca$sdev)
 
   rownames(pca$rotation) <- names(x_data[[1L]])
@@ -233,12 +234,11 @@ clr_transform <- function(x, replace_zeros = "fraction") {
     stop("All values must be positive for log-ratio transformation")
   }
   
-  # Behandlung von Nullwerten
   if (replace_zeros == "fraction") {
-    x[x == 0] <- 0.0333
+    x[x == 0] <- 0.65 * 0.5/1
   }
   log_x <- log(x)
-  # Berechne CLR für jede Zeile
+
   clr_values <- t(apply(log_x, 1, function(row) {
     if (replace_zeros == "neutral") {
       row - mean(row[row != -Inf])
@@ -249,11 +249,10 @@ clr_transform <- function(x, replace_zeros = "fraction") {
   if (replace_zeros == "neutral") {
     clr_values[x == 0] <- 0
   }
-  # Rückgabe als Vektor wenn Eingabe ein Vektor war
   if (nrow(x) == 1 && is.vector(x)) {
     clr_values <- as.vector(clr_values)
   }
-  
+
   return(clr_values)
 }
 
@@ -341,6 +340,17 @@ inv_ilr <- function(ilr_x, use_transpose = FALSE) {
   x <- x / rowSums(x)
   
   return(x)
+}
+
+summary_stats <- function(x_data) {
+  data.frame(
+    mean = colMeans(x_data),
+    sd = apply(x_data, 2, sd),
+    min = apply(x_data, 2, min),
+    max = apply(x_data, 2, max),
+    n_zeros_components = apply(x_data, 2, function(x) sum(x == 0)),
+    n_zeros_composition = sum(apply(x_data, 1, function(x) any(x == 0)))
+  )
 }
 
 replace_zeros <- function(x, repl = 0.0333) {
