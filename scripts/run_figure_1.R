@@ -1,14 +1,16 @@
-library(ggplot2)
-library(gridExtra)
-library(compositions)
-library(robCompositions)
-library(zCompositions)
+required_packages <- c("ggplot2", "gridExtra", "compositions", 
+                      "robCompositions", "zCompositions")
 
-source("scripts/fit_compositional_pca.R")
-source("scripts/helper_functions.R")
+new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+if(length(new_packages)) install.packages(new_packages)
+
+lapply(required_packages, library, character.only = TRUE)
+
+source("scripts/fit_comp_pca.R")
+source("scripts/help_functions.R")
+source("scripts/cond_scores_function.R")
+source("scripts/grad_function.R")
 source("scripts/simulation_functions.R")
-source("scripts/conditional_scores_function.R")
-source("scripts/gradient.R")
 
 #*******reproduction of figure 1***********#
 n_simulations <- 5
