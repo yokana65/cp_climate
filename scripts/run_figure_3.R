@@ -6,10 +6,10 @@ if(length(new_packages)) install.packages(new_packages)
 
 lapply(required_packages, library, character.only = TRUE)
 
-source("scripts/fit_compositional_pca.R")
-source("scripts/helper_functions.R")
-source("scripts/conditional_scores_function.R")
-source("scripts/gradient.R")
+source("scripts/fit_comp_pca.R")
+source("scripts/help_functions.R")
+source("scripts/cond_scores_function.R")
+source("scripts/grad_function.R")
 source("scripts/simulation_functions.R")
 source("scripts/read_data_KL15_XRF.R")
 
@@ -24,25 +24,19 @@ data_kl15_agem <- rename(data_kl15_agem, age = best)
 results <- read_data_kl15_xrf(data_kl15_xrf, data_kl15_agem)
 data <- results$data_kl15
 
-# data <- tar_read(data_kl15)
-
 n_simulations <- 5
 n_observations <- 100
 scales <- c(1, 0.1, 0.01)
 
 eigenvalues <- c(0.43, 0.26, 0.12, 0.08)
 true_mu <- c(-1.21, -1.76, 1.70, -0.6,
-                                 1.04, -3.62, -1.26, 1.04, -0.83,
-                                 0.50, -4.0, -0.49, 1.51)
+             1.04, -3.62, -1.26, 1.04, -0.83,
+             0.50, 4.0, -0.49, 1.51)
 
 pc_1 <- c(0.4, 0, 0.3, -0.3, 0, 0, -0.2, -0.2, 0.3, -0.1, 0.3, -0.3, -0.2)
 pc_2 <- c(0.7, 0, -0.3, 0.2, 0, -0.2, 0, 0, 0, 0, -0.4, 0, 0)
 pc_3 <- c(0.2, 0, -0.3, 0, -0.4, 0.6, -0.3, 0.2, 0, 0, 0, 0, 0)
 pc_4 <- c(0.3, 0, 0, 0, 0, 0.2, 0, 0, -0.8, 0, 0.3, 0, 0)
-
-# normalize <- function(v) {
-#   v / sqrt(sum(v^2))
-# }
 
 pc_1_norm <- normalize(pc_1)
 pc_2_norm <- normalize(pc_2)
@@ -149,6 +143,33 @@ distances_auto <- lapply(1:length(scales), function(i) {
   )
 })
 
+mean_df_auto <- data.frame(
+  differences = c(
+    unlist(lapply(distances_auto, `[[`, "mean_mcem")),
+    unlist(lapply(distances_auto, `[[`, "mean_std"))
+  ),
+  method = factor(rep(c("MCEM", "sample mean"), 
+                     each = n_simulations * length(scales))),
+  size = factor(rep(rep(c("cts per sec", "cts per dsec", "cts per csec"), 
+                       each = n_simulations), 2))
+)
+
+mean_df_auto$method <- factor(mean_df$method, 
+                        levels = c("MCEM", "sample mean"))
+
+mean_df_auto$size <- factor(mean_df$size, 
+                      levels = c("cts per sec", "cts per dsec", "cts per csec"))
+
+plot4 <- ggplot(mean_df_auto, aes(x = size, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_minimal() +
+  scale_fill_manual(values = set_1) +
+  labs(y = "dist mean",
+       x = "Scale",
+       fill = "method") +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5, size = 16))
+
 cov_df_auto <- data.frame(
   differences = c(
     unlist(lapply(distances_auto, `[[`, "sigma_mcem")),
@@ -182,4 +203,8 @@ grid.arrange(plot2, plot3, ncol = 2, top = textGrob("Distance of true covariance
 
 png("./scripts/figures/figure_3_upd.png", width = 12, height = 5, units = "in", res = 300)
 grid.arrange(plot2, plot3, ncol = 2, top = textGrob("Distance of true covariance to estimated covariance", gp = gpar(fontsize = 16)))
+dev.off()
+
+png("./scripts/figures/figure_3_upd_mean.png", width = 12, height = 5, units = "in", res = 300)
+grid.arrange(plot1, plot4, ncol = 2, top = textGrob("Distance of true mean to estimated mean", gp = gpar(fontsize = 16)))
 dev.off()

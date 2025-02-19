@@ -9,13 +9,20 @@ stabilize_weights <- function(log_weights) {
 
 finalize_pca <- function(pca, prepared_data, x_data, weights, start_time) {
 
+  pca$scores <- sapply(seq_along(prepared_data$x_data), function(i){
+    optim_result <- optim(rep(0, length = length(pca$sdev)), log_conditional_scores ,
+                          x_data_i = prepared_data$x_data[[i]], pca = pca,
+                          basis_matrix =  prepared_data$H,
+                          control = list(fnscale = -1), method = "Nelder-Mead")
+    as.vector(optim_result$par)
+  })
   pca$rotation_ilr <- pca$rotation
   pca$rotation <- prepared_data$H %*% pca$rotation_ilr
   pca$center <- as.vector(prepared_data$H %*% pca$center)
   pca$eigenvalues <- pca$sdev^2
   pca$sdev <- pca$sdev / sum(pca$sdev)
 
-  rownames(pca$rotation) <- names(x_data[[1L]])
+  rownames(pca$rotation) <- names(x_data)
   cn <- paste0("Comp.", seq_len(ncol(pca$rotation)))
   colnames(pca$rotation) <- cn
 
@@ -68,4 +75,65 @@ get_helmert <- function(D) {
       V[, i] <- V[, i] * sqrt(i/(i + 1)) * (-1)
     }
   return(V)
+}
+
+#***** functions for reproduction of thesis figures*****#
+load_required_packages <- function() {
+  required_packages <- c("ggplot2", "gridExtra", "compositions",
+                        "robCompositions", "zCompositions", "targets", "dplyr")
+  
+  new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+  if(length(new_packages)) install.packages(new_packages)
+  invisible(lapply(required_packages, library, character.only = TRUE))
+}
+
+get_color_palette <- function() {
+  c("#e0ecf4", "#9ebcda", "#8856a7")
+}
+
+plot_pca_rotations <- function(rotation, components = c(1,2), scale = 1, main = "PCA - clr", fixed = FALSE, pos_vector = NULL) {
+  if (fixed) {
+    plot(rotation[, components[1]], rotation[, components[2]],
+         xlab = paste0("PC", components[1]),
+         ylab = paste0("PC", components[2]),
+         main = main,
+         xlim = c(-0.7, 0.7),
+         ylim = c(-0.7, 0.7))
+  } else {
+    plot(rotation[, components[1]], rotation[, components[2]],
+          xlab = paste0("PC", components[1]),
+          ylab = paste0("PC", components[2]),
+          main = main)
+  }
+  arrows(0, 0,
+         rotation[, components[1]] * scale,
+         rotation[, components[2]] * scale,
+         length = 0.1, col = "blue")
+
+  labels <- if (!is.null(rownames(rotation))) rownames(rotation)
+  else seq_len(nrow(rotation))
+
+  default_pos_vector <- ifelse(rotation[, components[1]] < 0, 2, 4)
+  if (is.null(pos_vector)) {
+    pos_vector <- default_pos_vector
+  } else {
+    if (length(pos_vector) != length(labels)) {
+      warning("Length of 'pos_vector' does not match the number of labels. Using default positions for all labels.")
+      pos_vector <- default_pos_vector
+    }
+  }
+  text(rotation[, components[1]], rotation[, components[2]],
+       labels = labels,
+       pos = pos_vector,
+       cex = 0.8)
+
+  abline(h = 0, v = 0, lty = 2, col = "gray")
+}
+
+clrInverse <- function(clr_coords) {
+    exp(clr_coords) / sum(exp(clr_coords))
+}
+
+sample_from_density <- function(n, density_estimate) {
+    sample(density_estimate$x, size = n, prob = density_estimate$y, replace = TRUE)
 }

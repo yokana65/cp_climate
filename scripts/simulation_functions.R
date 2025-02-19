@@ -28,7 +28,7 @@ return(list("x_data" = x_data,"x_data_matrix" = x_data_matrix))
 
 base_setting_vs2 <- function(n_observations = 100,
                             eigenvalues = c(0.6, 0.3, 0.1, 0.1),
-                            mean = c(0, 0.01, 0.02, -0.02, -0.01),
+                            mean = c(0, 1, 0.5, -1, -0.5),
                             n_counts = 500) {
 pc_1 <- c(0, sqrt(1/2), -sqrt(1/2), 0, 0)
 pc_2 <- c(-sqrt(1/2), 0, 0, sqrt(1/2), 0)
@@ -81,7 +81,7 @@ complex_setting <- function(data,
   lambda_2 <- eigenvalues[2]
   lambda_3 <- eigenvalues[3]
   lambda_4 <- eigenvalues[4]
-  
+
   clr_coords <- lapply(1:n_observations, function(i){
     mean + rnorm(1, 0, sqrt(lambda_1)) * pc_1_norm +
       rnorm(1, 0, sqrt(lambda_2)) * pc_2_norm +
@@ -179,7 +179,7 @@ run_composition_simulation <- function(n_simulations, n_observations, n_counts, 
     x_data <- sim$x_data
     
     set.seed(l)
-    result <- co_pca_mcem_nograd(
+    result <- co_pca_mcem_nm(
       x_data,
       lambda = 1,
       max_iter = 40,
@@ -211,11 +211,11 @@ run_complex_simulation <- function(n_simulations, n_observations, data, complex_
     sim <- sim_composition_results[[l]]
     x_data <- sim$x_data
     set.seed(l)
-    result <- co_pca_mcem_nograd(
+    result <- co_pca_mcem(
       x_data,
       lambda = 1,
       max_iter = 40,
-      eps = 0.12,
+      eps = 0.15,
       sum_exp = TRUE
     )
     pca_results_list[[l]] <- result
@@ -234,6 +234,26 @@ calculate_pca <- function(simulation_data) {
     
     if (any(x_data == 0)) {
       x_data_repl <- cmultRepl(x_data, method = "CZM", suppress.print = TRUE)
+    } else {
+      x_data_repl <- x_data
+    }
+    
+    list(
+      standard = prcomp(clr(x_data_repl)),
+      robust = pcaCoDa(x_data_repl, method = "robust")
+    )
+  })
+  
+  return(pca_results)
+}
+
+calculate_pca_gbm <- function(simulation_data) {
+
+  pca_results <- lapply(simulation_data$simulations, function(sim) {
+    x_data <- do.call(rbind, sim$x_data)
+    
+    if (any(x_data == 0)) {
+      x_data_repl <- cmultRepl(x_data, method = "GBM", suppress.print = TRUE)
     } else {
       x_data_repl <- x_data
     }

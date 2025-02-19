@@ -1,19 +1,35 @@
-required_packages <- c("ggplot2", "targets")
+required_packages <- c("ggplot2", "gridExtra", "compositions", 
+                      "robCompositions", "zCompositions")
 
 new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
 if(length(new_packages)) install.packages(new_packages)
 
 lapply(required_packages, library, character.only = TRUE)
 
-source("scripts/helper_functions.R")
-source("scripts/read_data_KL15_XRF.R")
+source("scripts/fit_comp_pca.R")
+source("scripts/help_functions.R")
+source("scripts/cond_scores_function.R")
+source("scripts/grad_function.R")
+source("scripts/simulation_functions.R")
 
-simulation_results_list <- list(
-  tar_read(results_balanced_m20),
-  tar_read(results_balanced_m40),
-  tar_read(results_balanced_m80),
-  tar_read(results_balanced_m160) 
-)
+#*******reproduction of figure 4***********#
+n_simulations <- 5
+n_observations <- 100
+counts_list <- c(20, 40, 80, 160)
+
+true_mu <- c(0, 0.01, 0.02, -0.02, -0.01) 
+eigenvalues <- c(0.7, 0.3, 0, 0)
+V <- cbind(c(0, sqrt(1/2), -sqrt(1/2), 0, 0), c(-sqrt(1/2), 0, 0, sqrt(1/2), 0), c(0, 0, 0, 0, 0), c(0, 0, 0, 0, 0))
+true_sigma <- V %*% diag(eigenvalues) %*% t(V) 
+
+simulation_results <- lapply(counts_list, function(n_counts) {
+  run_composition_simulation(
+    n_simulations = n_simulations,
+    n_observations = n_observations,
+    n_counts = n_counts,
+    base_setting
+  )
+})
 
 n_simulations <- length(simulation_results_list[[1]])
 
@@ -44,6 +60,6 @@ plot1 <- ggplot(ess_data, aes(x = ESS, fill = size)) +
     y = ""
   )
 
-png("./scripts/figures/figure_4.png", width = 12, height = 5, units = "in", res = 300)
+png("./scripts/figures/figure_4_upd.png", width = 12, height = 5, units = "in", res = 300)
 print(plot1)
 dev.off()

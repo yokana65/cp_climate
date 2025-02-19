@@ -7,7 +7,7 @@ if(length(new_packages)) install.packages(new_packages)
 lapply(required_packages, library, character.only = TRUE)
 
 source("scripts/read_data_KL15_XRF.R")
-source("scripts/helper_functions.R")
+source("scripts/help_functions.R")
 
 set_1 <- get_color_palette()
 
@@ -20,7 +20,7 @@ results <- read_data_kl15_xrf(data_kl15_xrf, data_kl15_agem)
 data_kl15 <- results$data_kl15
 
 #*******reproduction figure 6***********#
-data_sel <- data[4:ncol(data_kl15)-1]
+data_sel <- data_kl15[4:ncol(data_kl15)-1]
 colnames(data_sel) <- gsub("_cts", "", colnames(data_sel))
 x <- acomp(data_sel)
 x_clr <- clr(data_sel)
@@ -178,7 +178,7 @@ plot6 <- ggplot(mean_comp_list[[6]]) +
     theme(axis.text.x = element_text(angle = 45, hjust = 1),
           legend.position = "top") 
 
-png("./scripts/figures/figure_8.png", width = 10, height = 5, units = "in", res = 300)
+png("./scripts/figures/figure_8.png", width = 10, height = 8, units = "in", res = 300)
 grid.arrange(plot1, plot2, plot3, plot4, plot5, plot6, ncol = 3)
 dev.off()
 

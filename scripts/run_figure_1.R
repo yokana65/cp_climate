@@ -100,8 +100,6 @@ plot2 <- ggplot(cov_df, aes(x = size, y = differences, fill = method)) +
   theme(legend.position = "top",
         plot.title = element_text(hjust = 0.5, size = 16))
 
-grid.arrange(plot1, plot2, ncol = 2)
-
 png("./scripts/figures/figure_1_upd.png", width = 12, height = 5, units = "in", res = 300)
 grid.arrange(plot1, plot2, ncol = 2)
 dev.off()

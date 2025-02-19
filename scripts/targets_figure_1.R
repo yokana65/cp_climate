@@ -1,4 +1,4 @@
-source("scripts/helper_functions.R")
+source("scripts/help_functions.R")
 
 load_required_packages()
 set_1 <- get_color_palette()
@@ -18,7 +18,7 @@ simulation_data_list <- list(
   tar_read(sim_balanced_m40),
   tar_read(sim_balanced_m80),
   tar_read(sim_balanced_m160)
-  )
+)
 
 n_simulations <- length(simulation_data_list[[1]])
 
@@ -26,7 +26,7 @@ simulation_results_list <- list(
   tar_read(results_balanced_m20),
   tar_read(results_balanced_m40),
   tar_read(results_balanced_m80),
-  tar_read(results_balanced_m160)  
+  tar_read(results_balanced_m160)
 )
 
 pca_clr_rob <- lapply(1:4, function(x) list(n_simulations))

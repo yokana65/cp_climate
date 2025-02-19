@@ -13,8 +13,8 @@ set_1 <- get_color_palette()
 #*******reproduction plot3 with targets***********#
 eigenvalues <- c(0.43, 0.26, 0.12, 0.08)
 true_mu <- c(-1.21, -1.76, 1.70, -0.6,
-                                 1.04, -3.62, -1.26, 1.04, -0.83,
-                                 0.50, -4.0, -0.49, 1.51)
+             1.04, -3.62, -1.26, 1.04, -0.83,
+             0.50, -4.0, -0.49, 1.51)
 
 pc_1 <- c(0.4, 0, 0.3, -0.3, 0, 0, -0.2, -0.2, 0.3, -0.1, 0.3, -0.3, -0.2)
 pc_2 <- c(0.7, 0, -0.3, 0.2, 0, -0.2, 0, 0, 0, 0, -0.4, 0, 0)
@@ -167,9 +167,9 @@ simulation_data_list <- list(
 n_simulations <- length(simulation_data_list[[1]])
 
 simulation_results_list <- list(
-  tar_read(result_complex_sec_auto),
-  tar_read(result_complex_dsec_auto),
-  tar_read(result_complex_csec_auto)
+  tar_read(results_complex_sec_auto),
+  tar_read(results_complex_dsec_auto),
+  tar_read(results_complex_csec_auto)
 )
 
 pca_clr_rob <- lapply(seq_along(methods), function(x) list(n_simulations))
@@ -191,6 +191,46 @@ for(j in seq_along(methods)) {
     pca_clr_rob[[j]][[i]] <- pcaCoDa(x_data_repl, method = "robust")
   }
 }
+
+diff_mean <- lapply(seq_along(methods), function(x) list(n_simulations))
+diff_mean_std_clr <- lapply(seq_along(methods), function(x) list(n_simulations))
+
+for(j in seq_along(methods)) {
+  for(i in 1:n_simulations) {
+    diff_mean[[j]][[i]] <- sqrt(sum((true_mu - simulation_results_list[[j]][[i]]$pca$center)^2))
+    diff_mean_std_clr[[j]][[i]] <- sqrt(sum((true_mu - pca_clr_std[[j]][[i]]$center)^2))
+  }
+}
+
+diff_df <- data.frame(
+  differences = c(
+    unlist(diff_mean[[1]]), unlist(diff_mean[[2]]), 
+    unlist(diff_mean[[3]]),
+    unlist(diff_mean_std_clr[[1]]), unlist(diff_mean_std_clr[[2]]),
+    unlist(diff_mean_std_clr[[3]])
+  ),
+  method = factor(rep(c("MCEM", "sample mean"), each = length(sample_sizes) * n_simulations)),
+  size = factor(rep(rep(sample_sizes, 
+                         each = n_simulations), 2))
+)
+
+diff_df$method <- factor(diff_df$method, 
+                        levels = c("MCEM", "sample mean"))
+
+diff_df$size <- factor(diff_df$size, 
+                        levels = sample_sizes)
+
+plot4 <- ggplot(diff_df, aes(x = size, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_minimal() +
+  scale_fill_manual(values = set_1) + 
+  labs(y = "dist mean",
+       x = "Scale",
+       fill = "method",
+       title = "Distance of true mean to estimated mean") +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5, size = 16))
+
 
 sigma_distances <- lapply(seq_along(methods), function(x) list(n_simulations))
 sigma_distances_std_clr <- lapply(seq_along(methods), function(x) list(n_simulations))
@@ -245,4 +285,8 @@ plot3 <- ggplot(sigma_diff_df, aes(x = size, y = differences, fill = method)) +
 
 png("./scripts/figures/figure_3.png", width = 12, height = 5, units = "in", res = 300)
 grid.arrange(plot2, plot3, ncol = 2, top = textGrob("Distance of true covariance to estimated covariance", gp = gpar(fontsize = 16)))
+dev.off()
+
+png("./scripts/figures/figure_3_mean.png", width = 12, height = 5, units = "in", res = 300)
+grid.arrange(plot1, plot4, ncol = 2, top = textGrob("Distance of true mean to estimated mean", gp = gpar(fontsize = 16)))
 dev.off()

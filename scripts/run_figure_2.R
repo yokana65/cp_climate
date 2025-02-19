@@ -6,14 +6,14 @@ if(length(new_packages)) install.packages(new_packages)
 
 lapply(required_packages, library, character.only = TRUE)
 
-source("scripts/fit_compositional_pca.R")
-source("scripts/helper_functions.R")
-source("scripts/conditional_scores_function.R")
-source("scripts/gradient.R")
+source("scripts/fit_comp_pca.R")
+source("scripts/help_functions.R")
+source("scripts/cond_scores_function.R")
+source("scripts/grad_function.R")
 source("scripts/simulation_functions.R")
 
 #*******reproduction plot2***********#
-n_simulations <- 5
+n_simulations <- 100
 n_observations <- 100
 counts_list <- c(20, 40, 80, 160)
 
@@ -91,7 +91,7 @@ cov_df$size <- factor(cov_df$size,
 
 plot2 <- ggplot(cov_df, aes(x = size, y = differences, fill = method)) +
   geom_boxplot() +
-  theme_grey() +
+  theme_minimal() +
   scale_fill_manual(values = set_1) +
   labs(y = "dist covariance",
        x = expression(m),
@@ -99,8 +99,6 @@ plot2 <- ggplot(cov_df, aes(x = size, y = differences, fill = method)) +
        title = "Distance of true covariance to estimated covariance") +
   theme(legend.position = "top",
         plot.title = element_text(hjust = 0.5, size = 16))
-
-grid.arrange(plot1, plot2, ncol = 2)
 
 png("./scripts/figures/figure_2_upd.png", width = 12, height = 5, units = "in", res = 300)
 grid.arrange(plot1, plot2, ncol = 2)

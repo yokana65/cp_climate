@@ -8,7 +8,7 @@ if(length(new_packages)) install.packages(new_packages)
 lapply(required_packages, library, character.only = TRUE)
 
 source("scripts/read_data_KL15_XRF.R")
-source("scripts/helper_functions.R")
+source("scripts/help_functions.R")
 
 dir <- paste0(getwd(), "/data/Africa_NE_200/data/")
 data_kl15_xrf <- read.table(paste0(dir,'data_KL15_XRF.txt'), header = TRUE, sep = "\t")
@@ -77,7 +77,7 @@ plot1 <- ggplot(pc_time_data_list[[1]], aes(x = age, y = score)) +
     geom_ribbon(data=pred_data, aes(y=fit, ymin=lower, ymax=upper), 
                 alpha=0.2) +
     geom_line(data = data_long, aes(x = age, y = value), color = "#9ebcda", linewidth = 0.8, alpha = 0.8) +
-    labs(x = "Age (ka)", 
+    labs(x = "", 
          y = "PC1 Score") +
     theme_minimal() +
     ylim(-1.5,1.5) +
@@ -85,10 +85,10 @@ plot1 <- ggplot(pc_time_data_list[[1]], aes(x = age, y = score)) +
 
 plot2 <- ggplot(pc_time_data_list[[2]], aes(x = age, y = score)) +
     geom_point(alpha=0.5) +
-    geom_line(data=pred_data_2, aes(y=fit), color="#8856a7", linewidth=0.6) +
+    geom_line(data=pred_data_2, aes(y=fit), color="#9ebcda", linewidth=0.6) +
     geom_ribbon(data=pred_data_2, aes(y=fit, ymin=lower, ymax=upper), 
                 alpha=0.2) +
-    geom_line(data = data_long, aes(x = age, y = value), color = "#9ebcda", linewidth = 0.8, , alpha = 0.8) +
+    geom_line(data = data_long, aes(x = age, y = value), color = "#8856a7", linewidth = 0.8, , alpha = 0.8) +
     labs(x = "Age (ka)", 
          y = "PC2 Score") +
     theme_minimal() +
