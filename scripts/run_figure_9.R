@@ -72,23 +72,23 @@ pred_data_2$upper <- pred_data_2$fit + 1.96 * pred_se_2$se.fit
 pred_data_2$lower <- pred_data_2$fit - 1.96 * pred_se_2$se.fit
 
 plot1 <- ggplot(pc_time_data_list[[1]], aes(x = age, y = score)) +
-    geom_point(alpha=0.5) +
+    geom_point(alpha=0.5, size=0.6) +
     geom_line(data=pred_data, aes(y=fit), color="#8856a7", linewidth=0.6) +
     geom_ribbon(data=pred_data, aes(y=fit, ymin=lower, ymax=upper), 
                 alpha=0.2) +
     geom_line(data = data_long, aes(x = age, y = value), color = "#9ebcda", linewidth = 0.8, alpha = 0.8) +
-    labs(x = "", 
+    labs(x = "",
          y = "PC1 Score") +
     theme_minimal() +
     ylim(-1.5,1.5) +
     theme(legend.position = "none") 
 
 plot2 <- ggplot(pc_time_data_list[[2]], aes(x = age, y = score)) +
-    geom_point(alpha=0.5) +
-    geom_line(data=pred_data_2, aes(y=fit), color="#9ebcda", linewidth=0.6) +
+    geom_point(alpha=0.5, size=0.6) +
+    geom_line(data=pred_data_2, aes(y=fit), color="#8856a7", linewidth=0.6) +
     geom_ribbon(data=pred_data_2, aes(y=fit, ymin=lower, ymax=upper), 
                 alpha=0.2) +
-    geom_line(data = data_long, aes(x = age, y = value), color = "#8856a7", linewidth = 0.8, , alpha = 0.8) +
+    geom_line(data = data_long, aes(x = age, y = value), color = "#9ebcda", linewidth = 0.8, , alpha = 0.8) +
     labs(x = "Age (ka)", 
          y = "PC2 Score") +
     theme_minimal() +

@@ -4343,7 +4343,7 @@ for(j in 1:4) {
     x_data_list <- sim$x_data
     x_data <- do.call(rbind, x_data_list)
     if (any(x_data == 0)) {
-      x_data_repl <- cmultRepl(x_data, method = "CZM", suppress.print=TRUE)
+      x_data_repl <- cmultRepl(x_data, method = "GBM", suppress.print=TRUE)
     } else {
       x_data_repl <- x_data
     }
@@ -4355,10 +4355,10 @@ for(j in 1:4) {
 }
 
 simulation_results_list_17 <- list(
-  tar_read(results_balanced_m20),
-  tar_read(results_balanced_m40),
-  tar_read(results_balanced_m80),
-  tar_read(results_balanced_m160)  
+  tar_read(result_balanced_m20),
+  tar_read(result_balanced_m40),
+  tar_read(result_balanced_m80),
+  tar_read(result_balanced_m160)  
 )
 
 diff_mean_17 <- lapply(1:4, function(x) list(n_simulations))
@@ -4560,7 +4560,7 @@ for(j in 1:4) {
     x_data_list <- sim$x_data
     x_data <- do.call(rbind, x_data_list)
     if (any(x_data == 0)) {
-      x_data_repl <- cmultRepl(x_data, method = "CZM", suppress.print=TRUE)
+      x_data_repl <- cmultRepl(x_data, method = "GBM", suppress.print=TRUE)
     } else {
       x_data_repl <- x_data
     }
@@ -4571,10 +4571,10 @@ for(j in 1:4) {
 }
 
 simulation_results_list_18 <- list(
-  tar_read(results_balanced_m20),
-  tar_read(results_balanced_m40),
-  tar_read(results_balanced_m80),
-  tar_read(results_balanced_m160)  
+  tar_read(result_balanced_m20),
+  tar_read(result_balanced_m40),
+  tar_read(result_balanced_m80),
+  tar_read(result_balanced_m160)  
 )
 
 diff_mean_18 <- lapply(1:4, function(x) list(n_simulations))
@@ -4723,8 +4723,8 @@ basis_matrix <- get_helmert(D)
 
 mean_19 <- c(0, 1, 0.5, -1, -0.5)
 
-eigenvalues_19 <- c(0.7, 0.3, 0, 0)
-V_19 <- cbind(c(0, sqrt(1/2), -sqrt(1/2), 0, 0), c(-sqrt(1/2), 0, 0, sqrt(1/2), 0), c(0, 0, 0, 0, 0), c(0, 0, 0, 0, 0))
+eigenvalues_19 <- c(0.6, 0.3, 0.1, 0.1)
+V_19 <- cbind(c(0, sqrt(1/2), -sqrt(1/2), 0, 0), c(-sqrt(1/2), 0, 0, sqrt(1/2), 0), c(sqrt(1/2), 0, -sqrt(1/2), 0, 0), c(-sqrt(1/2), 0, 0, 0, sqrt(1/2)))
 true_sigma_19 <- V_19 %*% diag(eigenvalues_19) %*% t(V_19) 
 
 true_v_19 <- mean_19
@@ -4750,7 +4750,7 @@ for(j in 1:4) {
     x_data_list <- sim$x_data
     x_data <- do.call(rbind, x_data_list)
     if (any(x_data == 0)) {
-      x_data_repl <- cmultRepl(x_data, method = "CZM", suppress.print=TRUE)
+      x_data_repl <- cmultRepl(x_data, method = "GBM", suppress.print=TRUE)
     } else {
       x_data_repl <- x_data
     }
@@ -4943,7 +4943,7 @@ for(j in 1:4) {
     x_data_list <- sim$x_data
     x_data <- do.call(rbind, x_data_list)
     if (any(x_data == 0)) {
-      x_data_repl <- cmultRepl(x_data, method = "CZM", suppress.print=TRUE)
+      x_data_repl <- cmultRepl(x_data, method = "GBM", suppress.print=TRUE)
     } else {
       x_data_repl <- x_data
     }
@@ -5108,7 +5108,7 @@ basis_matrix <- get_helmert(D)
 eigenvalues_21 = c(0.43, 0.26, 0.12, 0.08)
 mean_21 = mean = c(-1.21, -1.76, 1.70, -0.6,
                                  1.04, -3.62, -1.26, 1.04, -0.83,
-                                 0.50, -4.0, -0.49, 1.51)
+                                 0.50, 4.0, -0.49, 1.51)
 
 pc_1 <- c(0.4, 0, 0.3, -0.3, 0, 0, -0.2, -0.2, 0.3, -0.1, 0.3, -0.3, -0.2)
 pc_2 <- c(0.7, 0, -0.3, 0.2, 0, -0.2, 0, 0, 0, 0, -0.4, 0, 0)
@@ -5145,7 +5145,26 @@ simulation_data_list_21 <- list(
 pca_clr_rob_21 <- lapply(1:4, function(x) list(n_simulations))
 pca_clr_std_21 <- lapply(1:4, function(x) list(n_simulations))
 
+pca_clr_rob_21_czm <- lapply(1:4, function(x) list(n_simulations))
+pca_clr_std_21_czm <- lapply(1:4, function(x) list(n_simulations))
 # calculate standard PCA for each simulation
+for(j in 1:3) {
+  simulation_data <- simulation_data_list_21[[j]]
+  for(i in 1:length(simulation_data)) {
+    sim <- simulation_data[[i]]
+    x_data_list <- sim$x_data
+    x_data <- do.call(rbind, x_data_list)
+    if (any(x_data == 0)) {
+      x_data_repl <- cmultRepl(x_data, method = "GBM", suppress.print=TRUE)
+    } else {
+      x_data_repl <- x_data
+    }
+
+    pca_clr_std_21[[j]][[i]] <- prcomp(clr(x_data_repl))
+    pca_clr_rob_21[[j]][[i]] <- pcaCoDa(x_data_repl, method = "robust")
+  }
+}
+
 for(j in 1:3) {
   simulation_data <- simulation_data_list_21[[j]]
   for(i in 1:length(simulation_data)) {
@@ -5158,16 +5177,15 @@ for(j in 1:3) {
       x_data_repl <- x_data
     }
 
-    pca_clr_std_21[[j]][[i]] <- prcomp(clr(x_data_repl))
-    pca_clr_rob_21[[j]][[i]] <- pcaCoDa(x_data_repl, method = "robust")
+    pca_clr_std_21_czm[[j]][[i]] <- prcomp(clr(x_data_repl))
+    pca_clr_rob_21_czm[[j]][[i]] <- pcaCoDa(x_data_repl, method = "robust")
   }
 }
 
 simulation_results_list_21 <- list(
   tar_read(results_complex_sec),
   tar_read(results_complex_dsec),
-  tar_read(results_complex_csec),
-  tar_read(results_complex_msec)
+  tar_read(results_complex_csec)
 )
 
 diff_mean_21 <- lapply(1:4, function(x) list(n_simulations))
@@ -5227,7 +5245,8 @@ And for the Kovarianzmatrix:
 sigma_distances_21 <- lapply(1:4, function(x) list(n_simulations))
 sigma_distances_std_clr_21 <- lapply(1:4, function(x) list(n_simulations))
 sigma_distances_rob_clr_21 <- lapply(1:4, function(x) list(n_simulations))
-
+sigma_distances_std_clr_21_czm <- lapply(1:4, function(x) list(n_simulations))
+sigma_distances_rob_clr_21_czm <- lapply(1:4, function(x) list(n_simulations))
 
 for(j in 1:3) {
   for(i in 1:n_simulations) {
@@ -5242,6 +5261,14 @@ for(j in 1:3) {
     sigma_hat_rob <- with(pca_clr_rob_21[[j]][[i]],
     loadings %*% diag(eigenvalues) %*% t(loadings))
     sigma_distances_rob_clr_21[[j]][[i]] <- norm(true_sigma_21 - sigma_hat_rob, type = "F")
+
+    sigma_hat_clr_czm <- with(pca_clr_std_21_czm[[j]][[i]],
+      rotation %*% diag(sdev^2) %*% t(rotation))
+    sigma_distances_std_clr_21_czm[[j]][[i]] <- norm(true_sigma_21 - sigma_hat_clr_czm, type = "F")
+    
+    sigma_hat_rob_czm <- with(pca_clr_rob_21_czm[[j]][[i]],
+    loadings %*% diag(eigenvalues) %*% t(loadings))
+    sigma_distances_rob_clr_21_czm[[j]][[i]] <- norm(true_sigma_21 - sigma_hat_rob_czm, type = "F")
   }
 }
 
@@ -5268,6 +5295,27 @@ sigma_diff_df_21$method <- factor(sigma_diff_df_21$method,
 
 sigma_diff_df_21$size <- factor(sigma_diff_df_21$size, 
                         levels = c("cts per sec", "cts per dsec", "cts per csec"))
+                      
+sigma_diff_df_21_czm <- data.frame(
+  differences = c(
+    unlist(sigma_distances_21[[1]]), unlist(sigma_distances_21[[2]]), 
+    unlist(sigma_distances_21[[3]]),
+    unlist(sigma_distances_std_clr_21_czm[[1]]), unlist(sigma_distances_std_clr_21_czm[[2]]),
+    unlist(sigma_distances_std_clr_21_czm[[3]]),
+    unlist(sigma_distances_rob_clr_21_czm[[1]]), unlist(sigma_distances_rob_clr_21_czm[[2]]),
+    unlist(sigma_distances_rob_clr_21_czm[[3]])
+  ),
+  method = factor(rep(c("MCEM", "standard","robust"), each = 3 * n_simulations)),
+  size = factor(rep(rep(c("cts per sec", "cts per dsec", "cts per csec"), 
+                         each = n_simulations), 3))
+)
+
+# define order of sequence
+sigma_diff_df_21_czm$method <- factor(sigma_diff_df_21_czm$method, 
+                        levels = c("MCEM", "standard", "robust"))
+
+sigma_diff_df_21_czm$size <- factor(sigma_diff_df_21_czm$size, 
+                        levels = c("cts per sec", "cts per dsec", "cts per csec"))
 
 plot2_cplx <- ggplot(sigma_diff_df_21, aes(x = size, y = differences, fill = method)) +
   geom_boxplot() +
@@ -5279,7 +5327,21 @@ plot2_cplx <- ggplot(sigma_diff_df_21, aes(x = size, y = differences, fill = met
   theme(legend.position = "top",
         plot.title = element_text(hjust = 0.5, size = 16))
 
+plot3_cplx <- ggplot(sigma_diff_df_21_czm, aes(x = size, y = differences, fill = method)) +
+  geom_boxplot() +
+  theme_grey() +
+  scale_fill_manual(values = set_1) + 
+  labs(y = "dist covariance",
+       x = "Scale",
+       fill = "method") +
+  theme(legend.position = "top",
+        plot.title = element_text(hjust = 0.5, size = 16))
+
 grid.arrange(plot1_cplx, plot2_cplx, ncol = 2)
+```
+
+```{r zero replacement, fig.width=12, fig.height=5, eval=TRUE}
+grid.arrange(plot2_cplx, plot3_cplx, ncol = 2)
 ```
 
 ```{r stats 21, eval=TRUE}
@@ -5313,7 +5375,7 @@ basis_matrix <- get_helmert(D)
 eigenvalues_22 = c(0.43, 0.26, 0.12, 0.08)
 mean_22 = mean = c(-1.21, -1.76, 1.70, -0.6,
                                  1.04, -3.62, -1.26, 1.04, -0.83,
-                                 0.50, -4.0, -0.49, 1.51)
+                                 0.50, 4.0, -0.49, 1.51)
 
 pc_1 <- c(0.4, 0, 0.3, -0.3, 0, 0, -0.2, -0.2, 0.3, -0.1, 0.3, -0.3, -0.2)
 pc_2 <- c(0.7, 0, -0.3, 0.2, 0, -0.2, 0, 0, 0, 0, -0.4, 0, 0)
@@ -5371,8 +5433,7 @@ for(j in 1:3) {
 simulation_results_list_22 <- list(
   tar_read(results_complex_sec_auto),
   tar_read(results_complex_dsec_auto),
-  tar_read(results_complex_csec_auto),
-  tar_read(results_complex_msec_auto)
+  tar_read(results_complex_csec_auto)
 )
 
 diff_mean_22 <- lapply(1:4, function(x) list(n_simulations))
@@ -5632,14 +5693,18 @@ comp_pca <- prcomp(ilr(sim_data))
   })
   predicted_scores_3 <- sapply(seq_along(sim_data_ls), function(i){
     optim_result <- optim(rep(0, length = length(comp_pca$sdev)), log_conditional_scores , gr = gradient_lcs,
-                          x_data_i = sim_data_ls[[i]], pca = comp_pca,
+                          x_data_i = sim_data_ls[[i]], pca = result_2$pca,
                           basis_matrix = basis_matrix,
                           control = list(fnscale = -1), method = "BFGS")
     as.vector(optim_result$par)
   })
 coefficient_2 <- as.vector(result_2$pca$center) + result_2$pca$rotation %*% predicted_scores_3
-composition_2 <- clrInv(coefficient_2[,99])
-acomp(sim_data_ls[[99]])
+composition_2 <- clrInv(t(coefficient_2))
+observations <- acomp(sim_data)
+diff <- composition_2 - observations
+# for all observations
+
+
 # calculate weights 
 optim_result <- optim(rep(0L, length = length(comp_pca$sdev)),
                               conditional_scores_log_ilr_vs3b,

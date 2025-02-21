@@ -41,3 +41,7 @@ qq_plots <- lapply(1:ncol(x_ilr_sc), function(i) {
 png("./scripts/figures/figure_13.png", width = 12, height = 8, units = "in", res = 300)
 grid.arrange(grobs = qq_plots, ncol = 4)
 dev.off()
+
+#*******reproduction table ??***********#
+descriptives <- summary_stats(data_sel)
+descriptives <- summary_stats(round(data_sel * 0.01))

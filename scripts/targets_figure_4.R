@@ -9,10 +9,10 @@ source("scripts/helper_functions.R")
 source("scripts/read_data_KL15_XRF.R")
 
 simulation_results_list <- list(
-  tar_read(results_balanced_m20),
-  tar_read(results_balanced_m40),
-  tar_read(results_balanced_m80),
-  tar_read(results_balanced_m160) 
+  tar_read(result_balanced_m20),
+  tar_read(result_balanced_m40),
+  tar_read(result_balanced_m80),
+  tar_read(result_balanced_m160) 
 )
 
 n_simulations <- length(simulation_results_list[[1]])
@@ -24,17 +24,17 @@ ess_data <- data.frame(
     simulation_results_list[[3]][[1]]$ESS / (simulation_results_list[[1]][[1]]$iteration * 10),
     simulation_results_list[[4]][[1]]$ESS / (simulation_results_list[[1]][[1]]$iteration * 10)
   ),
-  size = factor(rep(c("20", "40", "80", "160"), each = 100))
+  m = factor(rep(c("20", "40", "80", "160"), each = 100))
 )
 
-ess_data$size <- factor(ess_data$size, 
+ess_data$m <- factor(ess_data$m, 
                         levels = c("20", "40", "80", "160"))
 
-plot1 <- ggplot(ess_data, aes(x = ESS, fill = size)) +
+plot1 <- ggplot(ess_data, aes(x = ESS, fill = m)) +
   geom_histogram(aes(y = after_stat(density)), 
                  position = "dodge", 
                  bins = 30, alpha = 0.7) +
-  geom_density(aes(color = size), fill = NA, linewidth = 0.5, adjust = 0.5) +
+  geom_density(aes(color = m), fill = NA, linewidth = 0.5, adjust = 0.5) +
   scale_fill_manual(values = c("#440154FF", "#31688EFF", "#9ebcda", "#e0ecf4")) +
   scale_color_manual(values = c("#440154FF", "#31688EFF", "#9ebcda", "#e0ecf4")) +
   theme_minimal() +

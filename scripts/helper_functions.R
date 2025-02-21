@@ -114,7 +114,6 @@ plot_pca_rotation <- function(rotation, scale = 1, main = "PCA - clr") {
 
 
 plot_pca_rotations <- function(rotation, components = c(1,2), scale = 1, main = "PCA - clr", fixed = FALSE, pos_vector = NULL) {
-    # Set up the plot with optional fixed axes
     if (fixed) {
         plot(rotation[, components[1]], rotation[, components[2]],
              xlab = paste0("PC", components[1]),
@@ -154,6 +153,14 @@ plot_pca_rotations <- function(rotation, components = c(1,2), scale = 1, main = 
          cex = 0.8)
     
     abline(h = 0, v = 0, lty = 2, col = "gray")
+}
+
+calculate_pc_scores <- function(data, pca, pc_number) {
+  centered_data <- scale(data, center = TRUE, scale = FALSE)
+
+  scores <- centered_data %*% pca$loadings[, pc_number]
+
+  return(scores)
 }
 
 plot_marginal_scores <- function(proposal_scores, weights, iteration) {
@@ -429,4 +436,40 @@ predict_coordinates <- function(comp_pca, x_df, basis_matrix){
   return(list("predicted_scores" = predicted_scores, "coordinates" = coordinates_list))
 }
 
-### Refactor MCEM
+load_required_packages <- function() {
+  required_packages <- c("ggplot2", "gridExtra", "compositions",
+                        "robCompositions", "zCompositions", "targets", "dplyr")
+  
+  new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
+  if(length(new_packages)) install.packages(new_packages)
+  invisible(lapply(required_packages, library, character.only = TRUE))
+}
+
+get_color_palette <- function() {
+  c("#e0ecf4", "#9ebcda", "#8856a7")
+}
+
+process_simulation_data <- function(simulation_data) {
+  pca_results <- list(
+    clr_rob = list(),
+    clr_std = list()
+  )
+  
+  for(i in 1:length(simulation_data)) {
+    x_data <- do.call(rbind, simulation_data[[i]]$x_data)
+    x_data_repl <- if(any(x_data == 0)) {
+      cmultRepl(x_data, method = "CZM", suppress.print=TRUE)
+    } else {
+      x_data
+    }
+    
+    pca_results$clr_std[[i]] <- prcomp(clr(x_data_repl))
+    pca_results$clr_rob[[i]] <- pcaCoDa(x_data_repl, method = "robust")
+  }
+  
+  return(pca_results)
+}
+
+normalize <- function(v) {
+    v / sqrt(sum(v^2))
+}

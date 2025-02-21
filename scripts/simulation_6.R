@@ -123,9 +123,9 @@ ar_coefs <- c(0.3, 0.1, -0.05, 0.1, 0.05, 0.04, -0.02, 0.02, 0.01, -0.01)
 
 coefs <- lapply(eigenvalues, function(ev) {
     arima.sim(
-      model = list(ar = ar_coefs), 
-      n = n_observations,         
-      sd = sqrt(eigenvalues)        
+      model = list(ar = ar_coefs),
+      n = n_observations,
+      sd = sqrt(eigenvalues)
     )
 })
 
@@ -186,10 +186,19 @@ complex_setting_auto <- function(data,
 
 
 
-  coef1 <- generate_sin_coef(n_observations, n_periods, sqrt(eigenvalues[1]))
-  coef2 <- generate_cos_coef(n_observations, n_periods, sqrt(eigenvalues[2]))
-  coef3 <- generate_sin_coef(n_observations, n_periods, sqrt(eigenvalues[3]))
-  coef4 <- generate_cos_coef(n_observations, n_periods, sqrt(eigenvalues[4]))
+  # coef1 <- generate_sin_coef(n_observations, n_periods, sqrt(eigenvalues[1]))
+  # coef2 <- generate_cos_coef(n_observations, n_periods, sqrt(eigenvalues[2]))
+  # coef3 <- generate_sin_coef(n_observations, n_periods, sqrt(eigenvalues[3]))
+  # coef4 <- generate_cos_coef(n_observations, n_periods, sqrt(eigenvalues[4]))
+
+  coef1 <- generate_temporal_scores(n_observations, n_periods, 
+                                    eigenvalues[1], phase = 0)
+  coef2 <- generate_temporal_scores(n_observations, n_periods, 
+                                    eigenvalues[2], phase = pi / 4)
+  coef3 <- generate_temporal_scores(n_observations, n_periods, 
+                                    eigenvalues[3], phase = pi / 2)
+  coef4 <- generate_temporal_scores(n_observations, n_periods, 
+                                    eigenvalues[4], phase = pi / 3)
 
   clr_coords <- lapply(1:n_observations, function(i){
     mean + coef1[i] * pc_1_norm + coef2[i]*pc_2_norm +
@@ -208,22 +217,26 @@ complex_setting_auto <- function(data,
   return(list("x_data" = x_data, "x_data_matrix" = x_data_matrix))
 }
 
-  generate_sin_coef <- function(n, periods, sigma) {
-      t <- seq(0, 2*pi*periods, length.out = n)
-      sin_wave <- sin(t)
-      return(sin_wave * sigma + rnorm(n, 0, sigma))
-  }
+generate_sin_coef <- function(n, periods, sigma) {
+    t <- seq(0, 2*pi*periods, length.out = n)
+    sin_wave <- sin(t)
+    return(sin_wave * sigma + rnorm(n, 0, sigma))
+}
 
-  generate_cos_coef <- function(n, periods, sigma) {
-      t <- seq(0, 2*pi*periods, length.out = n)
-      sin_wave <- cos(t)
-      return(sin_wave * sigma + rnorm(n, 0, sigma))
-  }
+generate_cos_coef <- function(n, periods, sigma) {
+    t <- seq(0, 2*pi*periods, length.out = n)
+    sin_wave <- cos(t)
+    return(sin_wave * sigma + rnorm(n, 0, sigma))
+}
 
-  
-  normalize <- function(v) {
-      v / sqrt(sum(v^2))
-  }
+generate_temporal_scores <- function(n_observations, n_periods, eigenvalue, phase = 0) {
+  base_scores <- rnorm(n_observations, mean = 0, sd = sqrt(eigenvalue))
+  t <- seq(0, 2*pi*n_periods, length.out = n_observations)
+  temporal_component <- sin(t + phase)
+  scores <- base_scores + temporal_component * sqrt(eigenvalue)
+  return(scores)
+}
+
 # plot(coef1, type = "l", col = "blue")
 # plot(coef1, type = "l", col = "blue", ylim = range(c(coef1, coef2, coef3, coef4)))
 # lines(coef2, col = "red")

@@ -62,10 +62,10 @@ png("./scripts/figures/figure_7.png", width = 8, height = 8, units = "in", res =
 plot_pca_rotations(pca_rob$loadings, components = c(1,2), main = "PC1 vs. PC2", fixed=TRUE, pos_vector = c(4,4,4,2,4,4,2,2,4,2,4,2,2))
 dev.off()
 
-#*******reproduction biplots for appendix***********#
-png("./scripts/figures/figure_D.png", width = 15, height = 10, units = "in", res = 300)
+#*******reproduction figure 15 for appendix***********#
+png("./scripts/figures/figure_15.png", width = 10, height = 10, units = "in", res = 300)
 
-par(mfrow=c(2,3))
+par(mfrow=c(3,2))
 
 plot_pca_rotations(pca_rob$loadings, components = c(1,2), main = "PC1 vs. PC2", fixed=TRUE, pos_vector = c(4,4,4,2,4,4,2,2,4,2,4,2,2))
 plot_pca_rotations(pca_rob$loadings, components = c(1,3), main = "PC1 vs. PC3", fixed=TRUE, pos_vector = c(4,4,4,2,4,4,2,2,4,2,4,2,2))

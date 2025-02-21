@@ -137,3 +137,22 @@ clrInverse <- function(clr_coords) {
 sample_from_density <- function(n, density_estimate) {
     sample(density_estimate$x, size = n, prob = density_estimate$y, replace = TRUE)
 }
+
+summary_stats <- function(x_data) {
+  data.frame(
+    mean = colMeans(x_data),
+    sd = apply(x_data, 2, sd),
+    min = apply(x_data, 2, min),
+    max = apply(x_data, 2, max),
+    n_zeros_components = apply(x_data, 2, function(x) sum(x == 0)),
+    n_zeros_composition = sum(apply(x_data, 1, function(x) any(x == 0)))
+  )
+}
+
+calculate_pc_scores <- function(data, pca, pc_number) {
+  centered_data <- scale(data, center = TRUE, scale = FALSE)
+
+  scores <- centered_data %*% pca$loadings[, pc_number]
+
+  return(scores)
+}
